@@ -1,0 +1,733 @@
+/* Confirmation Page - Galaxy Cinema Inspired Design */
+.confirmation-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #000000 0%, #1a1a1a 50%, #0a0a0a 100%);
+  padding: 24px 0 60px;
+  color: white;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.confirmation-page::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,215,0,0.02)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)" /></svg>') repeat;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.confirmation-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+.confirmation-header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding: 20px 0;
+}
+
+.confirmation-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 12px;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #FFD700, #F4C430, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.confirmation-header p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Success Message */
+.success-message {
+  background: linear-gradient(135deg, rgba(40, 167, 69, 0.15) 0%, rgba(40, 167, 69, 0.05) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(40, 167, 69, 0.3);
+  border-radius: 20px;
+  padding: 32px;
+  text-align: center;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(40, 167, 69, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.success-message::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, rgba(40, 167, 69, 0.4), transparent, rgba(40, 167, 69, 0.4));
+  border-radius: 20px;
+  z-index: -1;
+}
+
+.success-icon {
+  font-size: 48px;
+  color: #28a745;
+  margin-bottom: 20px;
+  animation: successPulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 2px 8px rgba(40, 167, 69, 0.4));
+}
+
+@keyframes successPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.success-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #28a745, #20c997);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.success-subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+  margin-bottom: 0;
+}
+
+/* E-Ticket */
+.e-ticket {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border: 2px solid #e1e5e9;
+  position: relative;
+  overflow: hidden;
+}
+
+.e-ticket::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Ticket Header */
+.ticket-header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid #e1e5e9;
+}
+
+.ticket-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.ticket-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+/* Movie Info */
+.movie-info {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+.movie-poster {
+  width: 120px;
+  height: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.movie-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.movie-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.movie-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+
+.movie-meta {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meta-icon {
+  font-size: 14px;
+  color: #667eea;
+}
+
+.movie-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.rating-stars {
+  color: #ffc107;
+  font-size: 18px;
+}
+
+.rating-text {
+  font-size: 16px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Booking Details */
+.booking-details {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+.booking-details h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.details-icon {
+  font-size: 18px;
+  color: #667eea;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
+
+.detail-value.seats {
+  font-family: monospace;
+  color: #28a745;
+  font-size: 18px;
+}
+
+.detail-value.highlight {
+  color: #667eea;
+}
+
+.detail-value.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value.status.confirmed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.detail-value.status.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.detail-value.status.cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* QR Section */
+.qr-section {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+.qr-code {
+  width: 120px;
+  height: 120px;
+  background: #f8f9fa;
+  border: 2px solid #e1e5e9;
+  border-radius: 12px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: #667eea;
+}
+
+.qr-text {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* Booking Code */
+.booking-code {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.booking-code h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.code-icon {
+  font-size: 16px;
+}
+
+.code-value {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: monospace;
+  letter-spacing: 2px;
+  background: rgba(255,255,255,0.2);
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: inline-block;
+  margin-top: 8px;
+}
+
+/* Actions */
+.confirmation-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.confirmation-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.confirmation-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.confirmation-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+}
+
+.confirmation-btn.secondary {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.confirmation-btn.secondary:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.confirmation-btn.outline {
+  background: transparent;
+  color: #666;
+  border: 2px solid #e1e5e9;
+}
+
+.confirmation-btn.outline:hover {
+  background: #f8f9fa;
+  border-color: #667eea;
+  color: #667eea;
+  transform: translateY(-2px);
+}
+
+.btn-icon {
+  font-size: 16px;
+}
+
+/* Print Styles */
+@media print {
+  .confirmation-page {
+    background: white;
+    padding: 0;
+  }
+
+  .confirmation-container {
+    max-width: none;
+    padding: 0;
+  }
+
+  .confirmation-header,
+  .success-message,
+  .confirmation-actions {
+    display: none;
+  }
+
+  .e-ticket {
+    box-shadow: none;
+    border: 1px solid #ccc;
+    page-break-inside: avoid;
+  }
+
+  .e-ticket::before {
+    display: none;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .confirmation-page {
+    padding: 20px 0;
+  }
+
+  .confirmation-container {
+    padding: 0 16px;
+  }
+
+  .confirmation-header h1 {
+    font-size: 28px;
+  }
+
+  .confirmation-header p {
+    font-size: 16px;
+  }
+
+  .success-message {
+    padding: 24px;
+  }
+
+  .success-icon {
+    font-size: 48px;
+  }
+
+  .success-title {
+    font-size: 24px;
+  }
+
+  .success-subtitle {
+    font-size: 16px;
+  }
+
+  .e-ticket {
+    padding: 24px;
+  }
+
+  .ticket-title {
+    font-size: 20px;
+  }
+
+  .ticket-subtitle {
+    font-size: 14px;
+  }
+
+  .movie-info {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .movie-poster {
+    width: 100px;
+    height: 150px;
+    margin: 0 auto;
+  }
+
+  .movie-title {
+    font-size: 20px;
+  }
+
+  .movie-meta {
+    font-size: 14px;
+    justify-content: center;
+  }
+
+  .rating-stars {
+    font-size: 16px;
+  }
+
+  .rating-text {
+    font-size: 14px;
+  }
+
+  .booking-details h3 {
+    font-size: 18px;
+  }
+
+  .details-icon {
+    font-size: 16px;
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .detail-label {
+    font-size: 13px;
+  }
+
+  .detail-value {
+    font-size: 14px;
+  }
+
+  .detail-value.seats {
+    font-size: 16px;
+  }
+
+  .qr-code {
+    width: 100px;
+    height: 100px;
+    font-size: 40px;
+  }
+
+  .qr-text {
+    font-size: 13px;
+  }
+
+  .booking-code {
+    padding: 20px;
+  }
+
+  .booking-code h3 {
+    font-size: 16px;
+  }
+
+  .code-icon {
+    font-size: 14px;
+  }
+
+  .code-value {
+    font-size: 20px;
+    letter-spacing: 1px;
+  }
+
+  .confirmation-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .confirmation-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 20px;
+    font-size: 14px;
+  }
+
+  .btn-icon {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .confirmation-container {
+    padding: 0 12px;
+  }
+
+  .confirmation-header h1 {
+    font-size: 24px;
+  }
+
+  .confirmation-header p {
+    font-size: 14px;
+  }
+
+  .success-message {
+    padding: 20px;
+  }
+
+  .success-icon {
+    font-size: 40px;
+  }
+
+  .success-title {
+    font-size: 20px;
+  }
+
+  .success-subtitle {
+    font-size: 14px;
+  }
+
+  .e-ticket {
+    padding: 20px;
+  }
+
+  .ticket-title {
+    font-size: 18px;
+  }
+
+  .ticket-subtitle {
+    font-size: 13px;
+  }
+
+  .movie-poster {
+    width: 80px;
+    height: 120px;
+  }
+
+  .movie-title {
+    font-size: 18px;
+  }
+
+  .movie-meta {
+    font-size: 13px;
+  }
+
+  .rating-stars {
+    font-size: 14px;
+  }
+
+  .rating-text {
+    font-size: 13px;
+  }
+
+  .booking-details h3 {
+    font-size: 16px;
+  }
+
+  .details-icon {
+    font-size: 14px;
+  }
+
+  .detail-label {
+    font-size: 12px;
+  }
+
+  .detail-value {
+    font-size: 13px;
+  }
+
+  .detail-value.seats {
+    font-size: 14px;
+  }
+
+  .qr-code {
+    width: 80px;
+    height: 80px;
+    font-size: 32px;
+  }
+
+  .qr-text {
+    font-size: 12px;
+  }
+
+  .booking-code {
+    padding: 16px;
+  }
+
+  .booking-code h3 {
+    font-size: 14px;
+  }
+
+  .code-icon {
+    font-size: 12px;
+  }
+
+  .code-value {
+    font-size: 18px;
+    letter-spacing: 0.5px;
+  }
+
+  .confirmation-btn {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+
+  .btn-icon {
+    font-size: 12px;
+  }
+} 

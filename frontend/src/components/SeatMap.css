@@ -1,0 +1,385 @@
+/* Seat Map Component */
+.seat-map {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Screen */
+.screen {
+  width: 100%;
+  max-width: 600px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.screen::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-top: 20px solid #667eea;
+}
+
+/* Seats Container */
+.seats-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 800px;
+}
+
+/* Row */
+.seat-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.row-label {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border: 1px solid #e1e5e9;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  flex-shrink: 0;
+}
+
+/* Seats */
+.seats {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.seat {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #e1e5e9;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  background: white;
+  color: #333;
+}
+
+.seat:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 10;
+}
+
+.seat.available {
+  border-color: #28a745;
+  background: #d4edda;
+  color: #155724;
+}
+
+.seat.available:hover {
+  background: #c3e6cb;
+  border-color: #1e7e34;
+}
+
+.seat.selected {
+  border-color: #667eea;
+  background: #667eea;
+  color: white;
+}
+
+.seat.selected:hover {
+  background: #5a67d8;
+  border-color: #5a67d8;
+}
+
+.seat.occupied {
+  border-color: #dc3545;
+  background: #f8d7da;
+  color: #721c24;
+  cursor: not-allowed;
+}
+
+.seat.occupied:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Seat Categories */
+.category-gold .seat.available {
+  border-color: #ffc107;
+  background: #fff3cd;
+  color: #856404;
+}
+
+.category-gold .seat.available:hover {
+  background: #ffeaa7;
+  border-color: #f39c12;
+}
+
+.category-platinum .seat.available {
+  border-color: #17a2b8;
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.category-platinum .seat.available:hover {
+  background: #bee5eb;
+  border-color: #138496;
+}
+
+.category-box .seat.available {
+  border-color: #6f42c1;
+  background: #e2d9f3;
+  color: #4a148c;
+}
+
+.category-box .seat.available:hover {
+  background: #d4c4f0;
+  border-color: #5a2d82;
+}
+
+/* Category Labels */
+.category-labels {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.category-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.category-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid #e1e5e9;
+}
+
+.category-gold .category-color {
+  background: #fff3cd;
+  border-color: #ffc107;
+}
+
+.category-platinum .category-color {
+  background: #d1ecf1;
+  border-color: #17a2b8;
+}
+
+.category-box .category-color {
+  background: #e2d9f3;
+  border-color: #6f42c1;
+}
+
+/* Seat Tooltip */
+.seat-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  margin-bottom: 8px;
+}
+
+.seat-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid #333;
+}
+
+.seat:hover .seat-tooltip {
+  opacity: 1;
+}
+
+/* Aisle Indicators */
+.aisle {
+  width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .seat-map {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .screen {
+    height: 30px;
+    font-size: 12px;
+  }
+
+  .screen::after {
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 15px solid #667eea;
+  }
+
+  .seats-container {
+    gap: 12px;
+  }
+
+  .seat-row {
+    gap: 6px;
+  }
+
+  .row-label {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .seats {
+    gap: 3px;
+  }
+
+  .seat {
+    width: 28px;
+    height: 28px;
+    font-size: 9px;
+  }
+
+  .category-labels {
+    gap: 16px;
+  }
+
+  .category-label {
+    font-size: 12px;
+  }
+
+  .category-color {
+    width: 16px;
+    height: 16px;
+  }
+
+  .aisle {
+    width: 30px;
+    height: 28px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 480px) {
+  .seat-map {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .screen {
+    height: 25px;
+    font-size: 11px;
+  }
+
+  .screen::after {
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 12px solid #667eea;
+  }
+
+  .seats-container {
+    gap: 8px;
+  }
+
+  .seat-row {
+    gap: 4px;
+  }
+
+  .row-label {
+    width: 20px;
+    height: 20px;
+    font-size: 9px;
+  }
+
+  .seats {
+    gap: 2px;
+  }
+
+  .seat {
+    width: 24px;
+    height: 24px;
+    font-size: 8px;
+  }
+
+  .category-labels {
+    gap: 12px;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .category-label {
+    font-size: 11px;
+  }
+
+  .category-color {
+    width: 14px;
+    height: 14px;
+  }
+
+  .aisle {
+    width: 25px;
+    height: 24px;
+    font-size: 8px;
+  }
+} 
