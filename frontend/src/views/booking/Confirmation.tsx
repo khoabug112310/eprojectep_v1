@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import api from '../../services/api'
+import ETicket from '../../components/ETicket'
 import './Confirmation.css'
 
 interface Booking {
@@ -9,6 +10,9 @@ interface Booking {
   movie: {
     title: string
     poster_url?: string
+    duration?: number
+    genre?: string[]
+    age_rating?: string
   }
   theater: {
     name: string
@@ -18,9 +22,11 @@ interface Booking {
     show_date: string
     show_time: string
   }
-  seats: string[]
+  seats: Array<{ seat: string; type: string; price: number }> | string[]
   total_amount: number
+  payment_status: string
   created_at: string
+  qr_code?: string
 }
 
 export default function Confirmation() {
@@ -79,27 +85,41 @@ export default function Confirmation() {
   }
 
   const handleDownload = () => {
-    // Create a simple text file with booking details
+    // Enhanced download with more details
+    const seatsText = Array.isArray(booking?.seats) 
+      ? (typeof booking.seats[0] === 'string' 
+          ? booking.seats.join(', ') 
+          : booking.seats.map(s => (s as any).seat || s).join(', '))
+      : ''
+
     const content = `
 CineBook - E-Ticket
 ===================
 
 Mã vé: ${booking?.booking_code}
 Phim: ${booking?.movie.title}
-Rạp: ${booking?.theater.name}
-Ngày: ${booking?.showtime.show_date}
-Giờ: ${booking?.showtime.show_time}
-Ghế: ${booking?.seats.join(', ')}
+${ booking?.movie.duration ? `Thời lượng: ${booking.movie.duration} phút\n` : '' }${ booking?.movie.genre ? `Thể loại: ${booking.movie.genre.join(', ')}\n` : '' }Rạp: ${booking?.theater.name}
+${ booking?.theater.address ? `Địa chỉ: ${booking.theater.address}\n` : '' }Ngày: ${formatDate(booking?.showtime.show_date || '')}
+Giờ: ${formatTime(booking?.showtime.show_time || '')}
+Ghế: ${seatsText}
 Tổng tiền: ${formatCurrency(booking?.total_amount || 0)}
+Trạng thái: ${booking?.payment_status}
+
+⚠️ Lưu ý quan trọng:
+• Vui lòng đến rạp ít nhất 15 phút trước giờ chiếu
+• Mang theo mã vé này hoặc điện thoại để vào rạp
+• Không được mang thức ăn từ bên ngoài vào rạp
+• Tắt tiếng điện thoại trong suốt thời gian xem phim
 
 Cảm ơn bạn đã sử dụng dịch vụ của CineBook!
+Hotline: 1900-123-456 | Email: support@cinebook.vn
     `.trim()
 
-    const blob = new Blob([content], { type: 'text/plain' })
+    const blob = new Blob([content], { type: 'text/plain; charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `ticket-${booking?.booking_code}.txt`
+    a.download = `cinebook-ticket-${booking?.booking_code}.txt`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -147,90 +167,16 @@ Cảm ơn bạn đã sử dụng dịch vụ của CineBook!
         </div>
 
         {/* E-Ticket */}
-        <div className="e-ticket">
-          <div className="ticket-header">
-            <div className="ticket-info">
-              <h2>E-Ticket</h2>
-              <p className="booking-code">Mã vé: {booking.booking_code}</p>
-            </div>
-            <div className="ticket-actions">
-              <button onClick={handlePrint} className="btn btn-secondary">
-                🖨️ In vé
-              </button>
-              <button onClick={handleDownload} className="btn btn-secondary">
-                📥 Tải xuống
-              </button>
-            </div>
-          </div>
-
-          <div className="ticket-content">
-            <div className="movie-info">
-              <div className="movie-poster">
-                <img 
-                  src={booking.movie.poster_url || '/placeholder-movie.jpg'} 
-                  alt={booking.movie.title}
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder-movie.jpg'
-                  }}
-                />
-              </div>
-              <div className="movie-details">
-                <h3>{booking.movie.title}</h3>
-                <div className="showtime-info">
-                  <div className="showtime-date">
-                    📅 {formatDate(booking.showtime.show_date)}
-                  </div>
-                  <div className="showtime-time">
-                    ⏰ {formatTime(booking.showtime.show_time)}
-                  </div>
-                </div>
-                <div className="theater-info">
-                  🎭 {booking.theater.name}
-                  {booking.theater.address && (
-                    <span className="theater-address">
-                      - {booking.theater.address}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="seats-info">
-              <h4>Ghế đã chọn:</h4>
-              <div className="seats-list">
-                {booking.seats.map((seat, index) => (
-                  <span key={index} className="seat-tag">
-                    {seat}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="payment-info">
-              <div className="payment-row">
-                <span>Giá vé:</span>
-                <span>{formatCurrency(booking.total_amount)}</span>
-              </div>
-              <div className="payment-row total">
-                <span>Tổng cộng:</span>
-                <span>{formatCurrency(booking.total_amount)}</span>
-              </div>
-            </div>
-
-            <div className="ticket-footer">
-              <div className="qr-code">
-                <div className="qr-placeholder">
-                  QR Code
-                </div>
-                <p>Quét mã để vào rạp</p>
-              </div>
-              <div className="ticket-note">
-                <p>⚠️ Vui lòng đến rạp ít nhất 15 phút trước giờ chiếu</p>
-                <p>📱 Mang theo mã vé này hoặc điện thoại để vào rạp</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ETicket 
+          booking={{
+            ...booking,
+            payment_status: booking.payment_status || 'completed'
+          }}
+          displayMode="full"
+          showActions={true}
+          onDownload={handleDownload}
+          onPrint={handlePrint}
+        />
 
         {/* Actions */}
         <div className="confirmation-actions">
@@ -240,6 +186,12 @@ Cảm ơn bạn đã sử dụng dịch vụ của CineBook!
           <Link to="/my-bookings" className="btn btn-secondary">
             🎫 Xem vé của tôi
           </Link>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="btn btn-outline"
+          >
+            🔄 Tải lại trang
+          </button>
         </div>
       </div>
     </div>

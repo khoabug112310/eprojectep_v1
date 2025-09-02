@@ -62,6 +62,10 @@ export const routes = [
     component: lazy(() => import("./views/booking/Confirmation")),
   },
   {
+    path: "/ticket/:bookingId",
+    component: lazy(() => import("./views/booking/TicketPage")),
+  },
+  {
     path: "/about",
     component: lazy(() => import("./views/About")),
   },

@@ -137,6 +137,83 @@
   box-shadow: none;
 }
 
+/* Locked seats */
+.seat.locked {
+  border-color: #FF9500;
+  background: #FFF3E0;
+  color: #E65100;
+  cursor: not-allowed;
+}
+
+.seat.locked:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Loading/Locking animation */
+.seat.locking {
+  opacity: 0.6;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Real-time update indicator */
+.seat-map-container {
+  position: relative;
+}
+
+.refresh-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 12px;
+  height: 12px;
+  background: #28a745;
+  border-radius: 50%;
+  animation: blink 2s infinite;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0.3;
+  }
+}
+
+/* Seat status indicators */
+.seat-status-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid white;
+}
+
+.seat-status-indicator.selected {
+  background: #7C4DFF;
+}
+
+.seat-status-indicator.locked {
+  background: #FF9500;
+}
+
+.seat-status-indicator.expiring {
+  background: #FF5722;
+  animation: pulse 0.5s infinite;
+}
+
 /* Seat Categories */
 .category-gold .seat.available {
   border-color: #ffc107;

@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Showtime;
 use App\Models\Movie;
 use App\Models\Theater;
+use App\Services\SeatLockingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ShowtimeController extends Controller
 {
@@ -69,36 +71,146 @@ class ShowtimeController extends Controller
         ]);
     }
 
-    public function lockSeats(Request $request, $id)
+    /**
+     * Lock seats for a user
+     */
+    public function lockSeats(Request $request, $id, SeatLockingService $seatLockingService)
     {
-        $request->validate([
-            'seats' => 'required|array|min:1',
-            'seats.*' => 'required|string'
+        $validated = $request->validate([
+            'seats' => 'required|array|min:1|max:10',
+            'seats.*' => 'required|string|regex:/^[A-Z]\d+$/'
         ]);
 
-        // In a real application, you would lock seats in Redis or database
-        // For now, just return success
+        $showtime = Showtime::findOrFail($id);
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required for seat locking'
+            ], 401);
+        }
+
+        try {
+            $result = $seatLockingService->lockSeats(
+                $validated['seats'],
+                $showtime->id,
+                $userId
+            );
+
+            $statusCode = $result['success'] ? 200 : 409;
+            
+            return response()->json($result, $statusCode);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Seat locking service temporarily unavailable'
+            ], 503);
+        }
+    }
+
+    /**
+     * Unlock seats for a user
+     */
+    public function unlockSeats(Request $request, $id, SeatLockingService $seatLockingService)
+    {
+        $validated = $request->validate([
+            'seats' => 'required|array|min:1',
+            'seats.*' => 'required|string|regex:/^[A-Z]\d+$/'
+        ]);
+
+        $showtime = Showtime::findOrFail($id);
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required for seat unlocking'
+            ], 401);
+        }
+
+        $success = $seatLockingService->unlockSeats(
+            $validated['seats'],
+            $showtime->id,
+            $userId
+        );
+
         return response()->json([
-            'success' => true,
-            'message' => 'Đã khóa ghế thành công',
-            'data' => [
-                'locked_seats' => $request->seats,
-                'expires_at' => now()->addMinutes(15)
-            ]
+            'success' => $success,
+            'message' => $success ? 'Seats unlocked successfully' : 'Failed to unlock seats'
         ]);
     }
 
-    public function releaseSeats(Request $request, $id)
+    /**
+     * Extend lock duration for user's seats
+     */
+    public function extendLock(Request $request, $id, SeatLockingService $seatLockingService)
     {
-        $request->validate([
+        $validated = $request->validate([
             'seats' => 'required|array|min:1',
-            'seats.*' => 'required|string'
+            'seats.*' => 'required|string|regex:/^[A-Z]\d+$/'
         ]);
 
-        // In a real application, you would release seats from Redis or database
+        $showtime = Showtime::findOrFail($id);
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required for lock extension'
+            ], 401);
+        }
+
+        $result = $seatLockingService->extendLock(
+            $validated['seats'],
+            $showtime->id,
+            $userId
+        );
+
+        return response()->json($result);
+    }
+
+    /**
+     * Get real-time seat status
+     */
+    public function seatStatus($id, SeatLockingService $seatLockingService)
+    {
+        $showtime = Showtime::with(['movie', 'theater'])->findOrFail($id);
+        
+        // Get seat status from Redis
+        $lockStatus = $seatLockingService->getSeatStatus($showtime->id);
+        
+        // Generate base seat map
+        $baseSeatMap = $this->generateSeatMap($showtime);
+        
+        // Merge with lock status
+        if ($lockStatus['success']) {
+            $lockedSeats = collect($lockStatus['seat_status']['locked']);
+            
+            foreach ($baseSeatMap as &$seat) {
+                $lockInfo = $lockedSeats->firstWhere('seat', $seat['seat']);
+                if ($lockInfo) {
+                    $seat['status'] = 'locked';
+                    $seat['locked_by'] = $lockInfo['user_id'];
+                    $seat['locked_at'] = $lockInfo['locked_at'] ?? now()->toISOString();
+                    $seat['expires_at'] = $lockInfo['expires_at'] ?? now()->addMinutes(15)->toISOString();
+                    
+                    // If current user owns the lock, mark as selected
+                    if (Auth::id() && $lockInfo['user_id'] === Auth::id()) {
+                        $seat['status'] = 'selected';
+                    }
+                }
+            }
+        }
+        
         return response()->json([
             'success' => true,
-            'message' => 'Đã giải phóng ghế thành công'
+            'data' => [
+                'showtime' => $showtime,
+                'seat_map' => $baseSeatMap,
+                'lock_statistics' => $lockStatus['seat_status'] ?? null
+            ],
+            'message' => 'Real-time seat status retrieved successfully'
         ]);
     }
 

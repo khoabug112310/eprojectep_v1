@@ -1,70 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="/Users/huahung/Documents/epro/backend/phpunit.xml" tests="30" assertions="62" errors="0" failures="1" skipped="0" time="0.286685">
-    <testsuite name="Unit" tests="29" assertions="61" errors="0" failures="0" skipped="0" time="0.223986">
-      <testsuite name="Tests\Unit\ExampleTest" file="/Users/huahung/Documents/epro/backend/tests/Unit/ExampleTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.002191">
-        <testcase name="test_that_true_is_true" file="/Users/huahung/Documents/epro/backend/tests/Unit/ExampleTest.php" line="12" class="Tests\Unit\ExampleTest" classname="Tests.Unit.ExampleTest" assertions="1" time="0.002191"/>
-      </testsuite>
-      <testsuite name="Tests\Unit\MovieModelTest" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" tests="16" assertions="36" errors="0" failures="0" skipped="0" time="0.172804">
-        <testcase name="it_can_create_a_movie" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="18" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="5" time="0.094916"/>
-        <testcase name="it_has_showtimes_relationship" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="43" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="2" time="0.014568"/>
-        <testcase name="it_has_reviews_relationship" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="53" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="2" time="0.009176"/>
-        <testcase name="it_has_bookings_through_showtimes" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="63" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="1" time="0.005957"/>
-        <testcase name="it_casts_genre_to_array" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="73" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="2" time="0.003880"/>
-        <testcase name="it_casts_cast_to_array" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="84" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="2" time="0.003164"/>
-        <testcase name="it_casts_release_date_to_date" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="98" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="2" time="0.003236"/>
-        <testcase name="it_scopes_active_movies" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="109" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="2" time="0.004298"/>
-        <testcase name="it_scopes_movies_by_genre" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="122" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="2" time="0.003926"/>
-        <testcase name="it_scopes_movies_by_language" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="136" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="2" time="0.003771"/>
-        <testcase name="it_scopes_now_showing_movies" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="149" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="3" time="0.004699"/>
-        <testcase name="it_scopes_coming_soon_movies" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="172" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="3" time="0.003829"/>
-        <testcase name="it_calculates_duration_in_hours_and_minutes" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="195" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="1" time="0.003219"/>
-        <testcase name="it_generates_unique_slug" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="205" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="3" time="0.005731"/>
-        <testcase name="it_has_default_rating_values" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="216" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="2" time="0.003926"/>
-        <testcase name="it_updates_rating_when_review_added" file="/Users/huahung/Documents/epro/backend/tests/Unit/MovieModelTest.php" line="225" class="Tests\Unit\MovieModelTest" classname="Tests.Unit.MovieModelTest" assertions="2" time="0.004506"/>
-      </testsuite>
-      <testsuite name="Tests\Unit\UserModelTest" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" tests="12" assertions="24" errors="0" failures="0" skipped="0" time="0.048990">
-        <testcase name="it_can_create_a_user" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" line="16" class="Tests\Unit\UserModelTest" classname="Tests.Unit.UserModelTest" assertions="5" time="0.007753"/>
-        <testcase name="it_hides_password_in_array_representation" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" line="36" class="Tests\Unit\UserModelTest" classname="Tests.Unit.UserModelTest" assertions="1" time="0.003870"/>
-        <testcase name="it_has_bookings_relationship" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" line="45" class="Tests\Unit\UserModelTest" classname="Tests.Unit.UserModelTest" assertions="2" time="0.004950"/>
-        <testcase name="it_has_reviews_relationship" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" line="55" class="Tests\Unit\UserModelTest" classname="Tests.Unit.UserModelTest" assertions="2" time="0.004740"/>
-        <testcase name="it_can_check_if_user_is_admin" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" line="65" class="Tests\Unit\UserModelTest" classname="Tests.Unit.UserModelTest" assertions="2" time="0.003243"/>
-        <testcase name="it_scopes_admin_users" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" line="75" class="Tests\Unit\UserModelTest" classname="Tests.Unit.UserModelTest" assertions="2" time="0.003414"/>
-        <testcase name="it_scopes_regular_users" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" line="88" class="Tests\Unit\UserModelTest" classname="Tests.Unit.UserModelTest" assertions="2" time="0.003965"/>
-        <testcase name="it_has_fillable_attributes" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" line="101" class="Tests\Unit\UserModelTest" classname="Tests.Unit.UserModelTest" assertions="1" time="0.002857"/>
-        <testcase name="it_casts_date_of_birth_to_date" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" line="113" class="Tests\Unit\UserModelTest" classname="Tests.Unit.UserModelTest" assertions="2" time="0.003217"/>
-        <testcase name="it_has_default_values" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" line="124" class="Tests\Unit\UserModelTest" classname="Tests.Unit.UserModelTest" assertions="3" time="0.003116"/>
-        <testcase name="it_validates_unique_email" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" line="134" class="Tests\Unit\UserModelTest" classname="Tests.Unit.UserModelTest" assertions="1" time="0.004396"/>
-        <testcase name="it_validates_unique_phone" file="/Users/huahung/Documents/epro/backend/tests/Unit/UserModelTest.php" line="143" class="Tests\Unit\UserModelTest" classname="Tests.Unit.UserModelTest" assertions="1" time="0.003469"/>
-      </testsuite>
-    </testsuite>
-    <testsuite name="Feature" tests="1" assertions="1" errors="0" failures="1" skipped="0" time="0.062700">
-      <testsuite name="Tests\Feature\AuthControllerTest" file="/Users/huahung/Documents/epro/backend/tests/Feature/AuthControllerTest.php" tests="1" assertions="1" errors="0" failures="1" skipped="0" time="0.062700">
-        <testcase name="it_can_register_a_new_user" file="/Users/huahung/Documents/epro/backend/tests/Feature/AuthControllerTest.php" line="15" class="Tests\Feature\AuthControllerTest" classname="Tests.Feature.AuthControllerTest" assertions="1" time="0.062700">
-          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Feature\AuthControllerTest::it_can_register_a_new_user
-Expected response status code [201] but received 422.
-Failed asserting that 422 is identical to 201.
-
-The following errors occurred during the last request:
-
-{
-    "success": false,
-    "message": "Dữ liệu không hợp lệ",
-    "errors": {
-        "email": [
-            "The email has already been taken."
-        ],
-        "phone": [
-            "The phone has already been taken."
-        ]
-    }
-}
-
-/Users/huahung/Documents/epro/backend/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:45
-/Users/huahung/Documents/epro/backend/vendor/laravel/framework/src/Illuminate/Testing/TestResponse.php:174
-/Users/huahung/Documents/epro/backend/tests/Feature/ApiTestCase.php:73
-/Users/huahung/Documents/epro/backend/tests/Feature/AuthControllerTest.php:27</failure>
-        </testcase>
+  <testsuite name="/Users/huamanhhung/Documents/eproject/eproject1/backend/phpunit.xml" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.304651">
+    <testsuite name="Feature" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.304651">
+      <testsuite name="Tests\Feature\Middleware\ApiResponseCachingTest" file="/Users/huamanhhung/Documents/eproject/eproject1/backend/tests/Feature/Middleware/ApiResponseCachingTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.304651">
+        <testcase name="it_does_not_cache_auth_endpoints" file="/Users/huamanhhung/Documents/eproject/eproject1/backend/tests/Feature/Middleware/ApiResponseCachingTest.php" line="52" class="Tests\Feature\Middleware\ApiResponseCachingTest" classname="Tests.Feature.Middleware.ApiResponseCachingTest" assertions="1" time="0.304651"/>
       </testsuite>
     </testsuite>
   </testsuite>

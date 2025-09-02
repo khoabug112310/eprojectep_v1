@@ -5,10 +5,29 @@ namespace Tests\Feature;
 use Tests\Feature\ApiTestCase;
 use Tests\Traits\CreatesTestData;
 use Tests\Helpers\TestHelper;
+use App\Services\SeatLockingService;
+use Mockery;
 
 class BookingFlowTest extends ApiTestCase
 {
     use CreatesTestData;
+
+    protected $seatLockingService;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        // Mock SeatLockingService to avoid Redis dependency in tests
+        $this->seatLockingService = Mockery::mock(SeatLockingService::class);
+        $this->app->instance(SeatLockingService::class, $this->seatLockingService);
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
+    }
 
     /** @test */
     public function it_can_complete_full_booking_flow()
@@ -19,11 +38,33 @@ class BookingFlowTest extends ApiTestCase
         $showtime = $flowData['showtime'];
         $headers = $this->authenticateUser($user);
 
-        // 2. Get available seats
+        // 2. Mock seat availability check
+        $this->seatLockingService->shouldReceive('getSeatStatus')
+            ->with($showtime->id)
+            ->andReturn([
+                'success' => true,
+                'seat_status' => [
+                    'locked' => [],
+                    'available' => ['A1', 'A2', 'A3', 'B1', 'B2']
+                ]
+            ]);
+
+        // Get available seats
         $seatsResponse = $this->getJson("/api/v1/showtimes/{$showtime->id}/seats", $headers);
         $this->assertApiResponse($seatsResponse);
 
-        // 3. Lock seats
+        // 3. Mock seat locking
+        $this->seatLockingService->shouldReceive('lockSeats')
+            ->with(['A1', 'A2'], $showtime->id, $user->id)
+            ->andReturn([
+                'success' => true,
+                'locked_seats' => ['A1', 'A2'],
+                'message' => 'Seats locked successfully',
+                'lock_duration' => 900,
+                'expires_at' => now()->addMinutes(15)->toISOString()
+            ]);
+
+        // Lock seats
         $lockData = ['seats' => ['A1', 'A2']];
         $lockResponse = $this->postJson("/api/v1/showtimes/{$showtime->id}/seats/lock", $lockData, $headers);
         $this->assertApiResponse($lockResponse);
@@ -65,6 +106,23 @@ class BookingFlowTest extends ApiTestCase
         $user2 = $this->createUser();
         $showtime = $flowData['showtime'];
 
+        // Mock seat locking service for user1's successful booking
+        $this->seatLockingService->shouldReceive('lockSeats')
+            ->with(['A1', 'A2'], $showtime->id, $user1->id)
+            ->andReturn([
+                'success' => true,
+                'locked_seats' => ['A1', 'A2'],
+                'message' => 'Seats locked successfully'
+            ]);
+
+        // Mock seat availability check showing A1 is occupied after user1's booking
+        $this->seatLockingService->shouldReceive('checkSeatAvailability')
+            ->with($showtime->id, ['A1', 'A3'])
+            ->andReturn([
+                'available' => ['A3'],
+                'occupied' => ['A1']
+            ]);
+
         // User 1 books seats A1, A2
         $bookingData1 = [
             'showtime_id' => $showtime->id,
@@ -78,11 +136,11 @@ class BookingFlowTest extends ApiTestCase
         $response1 = $this->postJson('/api/v1/bookings', $bookingData1, $this->authenticateUser($user1));
         $this->assertApiResponse($response1);
 
-        // User 2 tries to book the same seats
+        // User 2 tries to book the same seats - should fail validation
         $bookingData2 = [
             'showtime_id' => $showtime->id,
             'seats' => [
-                ['seat' => 'A1', 'type' => 'gold'],
+                ['seat' => 'A1', 'type' => 'gold'], // Already booked
                 ['seat' => 'A3', 'type' => 'gold']
             ],
             'payment_method' => 'credit_card'

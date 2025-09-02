@@ -4,6 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Movie;
+use App\Http\Requests\SecureFileUploadRequest;
+use App\Services\FileUploadSecurityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -197,33 +199,61 @@ class MovieController extends Controller
         ]);
     }
 
-    public function uploadPoster(Request $request)
+    public function uploadPoster(SecureFileUploadRequest $request, FileUploadSecurityService $securityService)
     {
-        $request->validate([
-            'poster' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
-
-        if ($request->hasFile('poster')) {
+        try {
             $file = $request->file('poster');
-            $filename = 'posters/' . time() . '_' . $file->getClientOriginalName();
             
-            // Store file
-            $path = $file->storeAs('public', $filename);
-            $url = Storage::url($path);
+            // Perform comprehensive security validation
+            $validation = $securityService->validateAndSecureFile($file, 'poster');
+            
+            if (!$validation['valid']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File upload security validation failed',
+                    'errors' => $validation['errors']
+                ], 422);
+            }
+            
+            // Store the secure file
+            $fileInfo = $validation['file_info'];
+            $securePath = $fileInfo['secure_path'];
+            
+            // Save file to storage using the secure filename
+            $storedPath = $file->storeAs('public/posters', $fileInfo['secure_name']);
+            $publicUrl = Storage::url($storedPath);
+            
+            $responseData = [
+                'url' => $publicUrl,
+                'filename' => $fileInfo['secure_name'],
+                'original_name' => $fileInfo['original_name'],
+                'size' => $fileInfo['size'],
+                'mime_type' => $fileInfo['mime_type'],
+                'hash' => $fileInfo['hash']
+            ];
+            
+            // Include warnings if any
+            if (!empty($validation['warnings'])) {
+                $responseData['warnings'] = $validation['warnings'];
+            }
 
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'url' => $url,
-                    'filename' => $filename
-                ],
+                'data' => $responseData,
                 'message' => 'Upload poster thành công'
             ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Poster upload failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+                'file_name' => $request->hasFile('poster') ? $request->file('poster')->getClientOriginalName() : null
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Upload failed due to system error'
+            ], 500);
         }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Không có file được upload'
-        ], 400);
     }
 }

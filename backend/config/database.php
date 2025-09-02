@@ -57,8 +57,36 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            
+            // Production Connection Pool Optimization
+            'pool' => [
+                'min_connections' => env('DB_POOL_MIN', 2),
+                'max_connections' => env('DB_POOL_MAX', 20),
+                'acquire_timeout' => env('DB_POOL_ACQUIRE_TIMEOUT', 30),
+                'timeout' => env('DB_POOL_TIMEOUT', 5),
+                'idle_timeout' => env('DB_POOL_IDLE_TIMEOUT', 300),
+                'max_lifetime' => env('DB_POOL_MAX_LIFETIME', 3600),
+            ],
+            
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                
+                // Connection optimization
+                PDO::ATTR_TIMEOUT => env('DB_TIMEOUT', 30),
+                PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', false),
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_STRINGIFY_FETCHES => false,
+                
+                // MySQL specific optimizations
+                PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
+                PDO::MYSQL_ATTR_LOCAL_INFILE => false,
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ZERO_DATE,NO_ZERO_IN_DATE,NO_AUTO_CREATE_USER'",
+                
+                // Connection compression for performance
+                PDO::MYSQL_ATTR_COMPRESS => env('DB_COMPRESS', false),
+                
+                // SSL configuration for production
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => env('DB_SSL_VERIFY', true),
             ]) : [],
         ],
 
@@ -141,14 +169,32 @@ return [
     |
     */
 
-    'redis' => [
+        'redis' => [
 
         'client' => env('REDIS_CLIENT', 'phpredis'),
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
             'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
-            'persistent' => env('REDIS_PERSISTENT', false),
+            'persistent' => env('REDIS_PERSISTENT', true), // Enable persistent connections for production
+            
+            // Connection pool settings for Redis
+            'parameters' => [
+                'timeout' => env('REDIS_TIMEOUT', 5.0),
+                'read_write_timeout' => env('REDIS_READ_TIMEOUT', 5.0),
+                'tcp_keepalive' => env('REDIS_TCP_KEEPALIVE', true),
+            ],
+            
+            // Redis connection pooling
+            'pool' => [
+                'min_connections' => env('REDIS_POOL_MIN', 1),
+                'max_connections' => env('REDIS_POOL_MAX', 10),
+                'wait_timeout' => env('REDIS_POOL_WAIT', 3.0),
+            ],
+            
+            // Retry and reconnection settings
+            'retry_interval' => env('REDIS_RETRY_INTERVAL', 100), // milliseconds
+            'max_retries' => env('REDIS_MAX_RETRIES', 3),
         ],
 
         'default' => [
@@ -158,6 +204,12 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', '0'),
+            
+            // Connection settings for seat locking
+            'options' => [
+                'serializer' => env('REDIS_SERIALIZER', 'php'), // php, igbinary, or json
+                'compression' => env('REDIS_COMPRESSION', 'none'), // none, lz4, zstd, or gzip
+            ],
         ],
 
         'cache' => [
@@ -167,6 +219,15 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_CACHE_DB', '1'),
+        ],
+
+        'sessions' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_SESSION_DB', '2'),
         ],
 
     ],
