@@ -35,7 +35,7 @@ export default function MyBookings() {
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('all')
 
   useEffect(() => {
-    fetchBookings()
+    void fetchBookings()
   }, [])
 
   const fetchBookings = async () => {
@@ -45,8 +45,11 @@ export default function MyBookings() {
     try {
       const response = await api.get('/bookings/my-bookings')
       setBookings(response.data.data || [])
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể tải danh sách đặt vé')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Không thể tải danh sách đặt vé'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -60,9 +63,12 @@ export default function MyBookings() {
     try {
       await api.post(`/bookings/${bookingId}/cancel`)
       // Refresh bookings
-      fetchBookings()
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể hủy vé. Vui lòng thử lại.')
+      void fetchBookings()
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Không thể hủy vé. Vui lòng thử lại.'
+      setError(errorMessage)
     }
   }
 
@@ -149,7 +155,7 @@ export default function MyBookings() {
             <div className="error-icon">⚠️</div>
             <h2>Đã xảy ra lỗi</h2>
             <p>{error}</p>
-            <button onClick={fetchBookings} className="btn btn-primary">
+            <button onClick={fetchBookings} className="btn btn-primary" type="button">
               Thử lại
             </button>
           </div>
@@ -174,18 +180,21 @@ export default function MyBookings() {
           <button 
             className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
             onClick={() => setFilter('all')}
+            type="button"
           >
             Tất cả ({bookings.length})
           </button>
           <button 
             className={`filter-tab ${filter === 'upcoming' ? 'active' : ''}`}
             onClick={() => setFilter('upcoming')}
+            type="button"
           >
             Sắp tới ({bookings.filter(b => isUpcoming(b)).length})
           </button>
           <button 
             className={`filter-tab ${filter === 'past' ? 'active' : ''}`}
             onClick={() => setFilter('past')}
+            type="button"
           >
             Đã xem ({bookings.filter(b => !isUpcoming(b)).length})
           </button>
@@ -268,6 +277,7 @@ export default function MyBookings() {
                         <button 
                           onClick={() => cancelBooking(booking.id)}
                           className="btn btn-danger"
+                          type="button"
                         >
                           Hủy vé
                         </button>

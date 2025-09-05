@@ -286,11 +286,11 @@ const Theaters: React.FC = () => {
                     </div>
 
                     <div className="theater-actions">
-                      <button className="btn btn-primary">
+                      <button className="btn btn-primary" type="button">
                         <span>🎬</span>
                         Xem Lịch Chiếu
                       </button>
-                      <button className="btn btn-secondary">
+                      <button className="btn btn-secondary" type="button">
                         <span>📍</span>
                         Chỉ Đường
                       </button>

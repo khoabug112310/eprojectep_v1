@@ -39,6 +39,7 @@ export default function NotFound() {
             <button 
               onClick={() => window.history.back()} 
               className="btn btn-secondary"
+              type="button"
             >
               ← Quay lại
             </button>

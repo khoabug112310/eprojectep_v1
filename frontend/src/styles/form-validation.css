@@ -1,0 +1,535 @@
+/* Advanced Form Validation Styles */
+
+/* Validated Field Container */
+.validated-field {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.validated-field__label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.validated-field__required {
+  color: #ef4444;
+  margin-left: 0.25rem;
+  font-weight: 600;
+}
+
+/* Input Styles */
+.validated-field__input,
+.validated-field__textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  background: #ffffff;
+  color: #111827;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  font-family: inherit;
+}
+
+.validated-field__textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.validated-field__input:focus,
+.validated-field__textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.validated-field__input:disabled,
+.validated-field__textarea:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Error States */
+.validated-field__input--error,
+.validated-field__textarea--error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.validated-field__input--error:focus,
+.validated-field__textarea--error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Warning States */
+.validated-field__input--warning,
+.validated-field__textarea--warning {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.validated-field__input--warning:focus,
+.validated-field__textarea--warning:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+/* Success States */
+.validated-field__input--success,
+.validated-field__textarea--success {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+.validated-field__input--success:focus,
+.validated-field__textarea--success:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Validation Status Indicator */
+.validated-field__validating {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.validated-field__validating::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error Messages */
+.validated-field__errors {
+  margin-top: 0.25rem;
+}
+
+.validated-field__error {
+  font-size: 0.875rem;
+  color: #ef4444;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+.validated-field__error::before {
+  content: '⚠';
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+/* Warning Messages */
+.validated-field__warnings {
+  margin-top: 0.25rem;
+}
+
+.validated-field__warning {
+  font-size: 0.875rem;
+  color: #f59e0b;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+.validated-field__warning::before {
+  content: '⚡';
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+/* Info Messages */
+.validated-field__info {
+  margin-top: 0.25rem;
+}
+
+.validated-field__info-item {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+.validated-field__info-item::before {
+  content: 'ℹ';
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+/* Form Validation Summary */
+.form-validation-summary {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-validation-summary--error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.form-validation-summary--warning {
+  background: #fffbeb;
+  border: 1px solid #fed7aa;
+  color: #92400e;
+}
+
+.form-validation-summary--success {
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  color: #065f46;
+}
+
+.form-validation-summary__title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-validation-summary__list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.form-validation-summary__item {
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+/* Form Group Styling */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group--inline {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.form-group__legend {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #374151;
+  border: none;
+  padding: 0;
+}
+
+/* Checkbox and Radio Validation */
+.validated-checkbox,
+.validated-radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.validated-checkbox__input,
+.validated-radio__input {
+  width: 18px;
+  height: 18px;
+  margin-top: 0.125rem;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.validated-checkbox__label,
+.validated-radio__label {
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.validated-checkbox--error .validated-checkbox__input,
+.validated-radio--error .validated-radio__input {
+  accent-color: #ef4444;
+}
+
+/* Multi-step Form Validation */
+.form-step {
+  display: none;
+}
+
+.form-step--active {
+  display: block;
+}
+
+.form-step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.form-step-indicator__step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.875rem;
+  position: relative;
+}
+
+.form-step-indicator__step--completed {
+  background: #10b981;
+  color: white;
+}
+
+.form-step-indicator__step--current {
+  background: #3b82f6;
+  color: white;
+}
+
+.form-step-indicator__step--error {
+  background: #ef4444;
+  color: white;
+}
+
+.form-step-indicator__connector {
+  width: 32px;
+  height: 2px;
+  background: #e5e7eb;
+}
+
+.form-step-indicator__connector--completed {
+  background: #10b981;
+}
+
+/* Real-time Validation Feedback */
+.validation-feedback {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.validation-feedback--validating {
+  color: #6b7280;
+}
+
+.validation-feedback--success {
+  color: #10b981;
+}
+
+.validation-feedback--error {
+  color: #ef4444;
+}
+
+.validation-feedback--warning {
+  color: #f59e0b;
+}
+
+/* Dark Theme Support */
+[data-theme="dark"] .validated-field__label {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .validated-field__input,
+[data-theme="dark"] .validated-field__textarea {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .validated-field__input:focus,
+[data-theme="dark"] .validated-field__textarea:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+[data-theme="dark"] .validated-field__input:disabled,
+[data-theme="dark"] .validated-field__textarea:disabled {
+  background: #1f2937;
+  color: #6b7280;
+}
+
+[data-theme="dark"] .validated-field__input--error,
+[data-theme="dark"] .validated-field__textarea--error {
+  background: #7f1d1d;
+  border-color: #dc2626;
+}
+
+[data-theme="dark"] .validated-field__input--warning,
+[data-theme="dark"] .validated-field__textarea--warning {
+  background: #78350f;
+  border-color: #d97706;
+}
+
+[data-theme="dark"] .validated-field__input--success,
+[data-theme="dark"] .validated-field__textarea--success {
+  background: #064e3b;
+  border-color: #059669;
+}
+
+[data-theme="dark"] .validated-field__validating {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .validated-field__error {
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .validated-field__warning {
+  color: #fcd34d;
+}
+
+[data-theme="dark"] .validated-field__info-item {
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .form-validation-summary--error {
+  background: #7f1d1d;
+  border-color: #991b1b;
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .form-validation-summary--warning {
+  background: #78350f;
+  border-color: #92400e;
+  color: #fcd34d;
+}
+
+[data-theme="dark"] .form-validation-summary--success {
+  background: #064e3b;
+  border-color: #065f46;
+  color: #a7f3d0;
+}
+
+[data-theme="dark"] .form-group__legend {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .validated-checkbox__label,
+[data-theme="dark"] .validated-radio__label {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .form-step-indicator__step {
+  background: #4b5563;
+  color: #f9fafb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .validated-field__input,
+  .validated-field__textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+    min-height: 48px;
+  }
+  
+  .form-group--inline {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .form-step-indicator {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .form-step-indicator__step {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+  
+  .form-step-indicator__connector {
+    width: 20px;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .validated-field__input,
+  .validated-field__textarea {
+    border-width: 2px;
+  }
+  
+  .validated-field__input:focus,
+  .validated-field__textarea:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+  
+  .validated-field__error,
+  .validated-field__warning,
+  .validated-field__info-item {
+    font-weight: 600;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .validated-field__input,
+  .validated-field__textarea,
+  .validated-field__validating::before {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .validated-field__validating,
+  .validation-feedback {
+    display: none;
+  }
+  
+  .validated-field__input,
+  .validated-field__textarea {
+    border: 1px solid #000;
+    background: white;
+    color: black;
+  }
+  
+  .validated-field__error,
+  .validated-field__warning {
+    color: #000;
+    font-weight: bold;
+  }
+}

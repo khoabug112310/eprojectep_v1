@@ -1,0 +1,168 @@
+.seat-lock-timer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.seat-lock-timer.normal {
+  background: linear-gradient(135deg, #e8f5e8, #f0fff0);
+  border: 1px solid #90EE90;
+  color: #2d5a2d;
+}
+
+.seat-lock-timer.warning {
+  background: linear-gradient(135deg, #fff9e6, #fffbf0);
+  border: 1px solid #FFD700;
+  color: #8B4513;
+  animation: pulse-warning 2s infinite;
+}
+
+.seat-lock-timer.critical {
+  background: linear-gradient(135deg, #ffe6e6, #fff0f0);
+  border: 1px solid #FF6B6B;
+  color: #8B0000;
+  animation: pulse-critical 1s infinite;
+}
+
+.seat-lock-timer.expired {
+  background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+  border: 1px solid #888;
+  color: #555;
+  opacity: 0.7;
+}
+
+.seat-lock-timer.compact {
+  padding: 4px 8px;
+  font-size: 12px;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.timer-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timer-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.seat-lock-timer.compact .timer-icon {
+  font-size: 14px;
+}
+
+.timer-text {
+  line-height: 1.2;
+  flex: 1;
+}
+
+.timer-progress-bar {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.timer-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50, #FF9500, #FF6B6B);
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+.timer-warning {
+  font-size: 12px;
+  color: #FF6B6B;
+  font-weight: 600;
+  text-align: center;
+  animation: blink 1s infinite;
+}
+
+/* Animations */
+@keyframes pulse-warning {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+  }
+}
+
+@keyframes pulse-critical {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(255, 107, 107, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .seat-lock-timer {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+  
+  .seat-lock-timer.compact {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+  
+  .timer-icon {
+    font-size: 14px;
+  }
+  
+  .seat-lock-timer.compact .timer-icon {
+    font-size: 12px;
+  }
+}
+
+/* Integration with seat map */
+.seat-map-container .seat-lock-timer {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Tooltip integration */
+.seat .seat-lock-timer.compact {
+  position: static;
+  margin-top: 4px;
+}
+
+/* Selection summary integration */
+.booking-summary .seat-lock-timer {
+  margin-top: 8px;
+  width: 100%;
+}
+
+.booking-summary .seat-lock-timer.critical {
+  order: -1; /* Move critical timers to top */
+}

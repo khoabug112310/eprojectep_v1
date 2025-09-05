@@ -1,0 +1,506 @@
+/* Security Components Styles for CineBook */
+
+.secure-input-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Secure Input Styling */
+.secure-input {
+  background: #2f2f2f;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  padding-right: 3rem; /* Make room for security indicator */
+  color: #ffffff;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.secure-input:focus {
+  outline: none;
+  border-color: #ffd700;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+}
+
+.secure-input::placeholder {
+  color: #8c8c8c;
+}
+
+/* Security Indicator Styling */
+.secure-input.security-indicator--safe {
+  border-color: #46d369;
+}
+
+.secure-input.security-indicator--warning {
+  border-color: #ff9500;
+}
+
+.secure-input.security-indicator--danger {
+  border-color: #ff3b30;
+  background: rgba(255, 59, 48, 0.05);
+}
+
+/* Security Status Indicator */
+.security-status {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.security-status--safe {
+  background: rgba(70, 211, 105, 0.1);
+  color: #46d369;
+}
+
+.security-status--warning {
+  background: rgba(255, 149, 0, 0.1);
+  color: #ff9500;
+}
+
+.security-status--danger {
+  background: rgba(255, 59, 48, 0.1);
+  color: #ff3b30;
+  animation: securityPulse 1s infinite;
+}
+
+.security-icon {
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
+.security-loading {
+  font-size: 0.75rem;
+  animation: spin 1s linear infinite;
+}
+
+/* Security Status Animations */
+@keyframes securityPulse {
+  0%, 100% {
+    transform: translateY(-50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-50%) scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Validation Messages */
+.validation-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.validation-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  color: #ff3b30;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+.validation-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 149, 0, 0.1);
+  border: 1px solid rgba(255, 149, 0, 0.3);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  color: #ff9500;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+.security-flag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 0, 0, 0.15);
+  border: 2px solid #ff0000;
+  border-radius: 6px;
+  padding: 0.75rem;
+  color: #ff0000;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  animation: securityAlert 0.5s ease-out;
+}
+
+/* Message Animations */
+@keyframes slideInFromTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes securityAlert {
+  0%, 100% {
+    background: rgba(255, 0, 0, 0.15);
+  }
+  50% {
+    background: rgba(255, 0, 0, 0.25);
+  }
+}
+
+/* Security Dashboard (if needed for monitoring) */
+.security-dashboard {
+  background: #1f1f1f;
+  border: 1px solid #404040;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+
+.security-dashboard h3 {
+  color: #ffd700;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.security-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.security-stat {
+  background: #2f2f2f;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.security-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.security-stat-value--safe {
+  color: #46d369;
+}
+
+.security-stat-value--warning {
+  color: #ff9500;
+}
+
+.security-stat-value--danger {
+  color: #ff3b30;
+}
+
+.security-stat-label {
+  color: #8c8c8c;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Security Events Log */
+.security-events {
+  max-height: 300px;
+  overflow-y: auto;
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.security-event {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid #404040;
+  transition: background 0.2s ease;
+}
+
+.security-event:last-child {
+  border-bottom: none;
+}
+
+.security-event:hover {
+  background: rgba(255, 215, 0, 0.05);
+}
+
+.security-event-info {
+  flex: 1;
+}
+
+.security-event-type {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.security-event-type--XSS_ATTEMPT {
+  color: #ff3b30;
+}
+
+.security-event-type--SQL_INJECTION {
+  color: #ff0000;
+}
+
+.security-event-type--CSRF_VIOLATION {
+  color: #ff9500;
+}
+
+.security-event-type--SUSPICIOUS_INPUT {
+  color: #8c8c8c;
+}
+
+.security-event-details {
+  font-size: 0.875rem;
+  color: #8c8c8c;
+}
+
+.security-event-time {
+  font-size: 0.75rem;
+  color: #666666;
+  text-align: right;
+}
+
+.security-event-severity {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 1rem;
+}
+
+.security-event-severity--LOW {
+  background: rgba(70, 211, 105, 0.2);
+  color: #46d369;
+}
+
+.security-event-severity--MEDIUM {
+  background: rgba(255, 149, 0, 0.2);
+  color: #ff9500;
+}
+
+.security-event-severity--HIGH {
+  background: rgba(255, 59, 48, 0.2);
+  color: #ff3b30;
+}
+
+.security-event-severity--CRITICAL {
+  background: #ff0000;
+  color: #ffffff;
+  animation: criticalAlert 1s infinite;
+}
+
+@keyframes criticalAlert {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Form Security Panel */
+.form-security-panel {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.form-security-panel h4 {
+  color: #ffd700;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.security-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.security-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #cccccc;
+  font-size: 0.875rem;
+}
+
+.security-feature-icon {
+  color: #46d369;
+  font-size: 1rem;
+}
+
+/* CSRF Token Display */
+.csrf-token-display {
+  background: #2a2a2a;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: #8c8c8c;
+  word-break: break-all;
+}
+
+.csrf-token-label {
+  color: #ffd700;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .secure-input {
+    padding-right: 2.5rem;
+  }
+
+  .security-status {
+    right: 0.5rem;
+    width: 20px;
+    height: 20px;
+  }
+
+  .security-icon {
+    font-size: 0.75rem;
+  }
+
+  .validation-messages {
+    margin-top: 0.25rem;
+  }
+
+  .validation-error,
+  .validation-warning,
+  .security-flag {
+    padding: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .security-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .security-features {
+    grid-template-columns: 1fr;
+  }
+
+  .security-event {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .security-event-severity {
+    margin-left: 0;
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .secure-input {
+    font-size: 0.875rem;
+    padding: 0.625rem 2rem 0.625rem 0.75rem;
+  }
+
+  .security-dashboard {
+    padding: 1rem;
+  }
+
+  .form-security-panel {
+    padding: 0.75rem;
+  }
+
+  .security-events {
+    padding: 0.75rem;
+    max-height: 200px;
+  }
+}
+
+/* Focus States for Accessibility */
+.secure-input:focus-visible {
+  outline: 2px solid #ffd700;
+  outline-offset: 2px;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .secure-input {
+    border-width: 3px;
+  }
+
+  .validation-error,
+  .validation-warning,
+  .security-flag {
+    border-width: 2px;
+  }
+
+  .security-dashboard {
+    border-width: 2px;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .security-status,
+  .secure-input,
+  .security-event {
+    transition: none;
+  }
+
+  .security-loading,
+  .securityPulse,
+  .securityAlert,
+  .criticalAlert {
+    animation: none;
+  }
+
+  .slideInFromTop {
+    animation: none;
+  }
+}

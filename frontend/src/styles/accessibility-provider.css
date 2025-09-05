@@ -1,0 +1,446 @@
+/* Enhanced Accessibility Provider Styles */
+
+/* Root accessibility classes */
+:root {
+  --font-size-multiplier: 1;
+}
+
+.high-contrast {
+  --primary-color: #000000;
+  --secondary-color: #ffffff;
+  --accent-color: #ffff00;
+  --error-color: #ff0000;
+  --success-color: #00ff00;
+  --warning-color: #ffa500;
+  
+  filter: contrast(150%);
+}
+
+.reduced-motion,
+.reduced-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.keyboard-navigation *:focus {
+  outline: 3px solid #0066cc !important;
+  outline-offset: 2px !important;
+}
+
+.screen-reader-enabled {
+  /* Optimize for screen readers */
+}
+
+/* Font size scaling */
+.high-contrast,
+.screen-reader-enabled {
+  font-size: calc(1rem * var(--font-size-multiplier));
+}
+
+/* Accessibility Settings Panel */
+.accessibility-settings-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.accessibility-settings-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.accessibility-settings-panel__header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.accessibility-settings-panel__close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.accessibility-settings-panel__close:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.accessibility-settings-panel__close:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.accessibility-settings-panel__content {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.accessibility-settings-panel__section {
+  margin-bottom: 2rem;
+}
+
+.accessibility-settings-panel__section:last-child {
+  margin-bottom: 0;
+}
+
+.accessibility-settings-panel__section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.accessibility-settings-panel__option {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.accessibility-settings-panel__option label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+  min-height: 44px;
+}
+
+.accessibility-settings-panel__option label:hover {
+  background: #f3f4f6;
+}
+
+.accessibility-settings-panel__option input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #3b82f6;
+}
+
+.accessibility-settings-panel__option select {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.875rem;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.accessibility-settings-panel__option select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.accessibility-settings-panel__status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.status-indicator {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-indicator::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-indicator.active {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.status-indicator.active::before {
+  background: #16a34a;
+}
+
+.status-indicator.inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+.status-indicator.inactive::before {
+  background: #9ca3af;
+}
+
+/* Dark theme support */
+[data-theme="dark"] .accessibility-settings-panel {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+[data-theme="dark"] .accessibility-settings-panel__header {
+  background: #374151;
+  border-bottom-color: #4b5563;
+}
+
+[data-theme="dark"] .accessibility-settings-panel__header h2 {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .accessibility-settings-panel__close {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .accessibility-settings-panel__close:hover {
+  background: #4b5563;
+  color: #f3f4f6;
+}
+
+[data-theme="dark"] .accessibility-settings-panel__section h3 {
+  color: #f9fafb;
+  border-bottom-color: #4b5563;
+}
+
+[data-theme="dark"] .accessibility-settings-panel__option label {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .accessibility-settings-panel__option label:hover {
+  background: #374151;
+}
+
+[data-theme="dark"] .accessibility-settings-panel__option select {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .accessibility-settings-panel__option select:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+[data-theme="dark"] .status-indicator.active {
+  background: #064e3b;
+  color: #a7f3d0;
+  border-color: #065f46;
+}
+
+[data-theme="dark"] .status-indicator.inactive {
+  background: #374151;
+  color: #9ca3af;
+  border-color: #4b5563;
+}
+
+/* High contrast mode overrides */
+.high-contrast .accessibility-settings-panel {
+  background: #ffffff !important;
+  border: 3px solid #000000 !important;
+  box-shadow: none !important;
+}
+
+.high-contrast .accessibility-settings-panel__header {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-bottom: 2px solid #000000 !important;
+}
+
+.high-contrast .accessibility-settings-panel__header h2 {
+  color: #ffffff !important;
+}
+
+.high-contrast .accessibility-settings-panel__close {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+}
+
+.high-contrast .accessibility-settings-panel__section h3 {
+  color: #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+}
+
+.high-contrast .accessibility-settings-panel__option label {
+  color: #000000 !important;
+}
+
+.high-contrast .accessibility-settings-panel__option select {
+  background: #ffffff !important;
+  border: 2px solid #000000 !important;
+  color: #000000 !important;
+}
+
+.high-contrast .status-indicator {
+  border: 2px solid #000000 !important;
+}
+
+.high-contrast .status-indicator.active {
+  background: #ffff00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast .status-indicator.inactive {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Reduced motion preferences */
+.reduced-motion .accessibility-settings-panel {
+  animation: none;
+  transition: none;
+}
+
+.reduced-motion .accessibility-settings-panel__close,
+.reduced-motion .accessibility-settings-panel__option label,
+.reduced-motion .accessibility-settings-panel__option select {
+  transition: none;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .accessibility-settings-panel {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .accessibility-settings-panel__header {
+    padding: 1rem;
+  }
+  
+  .accessibility-settings-panel__content {
+    padding: 1rem;
+  }
+  
+  .accessibility-settings-panel__option label {
+    min-height: 48px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  .accessibility-settings-panel__option select {
+    min-height: 48px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+/* Touch-friendly sizing */
+@media (pointer: coarse) {
+  .accessibility-settings-panel__close {
+    min-width: 48px;
+    min-height: 48px;
+  }
+  
+  .accessibility-settings-panel__option input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .accessibility-settings-panel__option label {
+    min-height: 48px;
+    padding: 0.75rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .accessibility-settings-panel {
+    display: none !important;
+  }
+}
+
+/* Focus management for keyboard users */
+.accessibility-settings-panel:focus-within {
+  /* Keep focus within the panel */
+}
+
+/* Overlay for modal backdrop */
+.accessibility-settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.high-contrast .accessibility-settings-overlay {
+  background: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Animation for panel entrance */
+@keyframes accessibilityPanelEnter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.accessibility-settings-panel {
+  animation: accessibilityPanelEnter 0.2s ease-out;
+}
+
+.reduced-motion .accessibility-settings-panel {
+  animation: none;
+}
+
+/* Screen reader optimizations */
+.screen-reader-enabled .accessibility-settings-panel__option label {
+  /* Provide more context for screen readers */
+}
+
+.screen-reader-enabled .status-indicator::before {
+  /* Hide visual indicators for screen readers */
+  display: none;
+}

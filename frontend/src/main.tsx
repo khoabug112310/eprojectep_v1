@@ -1,35 +1,33 @@
-import { StrictMode, Suspense } from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './index.css'
 import App from './App'
-import { routes } from './routes'
 import ErrorBoundary from './components/ErrorBoundary'
-import Loading from './components/Loading'
 
-const children = routes.map((r) => ({
-  path: r.path,
-  element: (
-    <ErrorBoundary>
-      <Suspense fallback={<Loading />}>
-        <r.component />
-      </Suspense>
-    </ErrorBoundary>
-  ),
-}))
-
+// Create a simple router without any complex imports first
 const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
-    children,
-  },
+    children: [
+      {
+        index: true,
+        element: <div>Home Page - Router Test</div>
+      },
+      {
+        path: 'test',
+        element: <div>Test Page - Router Working</div>
+      }
+    ]
+  }
 ])
 
+// Render the app
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
       <RouterProvider router={router} />
     </ErrorBoundary>
-  </StrictMode>,
+  </StrictMode>
 )

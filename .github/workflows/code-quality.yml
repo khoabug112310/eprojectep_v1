@@ -1,0 +1,296 @@
+# Code Quality and Testing Workflow
+# Comprehensive code quality checks and automated testing
+
+name: Code Quality
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  frontend-quality:
+    name: Frontend Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Run Prettier check
+        working-directory: ./frontend
+        run: npm run format:check
+      
+      - name: Run ESLint
+        working-directory: ./frontend
+        run: npm run lint:report
+      
+      - name: TypeScript compilation check
+        working-directory: ./frontend
+        run: npx tsc --noEmit
+      
+      - name: Bundle size analysis
+        working-directory: ./frontend
+        run: npm run build:analyze
+      
+      - name: Upload bundle analysis
+        uses: actions/upload-artifact@v3
+        with:
+          name: bundle-analysis
+          path: frontend/dist/stats.html
+      
+      - name: Comment bundle size on PR
+        if: github.event_name == 'pull_request'
+        uses: pkg-size/action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          build-script: npm run build
+          working-directory: frontend
+
+  backend-quality:
+    name: Backend Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: pdo, pdo_mysql, redis, gd, zip
+          tools: composer:v2, phpcs, phpstan, rector
+      
+      - name: Install Composer dependencies
+        working-directory: ./backend
+        run: composer install --prefer-dist --no-interaction
+      
+      - name: Run PHP CodeSniffer
+        working-directory: ./backend
+        run: phpcs --standard=PSR12 --report=junit --report-file=phpcs-report.xml app/
+      
+      - name: Run PHPStan
+        working-directory: ./backend
+        run: phpstan analyse --memory-limit=1G --error-format=junit > phpstan-report.xml
+      
+      - name: Run Rector (dry-run)
+        working-directory: ./backend
+        run: rector process --dry-run --output-format=json > rector-report.json
+      
+      - name: Upload PHP quality reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: php-quality-reports
+          path: |
+            backend/phpcs-report.xml
+            backend/phpstan-report.xml
+            backend/rector-report.json
+
+  accessibility-test:
+    name: Accessibility Testing
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Build application
+        working-directory: ./frontend
+        run: npm run build
+      
+      - name: Serve application
+        working-directory: ./frontend
+        run: |
+          npm install -g serve
+          serve -s dist -l 3000 &
+          sleep 5
+      
+      - name: Run Pa11y accessibility tests
+        run: |
+          npm install -g pa11y pa11y-ci
+          echo "http://localhost:3000" > urls.txt
+          echo "http://localhost:3000/movies" >> urls.txt
+          echo "http://localhost:3000/login" >> urls.txt
+          pa11y-ci --sitemap-find http://localhost:3000 --sitemap-replace http://localhost:3000
+      
+      - name: Run axe-core tests
+        uses: chrisdhanaraj/axe-action@v0.2.0
+        with:
+          url: http://localhost:3000
+      
+      - name: Upload accessibility report
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: accessibility-report
+          path: pa11y-ci-results.json
+
+  performance-audit:
+    name: Performance Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install and build
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run build
+      
+      - name: Serve application
+        working-directory: ./frontend
+        run: |
+          npm install -g serve
+          serve -s dist -l 3000 &
+          sleep 5
+      
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            http://localhost:3000
+            http://localhost:3000/movies
+          budgetPath: .github/lighthouse/budget.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+      
+      - name: WebPageTest performance audit
+        uses: WebPageTest/github-action@v1
+        with:
+          apikey: ${{ secrets.WEBPAGETEST_API_KEY }}
+          urls: http://localhost:3000
+          label: 'CineBook Performance Test'
+
+  visual-regression:
+    name: Visual Regression Testing
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install Playwright
+        run: |
+          npm install -g playwright
+          playwright install
+      
+      - name: Build and serve application
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run build
+          npm install -g serve
+          serve -s dist -l 3000 &
+          sleep 10
+      
+      - name: Run visual regression tests
+        run: |
+          playwright test --config=tests/visual/playwright.config.js
+      
+      - name: Upload visual diff artifacts
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: visual-regression-diffs
+          path: tests/visual/screenshots/
+
+  code-coverage:
+    name: Code Coverage Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Run frontend tests with coverage
+        working-directory: ./frontend
+        run: npm run test:coverage
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: xdebug
+          tools: composer:v2
+      
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: composer install --prefer-dist --no-interaction
+      
+      - name: Run backend tests with coverage
+        working-directory: ./backend
+        run: ./vendor/bin/phpunit --coverage-clover coverage.xml
+      
+      - name: Merge coverage reports
+        run: |
+          npm install -g istanbul-merge
+          mkdir -p coverage-merged
+          istanbul-merge --out coverage-merged/coverage.json frontend/coverage/coverage-final.json
+      
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./frontend/coverage/lcov.info,./backend/coverage.xml
+          flags: combined
+          name: cinebook-coverage
+          fail_ci_if_error: true
+      
+      - name: Coverage comment on PR
+        if: github.event_name == 'pull_request'
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          lcov-file: frontend/coverage/lcov.info

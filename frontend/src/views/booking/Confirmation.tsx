@@ -53,8 +53,11 @@ export default function Confirmation() {
     try {
       const response = await api.get(`/bookings/${bookingId}`)
       setBooking(response.data.data)
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể tải thông tin đặt vé')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Không thể tải thông tin đặt vé'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

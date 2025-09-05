@@ -41,9 +41,12 @@ export default function Movies() {
         console.warn('API returned non-array movies data:', moviesData)
         setMovies([])
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching movies:', err)
-      setError(err.response?.data?.message || 'Không thể tải danh sách phim')
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Không thể tải danh sách phim'
+      setError(errorMessage)
       setMovies([]) // Ensure movies is an empty array on error
     } finally {
       setLoading(false)
@@ -58,8 +61,11 @@ export default function Movies() {
     try {
       await api.delete(`/movies/${id}`)
       setMovies(movies.filter(movie => movie.id !== id))
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể xóa phim')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Không thể xóa phim'
+      setError(errorMessage)
     }
   }
 
@@ -72,8 +78,11 @@ export default function Movies() {
       await Promise.all(selectedMovies.map(id => api.delete(`/movies/${id}`)))
       setMovies(movies.filter(movie => !selectedMovies.includes(movie.id)))
       setSelectedMovies([])
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể xóa phim')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Không thể xóa phim'
+      setError(errorMessage)
     }
   }
 

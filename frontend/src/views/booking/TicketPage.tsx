@@ -59,8 +59,11 @@ export default function TicketPage() {
       } else {
         throw new Error(response.data.message || 'Không thể tải thông tin vé')
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Không thể tải thông tin vé')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Không thể tải thông tin vé'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

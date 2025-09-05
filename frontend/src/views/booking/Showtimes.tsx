@@ -28,16 +28,26 @@ export default function Showtimes() {
     if (!movieId) return
     setLoading(true)
     
-    Promise.all([
-      api.get(`/movies/${movieId}`),
-      api.get(`/showtimes`, { params: { movie_id: movieId } })
-    ])
-      .then(([movieRes, showtimesRes]) => {
+    const fetchData = async () => {
+      try {
+        const [movieRes, showtimesRes] = await Promise.all([
+          api.get(`/movies/${movieId}`),
+          api.get(`/showtimes`, { params: { movie_id: movieId } })
+        ])
+        
         setMovie(movieRes.data.data)
         setShowtimes(showtimesRes.data.data?.data ?? showtimesRes.data.data)
-      })
-      .catch((e) => setError(e.message || 'Error'))
-      .finally(() => setLoading(false))
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error
+          ? error.message
+          : 'Error loading data'
+        setError(errorMessage)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    void fetchData()
   }, [movieId])
 
   const onSelect = (showtimeId: number) => {

@@ -1,0 +1,606 @@
+/* E-Ticket Display Styles for CineBook */
+
+.e-ticket-display {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Main Ticket Container */
+.e-ticket {
+  background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border: 2px solid #ffd700;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.e-ticket::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #e50914, #ffd700, #e50914);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { background-position: 200% 0; }
+  50% { background-position: -200% 0; }
+}
+
+/* Fullscreen Mode */
+.e-ticket.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  border-radius: 0;
+  margin: 0;
+  padding: 3rem;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+}
+
+.e-ticket.fullscreen .e-ticket__qr {
+  transform: scale(1.5);
+  margin: 3rem 0;
+}
+
+/* Ticket Header */
+.e-ticket__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px dashed #404040;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo-icon {
+  font-size: 2rem;
+  color: #ffd700;
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.ticket-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-icon {
+  font-size: 1.25rem;
+}
+
+.close-btn {
+  background: transparent;
+  border: 2px solid #404040;
+  color: #8c8c8c;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  border-color: #e50914;
+  color: #e50914;
+}
+
+/* Movie Information */
+.e-ticket__movie {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.movie-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ffd700;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+}
+
+.movie-meta {
+  color: #cccccc;
+  font-size: 1rem;
+}
+
+.theater-name {
+  font-weight: 500;
+}
+
+/* QR Code Section */
+.e-ticket__qr {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.qr-container {
+  text-align: center;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.qr-code {
+  display: block;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.qr-instructions {
+  margin-top: 1rem;
+}
+
+.qr-instructions p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #2f2f2f;
+  font-weight: 500;
+}
+
+/* Booking Details */
+.e-ticket__details {
+  margin: 2rem 0;
+}
+
+.details-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #404040;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-item .label {
+  color: #8c8c8c;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.detail-item .value {
+  color: #ffffff;
+  font-weight: 600;
+  text-align: right;
+}
+
+.booking-code {
+  font-family: 'Courier New', monospace;
+  background: #404040;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.seats {
+  color: #ffd700;
+  font-weight: 700;
+}
+
+.amount {
+  color: #46d369;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+/* Important Notes */
+.e-ticket__notes {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid #ffd700;
+  border-radius: 8px;
+}
+
+.e-ticket__notes h4 {
+  margin: 0 0 1rem 0;
+  color: #ffd700;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.e-ticket__notes ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #cccccc;
+}
+
+.e-ticket__notes li {
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+/* Ticket Footer */
+.e-ticket__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 2px dashed #404040;
+  font-size: 0.75rem;
+  color: #8c8c8c;
+}
+
+.footer-info p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ticket-id {
+  text-align: right;
+}
+
+/* Control Panel */
+.e-ticket__controls {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #2f2f2f;
+  border-radius: 12px;
+  border: 1px solid #404040;
+}
+
+/* Brightness Control */
+.brightness-control {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.brightness-control label {
+  color: #ffffff;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.brightness-slider {
+  flex: 1;
+  height: 6px;
+  background: #404040;
+  border-radius: 3px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.brightness-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #ffd700;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.brightness-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #ffd700;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.brightness-control span {
+  color: #cccccc;
+  font-weight: 600;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Detail Toggle */
+.detail-toggle {
+  margin-bottom: 1.5rem;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: 2px solid #404040;
+  color: #cccccc;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-btn:hover,
+.toggle-btn.active {
+  border-color: #ffd700;
+  color: #ffd700;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: transparent;
+  border: 2px solid #404040;
+  border-radius: 8px;
+  color: #cccccc;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+}
+
+.action-btn:hover:not(.disabled) {
+  border-color: #e50914;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.action-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-icon {
+  font-size: 1.5rem;
+}
+
+.action-label {
+  font-weight: 500;
+}
+
+/* Fullscreen Exit Button */
+.fullscreen-exit {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.fullscreen-exit:hover {
+  background: #e50914;
+  border-color: #e50914;
+}
+
+/* Action History (Development) */
+.action-history {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #1a1a1a;
+  border-radius: 6px;
+  border: 1px solid #333;
+}
+
+.action-history h4 {
+  margin: 0 0 0.5rem 0;
+  color: #ffd700;
+  font-size: 0.875rem;
+}
+
+.action-history ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.action-history li {
+  font-size: 0.75rem;
+  color: #8c8c8c;
+  margin-bottom: 0.25rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .e-ticket-display {
+    padding: 0.5rem;
+  }
+
+  .e-ticket {
+    padding: 1.5rem;
+  }
+
+  .e-ticket.fullscreen {
+    padding: 2rem;
+  }
+
+  .movie-title {
+    font-size: 1.5rem;
+  }
+
+  .logo-text {
+    font-size: 1.25rem;
+  }
+
+  .details-grid {
+    gap: 0.75rem;
+  }
+
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .detail-item .value {
+    text-align: left;
+  }
+
+  .action-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .brightness-control {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .e-ticket__footer {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .e-ticket {
+    padding: 1rem;
+  }
+
+  .movie-title {
+    font-size: 1.25rem;
+  }
+
+  .qr-container {
+    padding: 1rem;
+  }
+
+  .action-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .e-ticket__header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .e-ticket-display {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .e-ticket__controls,
+  .close-btn,
+  .action-history {
+    display: none !important;
+  }
+
+  .e-ticket {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    border: 2px solid #000 !important;
+  }
+
+  .movie-title,
+  .logo-text {
+    color: #000 !important;
+  }
+
+  .qr-container {
+    background: white !important;
+    box-shadow: none !important;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .e-ticket {
+    border: 3px solid #ffffff;
+    background: #000000;
+  }
+
+  .detail-item {
+    border-bottom-color: #ffffff;
+  }
+
+  .action-btn {
+    border-color: #ffffff;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .e-ticket,
+  .action-btn,
+  .close-btn,
+  .toggle-btn,
+  .fullscreen-exit {
+    transition: none;
+  }
+
+  .e-ticket::before {
+    animation: none;
+  }
+
+  .action-btn:hover:not(.disabled) {
+    transform: none;
+  }
+}
+
+/* Focus States for Accessibility */
+.action-btn:focus-visible,
+.close-btn:focus-visible,
+.toggle-btn:focus-visible,
+.fullscreen-exit:focus-visible {
+  outline: 2px solid #ffd700;
+  outline-offset: 2px;
+}
+
+.brightness-slider:focus-visible {
+  outline: 2px solid #ffd700;
+  outline-offset: 4px;
+}

@@ -306,6 +306,7 @@ const Showtimes: React.FC = () => {
                   key={day.date}
                   className={`date-tab ${selectedDate === day.date ? 'active' : ''} ${day.isWeekend ? 'weekend' : ''}`}
                   onClick={() => setSelectedDate(day.date)}
+                  type="button"
                 >
                   <span className="date-day">{day.display}</span>
                   {day.isToday && <span className="today-badge">Hôm nay</span>}

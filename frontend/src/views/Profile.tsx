@@ -164,7 +164,7 @@ export default function Profile() {
   }
 
   useEffect(() => {
-    fetchUserData()
+    void fetchUserData()
   }, [])
 
   const fetchUserData = async () => {
@@ -187,7 +187,7 @@ export default function Profile() {
       
       setBookings(sampleBookings)
       setUserStats(sampleUserStats)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Không thể tải thông tin người dùng')
     } finally {
       setLoading(false)
@@ -199,8 +199,11 @@ export default function Profile() {
       await api.put('/auth/profile', formData)
       setUser(prev => prev ? { ...prev, ...formData } : null)
       setEditing(false)
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể cập nhật thông tin')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Không thể cập nhật thông tin'
+      setError(errorMessage)
     }
   }
 
@@ -291,7 +294,7 @@ export default function Profile() {
             <div className="error-icon">⚠️</div>
             <h2>Đã xảy ra lỗi</h2>
             <p>{error}</p>
-            <button onClick={fetchUserData} className="btn btn-primary">
+            <button onClick={fetchUserData} className="btn btn-primary" type="button">
               Thử lại
             </button>
           </div>
@@ -347,12 +350,14 @@ export default function Profile() {
               <button 
                 className={`nav-item ${activeTab === 'info' ? 'active' : ''}`}
                 onClick={() => setActiveTab('info')}
+                type="button"
               >
                 📋 Thông tin cá nhân
               </button>
               <button 
                 className={`nav-item ${activeTab === 'bookings' ? 'active' : ''}`}
                 onClick={() => setActiveTab('bookings')}
+                type="button"
               >
                 🎫 Lịch sử đặt vé ({bookings.length})
               </button>
@@ -440,6 +445,7 @@ export default function Profile() {
                       <button 
                         onClick={handleUpdateProfile}
                         className="btn btn-primary"
+                        type="button"
                       >
                         Lưu thay đổi
                       </button>

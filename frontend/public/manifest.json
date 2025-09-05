@@ -1,0 +1,134 @@
+{
+  \"name\": \"CineBook - Movie Ticket Booking\",
+  \"short_name\": \"CineBook\",
+  \"description\": \"Book movie tickets online with CineBook - Vietnam's premier cinema booking platform\",
+  \"start_url\": \"/\",
+  \"display\": \"standalone\",
+  \"background_color\": \"#000000\",
+  \"theme_color\": \"#FFD700\",
+  \"orientation\": \"portrait-primary\",
+  \"scope\": \"/\",
+  \"lang\": \"vi\",
+  \"dir\": \"ltr\",
+  \"categories\": [\"entertainment\", \"lifestyle\"],
+  \"icons\": [
+    {
+      \"src\": \"/pwa/icon-72x72.png\",
+      \"sizes\": \"72x72\",
+      \"type\": \"image/png\",
+      \"purpose\": \"any maskable\"
+    },
+    {
+      \"src\": \"/pwa/icon-96x96.png\",
+      \"sizes\": \"96x96\",
+      \"type\": \"image/png\",
+      \"purpose\": \"any maskable\"
+    },
+    {
+      \"src\": \"/pwa/icon-128x128.png\",
+      \"sizes\": \"128x128\",
+      \"type\": \"image/png\",
+      \"purpose\": \"any maskable\"
+    },
+    {
+      \"src\": \"/pwa/icon-144x144.png\",
+      \"sizes\": \"144x144\",
+      \"type\": \"image/png\",
+      \"purpose\": \"any maskable\"
+    },
+    {
+      \"src\": \"/pwa/icon-152x152.png\",
+      \"sizes\": \"152x152\",
+      \"type\": \"image/png\",
+      \"purpose\": \"any maskable\"
+    },
+    {
+      \"src\": \"/pwa/icon-192x192.png\",
+      \"sizes\": \"192x192\",
+      \"type\": \"image/png\",
+      \"purpose\": \"any maskable\"
+    },
+    {
+      \"src\": \"/pwa/icon-384x384.png\",
+      \"sizes\": \"384x384\",
+      \"type\": \"image/png\",
+      \"purpose\": \"any maskable\"
+    },
+    {
+      \"src\": \"/pwa/icon-512x512.png\",
+      \"sizes\": \"512x512\",
+      \"type\": \"image/png\",
+      \"purpose\": \"any maskable\"
+    }
+  ],
+  \"screenshots\": [
+    {
+      \"src\": \"/pwa/screenshot-wide.png\",
+      \"sizes\": \"1280x720\",
+      \"type\": \"image/png\",
+      \"form_factor\": \"wide\",
+      \"label\": \"CineBook Desktop Experience\"
+    },
+    {
+      \"src\": \"/pwa/screenshot-narrow.png\",
+      \"sizes\": \"750x1334\",
+      \"type\": \"image/png\",
+      \"form_factor\": \"narrow\",
+      \"label\": \"CineBook Mobile Experience\"
+    }
+  ],
+  \"shortcuts\": [
+    {
+      \"name\": \"Browse Movies\",
+      \"short_name\": \"Movies\",
+      \"description\": \"Browse current and upcoming movies\",
+      \"url\": \"/movies\",
+      \"icons\": [
+        {
+          \"src\": \"/pwa/shortcut-movies.png\",
+          \"sizes\": \"192x192\",
+          \"type\": \"image/png\"
+        }
+      ]
+    },
+    {
+      \"name\": \"My Bookings\",
+      \"short_name\": \"Bookings\",
+      \"description\": \"View your ticket bookings\",
+      \"url\": \"/profile/bookings\",
+      \"icons\": [
+        {
+          \"src\": \"/pwa/shortcut-bookings.png\",
+          \"sizes\": \"192x192\",
+          \"type\": \"image/png\"
+        }
+      ]
+    },
+    {
+      \"name\": \"Theaters\",
+      \"short_name\": \"Theaters\",
+      \"description\": \"Find theaters near you\",
+      \"url\": \"/theaters\",
+      \"icons\": [
+        {
+          \"src\": \"/pwa/shortcut-theaters.png\",
+          \"sizes\": \"192x192\",
+          \"type\": \"image/png\"
+        }
+      ]
+    }
+  ],
+  \"related_applications\": [
+    {
+      \"platform\": \"webapp\",
+      \"url\": \"https://cinebook.com/\"
+    }
+  ],
+  \"prefer_related_applications\": false,
+  \"edge_side_panel\": {
+    \"preferred_width\": 400
+  },
+  \"launch_handler\": {
+    \"client_mode\": \"navigate-existing\"
+  }
+}

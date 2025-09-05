@@ -101,9 +101,12 @@ export default function MovieDetail() {
         console.warn('API returned non-array reviews data:', reviewsData)
         setReviews([])
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching movie data:', err)
-      setError(err.response?.data?.message || 'Không thể tải thông tin phim')
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Không thể tải thông tin phim'
+      setError(errorMessage)
       setShowtimes([]) // Ensure showtimes is an empty array on error
       setReviews([]) // Ensure reviews is an empty array on error
     } finally {
@@ -129,8 +132,11 @@ export default function MovieDetail() {
       setComment('')
       setRating(5)
       setShowReviewForm(false)
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể gửi đánh giá')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Không thể gử i đánh giá'
+      setError(errorMessage)
     } finally {
       setSubmitting(false)
     }

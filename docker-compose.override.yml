@@ -1,0 +1,100 @@
+# CineBook Development Docker Compose Override
+# Automatically loaded in development environment
+
+version: '3.8'
+
+services:
+  # Frontend Development Configuration
+  frontend:
+    build:
+      target: development
+      args:
+        - VITE_API_BASE_URL=http://localhost:8000
+        - VITE_ENVIRONMENT=development
+        - VITE_ERROR_TRACKING_ENABLED=false
+        - VITE_WEBSOCKET_URL=ws://localhost:8000
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+    environment:
+      - NODE_ENV=development
+
+  # Backend Development Configuration
+  backend:
+    build:
+      target: development
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/app:cached
+      - backend-vendor:/app/vendor
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - LOG_LEVEL=debug
+      - MAIL_MAILER=log
+
+  # Development Database (with exposed port)
+  database:
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_PASSWORD=password
+    volumes:
+      - ./database/dev-data:/var/lib/mysql
+
+  # Development Redis (with exposed port)
+  redis:
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass password
+
+  # Development Tools
+  mailhog:
+    image: mailhog/mailhog
+    container_name: cinebook-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - cinebook-network
+    restart: unless-stopped
+    profiles:
+      - development
+
+  # Database Administration
+  adminer:
+    image: adminer:latest
+    container_name: cinebook-adminer
+    ports:
+      - "8080:8080"
+    networks:
+      - cinebook-network
+    restart: unless-stopped
+    depends_on:
+      - database
+    profiles:
+      - development
+
+  # Redis Administration
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: cinebook-redis-commander
+    ports:
+      - "8081:8081"
+    networks:
+      - cinebook-network
+    restart: unless-stopped
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:password
+    depends_on:
+      - redis
+    profiles:
+      - development
+
+volumes:
+  backend-vendor:
+    driver: local

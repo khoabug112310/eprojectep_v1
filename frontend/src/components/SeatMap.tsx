@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import seatService from '../services/seatService'
+import { useRealtimeSeatSelection } from '../hooks/useWebSocket'
+import ConnectionStatus from './ConnectionStatus'
+import SeatLockTimer from './SeatLockTimer'
+import toast from 'react-hot-toast'
 import './SeatMap.css'
 
 interface Seat {
@@ -33,24 +37,17 @@ export default function SeatMap({
   selectedSeats, 
   userId, 
   autoRefresh = true, 
-  refreshInterval = 30000 
+  refreshInterval = 5000 // Reduced from 30s to 5s for better responsiveness
 }: SeatMapProps) {
   const [hoveredSeat, setHoveredSeat] = useState<string | null>(null)
   const [seatStatuses, setSeatStatuses] = useState<Record<string, Seat>>({})
   const [isLocking, setIsLocking] = useState<string[]>([])
   const [lockTimer, setLockTimer] = useState<NodeJS.Timeout | null>(null)
   const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null)
+  const [conflictNotificationShown, setConflictNotificationShown] = useState<string[]>([])
+  const [expiredSeats, setExpiredSeats] = useState<string[]>([])
 
-  // Initialize seat statuses from props
-  useEffect(() => {
-    const statusMap = seats.reduce((acc, seat) => {
-      acc[seat.id] = seat
-      return acc
-    }, {} as Record<string, Seat>)
-    setSeatStatuses(statusMap)
-  }, [seats])
-
-  // Fetch real-time seat status from backend
+  // Fetch real-time seat status from backend (declared early for hook dependency)
   const fetchSeatStatus = useCallback(async () => {
     try {
       const response = await seatService.getSeatStatus(showtimeId)
@@ -90,16 +87,153 @@ export default function SeatMap({
     }
   }, [showtimeId, userId])
 
-  // Lock seats via API
+  // Handle seat lock expiry
+  const handleSeatExpiry = useCallback((seatId: string) => {
+    setExpiredSeats(prev => [...prev, seatId])
+    
+    // Update seat status to available
+    setSeatStatuses(prev => {
+      const updated = { ...prev }
+      if (updated[seatId]) {
+        updated[seatId].status = 'available'
+        delete updated[seatId].lockedBy
+        delete updated[seatId].lockedAt
+        delete updated[seatId].expiresAt
+      }
+      return updated
+    })
+    
+    // Deselect the expired seat
+    if (selectedSeats.includes(seatId)) {
+      onSeatDeselect(seatId)
+      toast('Seat ' + seatId + ' lock expired - please select again', {
+        icon: '⏰',
+        duration: 4000,
+        style: {
+          background: '#FF6B6B',
+          color: '#fff'
+        }
+      })
+    }
+  }, [selectedSeats, onSeatDeselect])
+
+  // Get selected seats with lock times for timer display
+  const getSelectedSeatsWithTimers = () => {
+    return selectedSeats
+      .map(seatId => {
+        const seat = seatStatuses[seatId]
+        return seat?.expiresAt ? { seatId, expiresAt: seat.expiresAt } : null
+      })
+      .filter(Boolean) as { seatId: string; expiresAt: string }[]
+  }
+
+  // WebSocket integration for real-time updates
+  const {
+    isConnected,
+    connectionStatus,
+    seatUpdates,
+    conflictedSeats,
+    lockSeat: lockSeatWS,
+    releaseSeat: releaseSeatWS,
+    clearConflicts
+  } = useRealtimeSeatSelection(
+    showtimeId, 
+    userId,
+    (conflictedSeats) => {
+      // Handle seat conflicts
+      const newConflicts = conflictedSeats.filter(seat => 
+        !conflictNotificationShown.includes(seat)
+      )
+      
+      if (newConflicts.length > 0) {
+                toast('Seat conflict detected: ' + newConflicts.join(', ') + ' - Please select different seats', {
+                  icon: '⚠️',
+                  duration: 5000,
+                  style: {
+                    background: '#FF9500',
+                    color: '#fff'
+                  }
+                })
+        setConflictNotificationShown(prev => [...prev, ...newConflicts])
+        
+        // Clear notification tracking after 10 seconds
+        setTimeout(() => {
+          setConflictNotificationShown(prev => 
+            prev.filter(seat => !newConflicts.includes(seat))
+          )
+        }, 10000)
+      }
+    },
+    fetchSeatStatus // Enhanced polling fallback when WebSocket disconnects
+  )
+
+  // Initialize seat statuses from props
+  useEffect(() => {
+    const statusMap = seats.reduce((acc, seat) => {
+      acc[seat.id] = seat
+      return acc
+    }, {} as Record<string, Seat>)
+    setSeatStatuses(statusMap)
+  }, [seats])
+
+  // Apply real-time seat updates from WebSocket
+  useEffect(() => {
+    if (seatUpdates.length > 0) {
+      setSeatStatuses(prev => {
+        const updated = { ...prev }
+        
+        seatUpdates.forEach(seatUpdate => {
+          const seatId = seatUpdate.seat
+          if (updated[seatId]) {
+            // Update seat status from WebSocket
+            updated[seatId] = {
+              ...updated[seatId],
+              status: seatUpdate.status,
+              lockedBy: seatUpdate.lockedBy,
+              lockedAt: seatUpdate.lockedAt,
+              expiresAt: seatUpdate.expiresAt
+            }
+            
+            // Show notification for seats locked by others
+            if (seatUpdate.status === 'locked' && 
+                seatUpdate.lockedBy !== userId && 
+                selectedSeats.includes(seatId)) {
+              toast('Seat ' + seatId + ' was locked by another user', {
+                icon: '⚠️',
+                duration: 3000,
+                style: {
+                  background: '#FF9500',
+                  color: '#fff'
+                }
+              })
+              // Automatically deselect the conflicted seat
+              onSeatDeselect(seatId)
+            }
+          }
+        })
+        
+        return updated
+      })
+    }
+  }, [seatUpdates, userId, selectedSeats, onSeatDeselect])
+
+  // Lock seats via API with WebSocket integration
   const lockSeats = useCallback(async (seatIds: string[]) => {
     if (!userId) {
-      alert('Please login to select seats')
+      toast.error('Please login to select seats')
       return false
     }
 
     setIsLocking(prev => [...prev, ...seatIds])
 
     try {
+      // Send WebSocket request for immediate feedback
+      if (isConnected) {
+        seatIds.forEach(seatId => {
+          lockSeatWS(showtimeId, seatId, userId)
+        })
+      }
+
       const response = await seatService.lockSeats(showtimeId, {
         seats: seatIds.map(id => ({ seat: id, type: seatStatuses[id]?.category || 'gold' })),
         user_id: userId
@@ -122,25 +256,40 @@ export default function SeatMap({
         
         // Start lock extension timer
         startLockExtensionTimer()
+        
+        // Show success feedback
+        if (seatIds.length === 1) {
+          toast.success(`Seat ${seatIds[0]} selected successfully`)
+        } else {
+          toast.success(`${seatIds.length} seats selected successfully`)
+        }
+        
         return true
       } else {
-        alert(response.message || 'Failed to lock seats')
+        toast.error(response.message || 'Failed to lock seats')
         return false
       }
     } catch (error: any) {
       console.error('Seat locking failed:', error)
-      alert(error.response?.data?.message || 'Failed to lock seats')
+      toast.error(error.response?.data?.message || 'Failed to lock seats')
       return false
     } finally {
       setIsLocking(prev => prev.filter(id => !seatIds.includes(id)))
     }
-  }, [showtimeId, userId, seatStatuses])
+  }, [showtimeId, userId, seatStatuses, isConnected, lockSeatWS])
 
-  // Unlock seats via API
+  // Unlock seats via API with WebSocket integration
   const unlockSeats = useCallback(async (seatIds: string[]) => {
     if (!userId) return false
 
     try {
+      // Send WebSocket request for immediate feedback
+      if (isConnected) {
+        seatIds.forEach(seatId => {
+          releaseSeatWS(showtimeId, seatId, userId)
+        })
+      }
+
       const response = await seatService.unlockSeats(showtimeId, {
         seats: seatIds,
         user_id: userId
@@ -162,14 +311,21 @@ export default function SeatMap({
         })
         
         stopLockExtensionTimer()
+        
+        // Show success feedback
+        if (seatIds.length === 1) {
+          toast.success(`Seat ${seatIds[0]} released`)
+        }
+        
         return true
       }
     } catch (error) {
       console.error('Seat unlocking failed:', error)
+      toast.error('Failed to release seat')
       return false
     }
     return false
-  }, [showtimeId, userId])
+  }, [showtimeId, userId, isConnected, releaseSeatWS])
 
   // Extend lock timer for selected seats
   const extendLock = useCallback(async () => {
@@ -182,7 +338,7 @@ export default function SeatMap({
     try {
       await seatService.extendLock(showtimeId, {
         seats: userSelectedSeats,
-        user_id: userId
+        user_id: userId || 0
       })
     } catch (error) {
       console.error('Failed to extend lock:', error)
@@ -317,6 +473,24 @@ export default function SeatMap({
 
   return (
     <div className="seat-map-container">
+      <ConnectionStatus showDetails={true} />
+      
+      {/* Seat Lock Timers for Selected Seats */}
+      {getSelectedSeatsWithTimers().length > 0 && (
+        <div className="seat-lock-timers">
+          <h4>Selected Seats Lock Status:</h4>
+          {getSelectedSeatsWithTimers().map(({ seatId, expiresAt }) => (
+            <SeatLockTimer
+              key={seatId}
+              seatId={seatId}
+              expiresAt={expiresAt}
+              onExpiry={handleSeatExpiry}
+              className="seat-timer-item"
+            />
+          ))}
+        </div>
+      )}
+      
       <svg className="seat-map" width="800" height="600" viewBox="0 0 800 600">
         {/* Screen */}
         <rect x="50" y="50" width="700" height="20" fill="#333" className="screen" />
