@@ -194,8 +194,12 @@
 }
 
 /* Color Section Styles */
-.color-section {
-  space-y: 3rem;
+.color-section > * {
+  margin-bottom: 3rem;
+}
+
+.color-section > *:last-child {
+  margin-bottom: 0;
 }
 
 .color-palette {
@@ -344,12 +348,21 @@
 .contrast-ratio {
   font-size: 0.75rem;
   color: #8c8c8c;
-  font-family: 'Monaco', 'Menlo', monospace;
+}
+.typography-specimens > * {
+  margin-bottom: 2rem;
 }
 
+.typography-specimens > *:last-child {
+  margin-bottom: 0;
+}
 /* Typography Section Styles */
-.typography-specimens {
-  space-y: 2rem;
+.typography-specimens > * {
+  margin-bottom: 2rem;
+}
+
+.typography-specimens > *:last-child {
+  margin-bottom: 0;
 }
 
 .typography-specimen {
@@ -599,17 +612,26 @@
 
 .icon-item__symbol {
   font-size: 2rem;
-}
-
-.icon-item__name {
   font-size: 0.75rem;
-  color: #8c8c8c;
 }
 
-/* Layout Section Styles */
-.layout-examples {
-  space-y: 2rem;
+.layout-examples > * {
+  margin-bottom: 2rem;
 }
+
+.layout-examples > *:last-child {
+  margin-bottom: 0;
+}
+
+.layout-examples > * {
+  margin-bottom: 2rem;
+}
+
+.layout-examples > *:last-child {
+  margin-bottom: 0;
+}
+/* Layout Section Styles */
+
 
 .layout-example {
   margin-bottom: 2rem;
@@ -628,21 +650,23 @@
   gap: 1rem;
   padding: 1rem;
   background: #2f2f2f;
-  border-radius: 8px;
+}
+
+.container-demo > * {
+  margin-bottom: 1rem;
+}
+
+.container-demo > *:last-child {
+  margin-bottom: 0;
 }
 
 .grid-demo__item {
-  background: #e50914;
-  color: white;
-  padding: 2rem;
   border-radius: 4px;
   text-align: center;
   font-weight: 600;
 }
 
-.container-demo {
-  space-y: 1rem;
-}
+
 
 .container-demo > div {
   padding: 1rem;
@@ -988,7 +1012,8 @@
 @media print {
   .style-guide__nav,
   .style-guide__controls,
-  .code-block__header {
+  .code-block__header,
+  .pwa-update-banner {
     display: none;
   }
   

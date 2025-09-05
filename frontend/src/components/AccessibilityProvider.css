@@ -298,7 +298,7 @@ legend {
 
 /* Ensure proper heading hierarchy for screen readers */
 .screen-reader-optimized h1:not(:first-child)::before {
-  content: \"Warning: Multiple H1 elements detected. \";
+  content: "Warning: Multiple H1 elements detected. ";
   color: red;
   font-weight: bold;
 }
@@ -444,4 +444,4 @@ legend {
     box-shadow: none;
     border: 1px solid #000;
   }
-}"
+}

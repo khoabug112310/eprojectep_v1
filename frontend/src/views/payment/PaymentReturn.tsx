@@ -75,7 +75,7 @@ export default function PaymentReturn() {
         setPaymentData({
           ...result,
           storedInfo: paymentInfo
-        } as ExtendedPaymentReturn)
+        } as unknown as ExtendedPaymentReturn)
 
         if (result.transactionStatus === 'SUCCESS') {
           setStatus('success')

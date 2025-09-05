@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../services/api'
 import './Home.css'
 
 interface Movie {
@@ -17,13 +16,6 @@ interface Movie {
   trailer_url?: string
   director?: string
   cast?: string[]
-}
-
-interface QuickBookingData {
-  city: string
-  movie: string
-  date: string
-  theater: string
 }
 
 export default function Home() {
@@ -263,6 +255,15 @@ export default function Home() {
       }
     }
   }, [isPromoPaused])
+
+  // Handlers for promo carousel mouse enter/leave
+  const handlePromoMouseEnter = useCallback(() => {
+    setIsPromoPaused(true)
+  }, [])
+
+  const handlePromoMouseLeave = useCallback(() => {
+    setIsPromoPaused(false)
+  }, [])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -835,8 +836,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Enhanced Promotions Section */}
       <section className="promotions-section">
         <div className="container">
           <div className="section-header">
@@ -844,7 +843,11 @@ export default function Home() {
             <p className="section-subtitle">Những ưu đãi hấp dẫn dành riêng cho bạn</p>
           </div>
           
-          <div className="promotions-carousel-container">
+          <div 
+            className="promotions-carousel-container"
+            onMouseEnter={handlePromoMouseEnter}
+            onMouseLeave={handlePromoMouseLeave}
+          >
             <div className="promotions-carousel">
               <div 
                 className="promo-slides"
@@ -957,13 +960,7 @@ export default function Home() {
       
       {/* Enhanced Trailer Modal */}
       {showTrailerModal && selectedTrailerMovie && (
-        <div 
-          className="trailer-modal-overlay"
-          onClick={handleCloseTrailer}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="trailer-title"
-        >
+        <div className="trailer-modal" role="dialog" aria-labelledby="trailer-title" onClick={handleCloseTrailer}>
           <div className="trailer-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="trailer-modal-header">
               <h2 id="trailer-title" className="trailer-title">
@@ -1008,4 +1005,4 @@ export default function Home() {
       )}
     </div>
   )
-} 
+}

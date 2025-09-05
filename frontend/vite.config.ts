@@ -19,7 +19,6 @@ export default defineConfig({
           // Vendor chunks
           'react-vendor': ['react', 'react-dom'],
           'router-vendor': ['react-router-dom'],
-          'http-vendor': ['axios'],
         },
         // Optimize chunk names
         chunkFileNames: 'assets/js/[name]-[hash].js',

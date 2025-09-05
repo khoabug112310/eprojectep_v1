@@ -31,6 +31,9 @@
 
 .screen-reader-enabled {
   /* Optimize for screen readers */
+  font-family: sans-serif;
+  line-height: 1.5;
+  letter-spacing: 0.05em;
 }
 
 /* Font size scaling */

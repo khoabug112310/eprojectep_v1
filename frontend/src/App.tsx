@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react'
+
 import { Outlet } from 'react-router-dom'
 
 // Providers
@@ -10,7 +10,7 @@ import { NotificationProvider } from './components/NotificationSystem'
 import Loading from './components/Loading'
 import ErrorBoundary from './components/ErrorBoundary'
 import PWAInstallBanner from './components/PWAInstallBanner'
-import SkipLinks from './components/SkipLinks'
+import { Suspense } from 'react'
 
 // Loading Component for Suspense fallback
 const LoadingFallback = () => (
@@ -27,9 +27,7 @@ function App() {
         <PWAProvider>
           <NotificationProvider>
             <div className="app">
-              <SkipLinks />
               <PWAInstallBanner />
-              
               <Suspense fallback={<LoadingFallback />}>
                 <Outlet />
               </Suspense>

@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
+import Home from './views/Home' // Thêm dòng này
 
 // Create a simple router without any complex imports first
 const router = createBrowserRouter([
@@ -13,7 +14,7 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <div>Home Page - Router Test</div>
+        element: <Home /> // Sửa dòng này
       },
       {
         path: 'test',

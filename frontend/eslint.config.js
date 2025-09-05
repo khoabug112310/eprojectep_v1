@@ -1,5 +1,4 @@
 import tseslint from 'typescript-eslint';
-import tseslint from 'typescript-eslint';
 import reactX from 'eslint-plugin-react-x';
 import reactDom from 'eslint-plugin-react-dom';
 
