@@ -72,53 +72,60 @@ export default function Login() {
   return (
     <div className="auth-page">
       <div className="auth-container">
-        <div className="auth-header">
-          <h2>Đăng nhập</h2>
-          <p>Chào mừng bạn quay trở lại</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          {errors.general && (
-            <div className="error-message">{errors.general}</div>
-          )}
-
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={errors.email ? 'error' : ''}
-              placeholder="Nhập email của bạn"
-            />
-            {errors.email && <span className="error-text">{errors.email}</span>}
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="auth-icon">🔐</div>
+            <h1 className="auth-title">Đăng nhập</h1>
+            <p className="auth-subtitle">Chào mừng bạn quay trở lại</p>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Mật khẩu</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={errors.password ? 'error' : ''}
-              placeholder="Nhập mật khẩu"
-            />
-            {errors.password && <span className="error-text">{errors.password}</span>}
+          <form onSubmit={handleSubmit} className="auth-form">
+            {errors.general && (
+              <div className="error-message">
+                <div className="error-icon">⚠️</div>
+                <p>{errors.general}</p>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className={`form-input ${errors.email ? 'error' : ''}`}
+                placeholder="Nhập email của bạn"
+              />
+              {errors.email && <span className="form-error"><span className="error-icon">⚠️</span>{errors.email}</span>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password" className="form-label">Mật khẩu</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className={`form-input ${errors.password ? 'error' : ''}`}
+                placeholder="Nhập mật khẩu"
+              />
+              {errors.password && <span className="form-error"><span className="error-icon">⚠️</span>{errors.password}</span>}
+            </div>
+
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading && <div className="loading-spinner"></div>}
+              {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            <p>
+              Chưa có tài khoản? <Link to="/auth/register" className="auth-link">Đăng ký ngay</Link>
+            </p>
           </div>
-
-          <button type="submit" className="auth-btn" disabled={loading}>
-            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          <p>
-            Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
-          </p>
         </div>
       </div>
     </div>

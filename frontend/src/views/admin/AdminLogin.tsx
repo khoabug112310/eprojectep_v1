@@ -25,6 +25,27 @@ export default function AdminLogin() {
     setError('')
 
     try {
+      // Demo admin login (without API call)
+      if (formData.email === 'admin@cinebook.com' && formData.password === 'admin123') {
+        // Create demo admin user
+        const demoAdmin = {
+          id: 1,
+          name: 'CineBook Admin',
+          email: 'admin@cinebook.com',
+          role: 'admin',
+          status: 'active'
+        }
+
+        // Store demo admin token and user
+        localStorage.setItem('adminToken', 'demo-admin-token-' + Date.now())
+        localStorage.setItem('adminUser', JSON.stringify(demoAdmin))
+
+        // Redirect to admin dashboard
+        navigate('/admin')
+        return
+      }
+
+      // Try API login for real authentication
       const response = await api.post('/auth/login', formData)
       const { token, user } = response.data.data
 
@@ -41,7 +62,12 @@ export default function AdminLogin() {
       // Redirect to admin dashboard
       navigate('/admin')
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Đăng nhập thất bại')
+      // If API fails and using demo credentials, show helpful error
+      if (formData.email === 'admin@cinebook.com' && formData.password === 'admin123') {
+        setError('API không khả dụng, nhưng đang sử dụng tài khoản demo')
+      } else {
+        setError(error.response?.data?.message || 'Đăng nhập thất bại. Thử sử dụng: admin@cinebook.com / admin123')
+      }
     } finally {
       setLoading(false)
     }
@@ -53,6 +79,22 @@ export default function AdminLogin() {
         <div className="login-header">
           <h1>CineBook Admin</h1>
           <p>Đăng nhập vào hệ thống quản trị</p>
+          
+          <div className="demo-credentials">
+            <h3>🔑 Demo Admin Account</h3>
+            <p><strong>Email:</strong> admin@cinebook.com</p>
+            <p><strong>Password:</strong> admin123</p>
+            <small>Sử dụng thông tin này để truy cập demo admin dashboard</small>
+            <div className="quick-fill">
+              <button 
+                type="button" 
+                className="quick-fill-btn"
+                onClick={() => setFormData({email: 'admin@cinebook.com', password: 'admin123'})}
+              >
+                📝 Tự động điền
+              </button>
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -71,6 +113,7 @@ export default function AdminLogin() {
               value={formData.email}
               onChange={handleChange}
               placeholder="admin@cinebook.com"
+              autoComplete="email"
               required
             />
           </div>
@@ -109,6 +152,9 @@ export default function AdminLogin() {
 
         <div className="login-footer">
           <p>Bạn không phải admin? <a href="/">Quay lại trang chủ</a></p>
+          <div className="demo-info">
+            <small>💡 <strong>Demo Mode:</strong> Không cần database. Sử dụng tài khoản demo để truy cập ngay.</small>
+          </div>
         </div>
       </div>
     </div>

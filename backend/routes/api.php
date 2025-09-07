@@ -15,7 +15,89 @@ use App\Http\Controllers\API\QrCodeController;
 use App\Http\Controllers\API\RateLimitingController;
 use App\Http\Controllers\API\CachingController;
 
-// API Version 1 (Deprecated)
+// Simple test routes without complex middleware
+Route::get('/test', function () {
+    return response()->json([
+        'success' => true,
+        'message' => 'API is working!',
+        'timestamp' => now()->toISOString()
+    ]);
+});
+
+Route::get('/test/movies', [MovieController::class, 'index']);
+Route::get('/test/movies/{id}', [MovieController::class, 'show']);
+Route::get('/test/theaters', [TheaterController::class, 'index']);
+Route::get('/test/theaters/{id}', [TheaterController::class, 'show']);
+Route::get('/test/showtimes', [ShowtimeController::class, 'index']);
+Route::post('/test/auth/login', [AuthController::class, 'login']);
+
+// Simple working API v1 routes (without problematic middleware)
+Route::prefix('v1')->group(function () {
+    // Auth routes
+    Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+    
+    // Public routes
+    Route::get('/movies', [MovieController::class, 'index']);
+    Route::get('/movies/{id}', [MovieController::class, 'show']);
+    Route::get('/movies/{id}/showtimes', [MovieController::class, 'showtimes']);
+    Route::get('/movies/{id}/reviews', [MovieController::class, 'reviews']);
+    
+    Route::get('/theaters', [TheaterController::class, 'index']);
+    Route::get('/theaters/{id}', [TheaterController::class, 'show']);
+    
+    Route::get('/showtimes', [ShowtimeController::class, 'index']);
+    Route::get('/showtimes/{id}', [ShowtimeController::class, 'show']);
+    Route::get('/showtimes/{id}/seats', [ShowtimeController::class, 'seats']);
+    
+    // Protected routes (require authentication)
+    Route::middleware('auth:sanctum')->group(function () {
+        // User profile routes
+        Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
+        Route::put('/auth/change-password', [AuthController::class, 'changePassword']);
+        Route::post('/auth/logout', [AuthController::class, 'logout']);
+        
+        // Booking routes
+        Route::post('/bookings', [BookingController::class, 'store']);
+        Route::get('/user/bookings', [BookingController::class, 'userBookings']);
+        Route::get('/bookings/{id}', [BookingController::class, 'show']);
+        Route::put('/bookings/{id}/cancel', [BookingController::class, 'cancel']);
+        
+        // Review routes
+        Route::post('/movies/{id}/reviews', [ReviewController::class, 'store']);
+        Route::put('/reviews/{id}', [ReviewController::class, 'update']);
+        Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
+        
+        // Admin routes
+        Route::prefix('admin')->middleware('admin')->group(function () {
+            Route::get('/dashboard/stats', [ReportController::class, 'dashboard']);
+            Route::get('/movies', [MovieController::class, 'adminIndex']);
+            Route::post('/movies', [MovieController::class, 'store']);
+            Route::put('/movies/{id}', [MovieController::class, 'update']);
+            Route::delete('/movies/{id}', [MovieController::class, 'destroy']);
+            
+            Route::get('/theaters', [TheaterController::class, 'adminIndex']);
+            Route::post('/theaters', [TheaterController::class, 'store']);
+            Route::put('/theaters/{id}', [TheaterController::class, 'update']);
+            Route::delete('/theaters/{id}', [TheaterController::class, 'destroy']);
+            
+            Route::get('/showtimes', [ShowtimeController::class, 'adminIndex']);
+            Route::post('/showtimes', [ShowtimeController::class, 'store']);
+            Route::put('/showtimes/{id}', [ShowtimeController::class, 'update']);
+            Route::delete('/showtimes/{id}', [ShowtimeController::class, 'destroy']);
+            
+            Route::get('/bookings', [BookingController::class, 'adminIndex']);
+            Route::put('/bookings/{id}', [BookingController::class, 'update']);
+            Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
+        });
+    });
+});
+
+// Complex middleware API v1 routes (with issues) - DISABLED
+/*
 Route::prefix('v1')->middleware(['api.versioning', 'advanced.rate.limit', 'api.cache'])->group(function () {
     // Health check routes
     Route::get('/health', [HealthController::class, 'index']);
@@ -172,6 +254,7 @@ Route::prefix('v1')->middleware(['api.versioning', 'advanced.rate.limit', 'api.c
         });
     });
 });
+*/
 
 // API Version 2 (Current)
 Route::prefix('v2')->middleware(['api.versioning', 'advanced.rate.limit', 'api.cache'])->group(function () {

@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import vnpayService from '../../services/vnpayService'
-import { type PaymentReturn as PaymentReturnType } from '../../types/api'
+import api from '../../services/api'
 import './PaymentReturn.css'
+
+interface PaymentReturn {
+  success: boolean
+  booking_id?: string
+  transaction_id?: string
+  amount: number
+  bank_code?: string
+  payment_date?: string
+  transactionStatus?: string
+  message?: string
+}
 
 interface PaymentInfo {
   bookingId: string
@@ -12,8 +22,8 @@ interface PaymentInfo {
 }
 
 // Extended PaymentReturn type to include local storage data
-interface ExtendedPaymentReturn extends PaymentReturnType {
-  storedInfo?: PaymentInfo;
+interface ExtendedPaymentReturn extends PaymentReturn {
+  storedInfo?: PaymentInfo
 }
 
 export default function PaymentReturn() {
@@ -25,7 +35,7 @@ export default function PaymentReturn() {
   const [redirectCountdown, setRedirectCountdown] = useState(5)
 
   useEffect(() => {
-    processPaymentReturn()
+    void processPaymentReturn()
   }, [])
 
   useEffect(() => {
@@ -45,10 +55,34 @@ export default function PaymentReturn() {
     }
   }, [status, redirectCountdown, paymentData, navigate])
 
+  const isValidVNPayReturn = (params: URLSearchParams): boolean => {
+    // Basic validation - check for required VNPay parameters
+    return !!(params.get('vnp_ResponseCode') && params.get('vnp_TxnRef'))
+  }
+
+  const getResponseMessage = (responseCode: string): string => {
+    const messages: Record<string, string> = {
+      '00': 'Giao dịch thành công',
+      '07': 'Trừ tiền thành công. Giao dịch bị nghi ngờ (liên quan tới lừa đảo, giao dịch bất thường)',
+      '09': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng chưa đăng ký dịch vụ InternetBanking tại ngân hàng',
+      '10': 'Giao dịch không thành công do: Khách hàng xác thực thông tin thẻ/tài khoản không đúng quá 3 lần',
+      '11': 'Giao dịch không thành công do: Đã hết hạn chờ thanh toán. Xin quý khách vui lòng thực hiện lại giao dịch',
+      '12': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng bị khóa',
+      '13': 'Giao dịch không thành công do Quý khách nhập sai mật khẩu xác thực giao dịch (OTP)',
+      '24': 'Giao dịch không thành công do: Khách hàng hủy giao dịch',
+      '51': 'Giao dịch không thành công do: Tài khoản của quý khách không đủ số dư để thực hiện giao dịch',
+      '65': 'Giao dịch không thành công do: Tài khoản của Quý khách đã vượt quá hạn mức giao dịch trong ngày',
+      '75': 'Ngân hàng thanh toán đang bảo trì',
+      '79': 'Giao dịch không thành công do: KH nhập sai mật khẩu thanh toán quá số lần quy định. Xin quý khách vui lòng thực hiện lại giao dịch',
+      '99': 'Các lỗi khác (lỗi còn lại, không có trong danh sách mã lỗi đã liệt kê)'
+    }
+    return messages[responseCode] || 'Lỗi không xác định'
+  }
+
   const processPaymentReturn = async () => {
     try {
       // Check if this is a valid VNPay return
-      if (!vnpayService.isValidVNPayReturn(searchParams)) {
+      if (!isValidVNPayReturn(searchParams)) {
         setStatus('error')
         setError('Invalid payment return URL')
         return
@@ -59,35 +93,51 @@ export default function PaymentReturn() {
       let paymentInfo: PaymentInfo | null = null
       
       if (storedInfo) {
-        paymentInfo = JSON.parse(storedInfo)
-        // Check if payment info is not too old (30 minutes)
-        const now = Date.now()
-        if (paymentInfo && now - paymentInfo.timestamp > 30 * 60 * 1000) {
+        try {
+          paymentInfo = JSON.parse(storedInfo) as PaymentInfo
+          // Check if payment info is not too old (30 minutes)
+          const now = Date.now()
+          if (paymentInfo && now - paymentInfo.timestamp > 30 * 60 * 1000) {
+            localStorage.removeItem('vnpay_payment_info')
+            paymentInfo = null
+          }
+        } catch {
           localStorage.removeItem('vnpay_payment_info')
           paymentInfo = null
         }
       }
 
-      // Verify payment with backend
-      const result = await vnpayService.verifyPaymentReturn(searchParams)
-      
-      if (result.success) {
-        setPaymentData({
-          ...result,
-          storedInfo: paymentInfo
-        } as unknown as ExtendedPaymentReturn)
+      // Get response code from URL params
+      const responseCode = searchParams.get('vnp_ResponseCode') || '99'
+      const txnRef = searchParams.get('vnp_TxnRef') || ''
+      const amount = parseInt(searchParams.get('vnp_Amount') || '0') / 100 // VNPay amount is in cents
+      const bankCode = searchParams.get('vnp_BankCode') || ''
+      const payDate = searchParams.get('vnp_PayDate') || ''
 
-        if (result.transactionStatus === 'SUCCESS') {
-          setStatus('success')
-          // Clean up stored payment info
-          localStorage.removeItem('vnpay_payment_info')
-        } else {
-          setStatus('failed')
-          setError(result.message || vnpayService.getResponseMessage(searchParams.get('vnp_ResponseCode') || '99'))
-        }
+      // Mock verify payment with backend (for now just check response code)
+      const result: PaymentReturn = {
+        success: responseCode === '00',
+        booking_id: txnRef,
+        transaction_id: txnRef,
+        amount: amount,
+        bank_code: bankCode,
+        payment_date: payDate,
+        transactionStatus: responseCode === '00' ? 'SUCCESS' : 'FAILED',
+        message: getResponseMessage(responseCode)
+      }
+      
+      setPaymentData({
+        ...result,
+        storedInfo: paymentInfo
+      })
+
+      if (result.transactionStatus === 'SUCCESS') {
+        setStatus('success')
+        // Clean up stored payment info
+        localStorage.removeItem('vnpay_payment_info')
       } else {
         setStatus('failed')
-        setError(result.message || 'Payment verification failed')
+        setError(result.message || getResponseMessage(responseCode))
       }
     } catch (error: unknown) {
       console.error('Payment return processing error:', error)

@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import api from '../services/api'
 import './Home.css'
 
 interface Movie {
@@ -8,21 +9,24 @@ interface Movie {
   poster_url?: string
   average_rating?: number
   genre?: string
-  status?: 'now_showing' | 'coming_soon' | 'ended'
+  status?: 'now_showing' | 'coming_soon' | 'ended' | 'active'
   release_date?: string
   duration?: number
   age_rating?: string
   synopsis?: string
   trailer_url?: string
   director?: string
-  cast?: string[]
+  cast?: string[] | string | any // Allow different cast formats from database
 }
 
 export default function Home() {
   // State management
   const [featuredMovies, setFeaturedMovies] = useState<Movie[]>([])
   const [comingSoonMovies, setComingSoonMovies] = useState<Movie[]>([])
+  const [theaters, setTheaters] = useState<any[]>([])
+  const [cities, setCities] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [selectedCity, setSelectedCity] = useState('')
   const [selectedMovie, setSelectedMovie] = useState('')
   const [selectedTheater, setSelectedTheater] = useState('')
@@ -42,33 +46,52 @@ export default function Home() {
   const heroSectionRef = useRef<HTMLElement>(null)
   const quickBookingRef = useRef<HTMLDivElement>(null)
 
-  // Sample data for quick booking
-  const cities = ['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Cần Thơ', 'Hải Phòng']
-  
-  const theaters = useMemo(() => ({
-    'TP. Hồ Chí Minh': [
-      'CGV Vincom Center Landmark 81',
-      'Galaxy Nguyễn Du',
-      'Lotte Cinema Diamond Plaza',
-      'BHD Star Bitexco'
-    ],
-    'Hà Nội': [
-      'CGV Vincom Bà Triệu', 
-      'Galaxy Mipec Long Biên',
-      'Lotte Cinema Keangnam',
-      'BHD Star Phạm Hùng'
-    ],
-    'Đà Nẵng': [
-      'CGV Vincom Đà Nẵng',
-      'Galaxy Đà Nẵng',
-      'Lotte Cinema Đà Nẵng'
-    ]
-  }), [])
-
-  // Performance optimization: Memoize theater count calculation
-  const totalTheaterCount = useMemo(() => {
-    return Object.values(theaters).flat().length
+  // Theater grouping by city with proper array check
+  const theatersByCity = useMemo(() => {
+    if (!Array.isArray(theaters) || theaters.length === 0) {
+      return {}
+    }
+    return theaters.reduce((acc, theater) => {
+      const city = theater.city || 'Khác'
+      if (!acc[city]) acc[city] = []
+      acc[city].push(theater.name)
+      return acc
+    }, {} as Record<string, string[]>)
   }, [theaters])
+
+  // Performance optimization: Memoize theater count calculation with array check
+  const totalTheaterCount = useMemo(() => {
+    return Array.isArray(theaters) ? theaters.length : 0
+  }, [theaters])
+
+  // Data normalization helpers
+  const normalizeCast = useCallback((cast: any): string[] => {
+    if (Array.isArray(cast)) {
+      return cast.filter(item => typeof item === 'string')
+    }
+    if (typeof cast === 'string') {
+      try {
+        // Try to parse JSON string
+        const parsed = JSON.parse(cast)
+        if (Array.isArray(parsed)) {
+          return parsed.filter(item => typeof item === 'string')
+        }
+        // If it's a comma-separated string
+        return cast.split(',').map(s => s.trim()).filter(Boolean)
+      } catch {
+        // If JSON parsing fails, treat as comma-separated string
+        return cast.split(',').map(s => s.trim()).filter(Boolean)
+      }
+    }
+    return []
+  }, [])
+
+  const normalizeMovieData = useCallback((movie: any): Movie => {
+    return {
+      ...movie,
+      cast: normalizeCast(movie.cast)
+    }
+  }, [normalizeCast])
 
   // Default fallback poster URL
   const defaultPosterUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9Ijc1MCIgdmlld0JveD0iMCAwIDUwMCA3NTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iNzUwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNTAgMzAwQzI3NS4yMjkgMzAwIDI5NSAyODAuMjI5IDI5NSAyNTVDMjk1IDIyOS43NzEgMjc1LjIyOSAyMTAgMjUwIDIxMEMyMjQuNzcxIDIxMCAyMDUgMjI5Ljc3MSAyMDUgMjU1QzIwNSAyODAuMjI5IDIyNC43NzEgMzAwIDI1MCAzMDBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yNTAgMzUwQzI3NS4yMjkgMzUwIDI5NSAzMzAuMjI5IDI5NSAzMDVDMjk1IDI3OS43NzEgMjc1LjIyOSAyNjAgMjUwIDI2MEMyMjQuNzcxIDI2MCAyMDUgMjc5Ljc3MSAyMDUgMzA1QzIwNSAzMzAuMjI5IDIyNC43NzEgMzUwIDI1MCAzNTBaIiBmaWxsPSIjOUI5QkEwIi8+Cjx0ZXh0IHg9IjI1MCIgeT0iNDAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOUI5QkEwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K'
@@ -88,138 +111,136 @@ export default function Home() {
     target.style.transform = 'scale(1)';
   }, [])
 
-  // Enhanced movie data with comprehensive details - moved outside component for better performance
-  const sampleMovies = useMemo((): Movie[] => [
-    {
-      id: 1,
-      title: "Avatar: The Way of Water",
-      poster_url: "https://images.moviesanywhere.com/bf6b9c450e9343fe93ad76efd7c6b6b4/e2956d37-3fa0-4e42-af71-1a9f4a3b9b88.webp",
-      average_rating: 4.9,
-      genre: "Khoa Học Viễn Tưởng, Phiêu Lưu",
-      status: "now_showing",
-      duration: 192,
-      age_rating: "T13",
-      synopsis: "Jake Sully sống với gia đình mới được thành lập trên hành tinh Pandora. Khi một mối đe dọa quen thuộc trở lại để hoàn thành những gì đã bắt đầu trước đây, Jake phải làm việc với Neytiri và quân đội của chủng tộc Na'vi để bảo vệ hành tinh của họ.",
-      trailer_url: "https://www.youtube.com/watch?v=a8Gx8wiNbs8",
-      director: "James Cameron",
-      cast: ["Sam Worthington", "Zoe Saldana", "Sigourney Weaver"]
-    },
-    {
-      id: 2,
-      title: "Black Panther: Wakanda Forever",
-      poster_url: "https://terrigen-cdn-dev.marvel.com/content/prod/1x/blackpantherff_lob_crd_03.jpg",
-      average_rating: 4.7,
-      genre: "Hành Động, Siêu Anh Hùng",
-      status: "now_showing",
-      duration: 161,
-      age_rating: "T13",
-      synopsis: "Nữ hoàng Ramonda, Shuri, M'Baku, Okoye và Dora Milaje chiến đấu để bảo vệ quốc gia của họ khỏi sự can thiệp của các thế lực thế giới sau cái chết của Vua T'Challa.",
-      trailer_url: "https://www.youtube.com/watch?v=_Z3QKkl1WyM",
-      director: "Ryan Coogler",
-      cast: ["Letitia Wright", "Angela Bassett", "Tenoch Huerta"]
-    },
-    {
-      id: 3,
-      title: "Top Gun: Maverick",
-      poster_url: "https://m.media-amazon.com/images/M/MV5BZWYzOGEwNTgtNWU3NS00ZTQ0LWJkODUtMmVhMjIwMjA1ZmQwXkEyXkFqcGdeQXVyMjkwOTAyMDU@._V1_.jpg",
-      average_rating: 4.8,
-      genre: "Hành Động, Drama",
-      status: "now_showing",
-      duration: 130,
-      age_rating: "T13",
-      synopsis: "Sau hơn ba thập kỷ phục vụ là một trong những phi công hàng đầu của Hải quân, Pete 'Maverick' Mitchell ở nơi anh thuộc về, thúc đẩy phong bì như một phi công thử nghiệm dũng cảm.",
-      trailer_url: "https://www.youtube.com/watch?v=giXco2jaZ_4",
-      director: "Joseph Kosinski",
-      cast: ["Tom Cruise", "Miles Teller", "Jennifer Connelly"]
-    },
-    {
-      id: 4,
-      title: "Gái Già Lắm Chiêu V: Những Cuộc Đời Vương Giả",
-      poster_url: "https://media.baodautu.vn/files/hongdangcao/2023/03/01/gai-gia-lam-chieu-v-bat-ngo-dat-lich-chieu-som-113129.jpg",
-      average_rating: 4.5,
-      genre: "Hài, Gia Đình",
-      status: "now_showing",
-      duration: 112,
-      age_rating: "T16",
-      synopsis: "Lão bà U90 quyết tâm 'cải lão hoàn đồng' để chinh phục cụ ông hàng xóm. Những tình huống dở khóc dở cười xảy ra liên tục trong hành trình tìm kiếm tình yêu tuổi xế chiều.",
-      trailer_url: "https://www.youtube.com/watch?v=example",
-      director: "Bảo Nhân",
-      cast: ["Lan Hương", "NSND Thành Lộc", "Ngân Chi"]
-    },
-    {
-      id: 5,
-      title: "Spider-Man: No Way Home",
-      poster_url: "https://m.media-amazon.com/images/M/MV5BZWMyYzFjYTYtNTRjYi00OGExLWE2YzgtOGRmYjAxZTU3NzBiXkEyXkFqcGdeQXVyMzQ0MzA0NTM@._V1_UX182_CR0,0,182,268_AL_.jpg",
-      average_rating: 4.7,
-      genre: "Hành Động, Phiêu Lưu",
-      status: "now_showing",
-      duration: 148,
-      age_rating: "T13",
-      synopsis: "Danh tính bí mật của Peter Parker bị tiết lộ với toàn thế giới. Tuyệt vọng vì sự giúp đỡ, Peter tìm đến Doctor Strange để làm cho thế giới quên anh ta là Spider-Man.",
-      trailer_url: "https://www.youtube.com/watch?v=JfVOs4VSpmA",
-      director: "Jon Watts",
-      cast: ["Tom Holland", "Zendaya", "Benedict Cumberbatch"]
-    },
-    {
-      id: 6,
-      title: "Fast X",
-      poster_url: "https://m.media-amazon.com/images/M/MV5BNzVlY2MwMjEtM2E4OS00Y2Y3LWE3ZjctYzhkZGM3YzA1ZWM2XkEyXkFqcGdeQXVyODE5NzE3OTE@._V1_UX182_CR0,0,182,268_AL_.jpg",
-      average_rating: 4.3,
-      genre: "Hành Động, Phiêu Lưu",
-      status: "now_showing",
-      duration: 141,
-      age_rating: "T13",
-      synopsis: "Dom Toretto và gia đình anh phải đối mặt với kẻ thù nguy hiểm nhất từ trước đến nay: một mối đe dọa nổi lên từ bóng tối của quá khứ, được thúc đẩy bởi khao khát máu và quyết tâm nghiền nát gia đình này.",
-      trailer_url: "https://www.youtube.com/watch?v=aOb15GVFZaA",
-      director: "Louis Leterrier",
-      cast: ["Vin Diesel", "Michelle Rodriguez", "Jason Momoa"]
-    },
-    {
-      id: 7,
-      title: "Mai",
-      poster_url: "https://cdn.moveek.com/bundles/ornweb/img/film/film-poster-coming-soon.png",
-      average_rating: 4.2,
-      genre: "Tình Cảm, Drama",
-      status: "coming_soon",
-      duration: 131,
-      age_rating: "T18",
-      release_date: "2024-02-10",
-      synopsis: "Một câu chuyện tình yêu đầy cảm động về Mai, một cô gái trẻ phải đối mặt với những thử thách của cuộc sống và tình yêu trong xã hội hiện đại.",
-      trailer_url: "https://www.youtube.com/watch?v=example",
-      director: "Trấn Thành",
-      cast: ["Phương Anh Đào", "Tuấn Trần", "Trấn Thành"]
-    },
-    {
-      id: 8,
-      title: "Tết Ở Làng Địa Ngục",
-      poster_url: "https://cdn.moveek.com/bundles/ornweb/img/film/film-poster-coming-soon.png",
-      average_rating: 4.0,
-      genre: "Hài, Kinh Dị",
-      status: "coming_soon",
-      duration: 108,
-      age_rating: "T16",
-      release_date: "2024-02-08",
-      synopsis: "Một bộ phim hài kinh dị độc đáo về những câu chuyện kỳ lạ xảy ra trong dịp Tết Nguyên Đán tại một ngôi làng bí ẩn.",
-      trailer_url: "https://www.youtube.com/watch?v=example",
-      director: "Nguyễn Hữu Hoàng",
-      cast: ["Tuấn Trần", "Huỳnh Lập", "Thu Trang"]
+  // Fetch movies, theaters, and cities from database
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      // Fetch movies with status filtering
+      const [moviesResponse, theatersResponse] = await Promise.all([
+        api.get('/movies?per_page=50'),
+        api.get('/theaters')
+      ])
+
+      if (moviesResponse.data.success) {
+        const moviesData = moviesResponse.data.data
+        let allMovies: Movie[] = []
+        
+        // Handle different possible response structures and normalize data
+        if (Array.isArray(moviesData)) {
+          allMovies = moviesData.map(normalizeMovieData)
+        } else if (moviesData && Array.isArray(moviesData.data)) {
+          // Laravel pagination structure: response.data.data.data
+          allMovies = moviesData.data.map(normalizeMovieData)
+        } else if (moviesData && Array.isArray(moviesData.movies)) {
+          allMovies = moviesData.movies.map(normalizeMovieData)
+        }
+        
+        // Filter movies by status
+        const nowShowingMovies = allMovies.filter((movie: Movie) => 
+          movie.status === 'now_showing' || movie.status === 'active'
+        )
+        const upcomingMovies = allMovies.filter((movie: Movie) => 
+          movie.status === 'coming_soon'
+        )
+        
+        setFeaturedMovies(nowShowingMovies)
+        setComingSoonMovies(upcomingMovies)
+      }
+
+      if (theatersResponse.data.success) {
+        const theatersData = theatersResponse.data.data
+        let allTheaters: any[] = []
+        
+        // Handle different possible response structures
+        if (Array.isArray(theatersData)) {
+          allTheaters = theatersData
+        } else if (theatersData && Array.isArray(theatersData.data)) {
+          // Laravel pagination structure: response.data.data.data
+          allTheaters = theatersData.data
+        } else if (theatersData && Array.isArray(theatersData.theaters)) {
+          allTheaters = theatersData.theaters
+        } else if (theatersData && typeof theatersData === 'object') {
+          // If it's an object, try to extract array values
+          const possibleArrays = Object.values(theatersData).filter(Array.isArray)
+          if (possibleArrays.length > 0) {
+            allTheaters = possibleArrays[0] as any[]
+          }
+        }
+        
+        // Ensure we have a valid array
+        if (!Array.isArray(allTheaters)) {
+          console.warn('Theaters data is not an array, using empty array')
+          allTheaters = []
+        }
+        
+        setTheaters(allTheaters)
+        
+        // Extract unique cities from theaters with additional safety check
+        if (Array.isArray(allTheaters) && allTheaters.length > 0) {
+          const uniqueCities = [...new Set(allTheaters.map((theater: any) => theater.city))]
+            .filter(Boolean)
+            .sort() as string[]
+          setCities(uniqueCities)
+        } else {
+          setCities([])
+        }
+      } else {
+        // Fallback if theaters response is not successful
+        console.warn('Theaters API response not successful, using empty array')
+        setTheaters([])
+        setCities([])
+      }
+    } catch (err: any) {
+      console.error('Error fetching data:', err)
+      setError(err.response?.data?.message || err.message || 'Có lỗi xảy ra khi tải dữ liệu')
+      
+      // Fallback to sample data in case of API error
+      const sampleMovies: Movie[] = [
+        {
+          id: 1,
+          title: "Avatar: The Way of Water",
+          poster_url: "https://images.moviesanywhere.com/bf6b9c450e9343fe93ad76efd7c6b6b4/e2956d37-3fa0-4e42-af71-1a9f4a3b9b88.webp",
+          average_rating: 4.9,
+          genre: "Khoa Học Viễn Tưởng, Phiêu Lưu",
+          status: "now_showing",
+          duration: 192,
+          age_rating: "T13",
+          synopsis: "Jake Sully sống với gia đình mới được thành lập trên hành tinh Pandora.",
+          cast: ["Sam Worthington", "Zoe Saldana", "Sigourney Weaver"]
+        },
+        {
+          id: 2,
+          title: "Black Panther: Wakanda Forever",
+          poster_url: "https://terrigen-cdn-dev.marvel.com/content/prod/1x/blackpantherff_lob_crd_03.jpg",
+          average_rating: 4.7,
+          genre: "Hành Động, Siêu Anh Hùng",
+          status: "now_showing",
+          duration: 161,
+          cast: ["Letitia Wright", "Angela Bassett", "Lupita Nyong'o"]
+        }
+      ]
+      
+      setFeaturedMovies(sampleMovies.filter(m => m.status === 'now_showing'))
+      setComingSoonMovies(sampleMovies.filter(m => m.status === 'coming_soon'))
+      setCities(['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng'])
+      
+      // Set sample theaters to prevent array errors
+      const sampleTheaters = [
+        { id: 1, name: 'Galaxy Nguyễn Du', city: 'TP. Hồ Chí Minh' },
+        { id: 2, name: 'CGV Landmark 81', city: 'TP. Hồ Chí Minh' },
+        { id: 3, name: 'Lotte Cinema Ha Dong', city: 'Hà Nội' }
+      ]
+      setTheaters(sampleTheaters)
+    } finally {
+      setLoading(false)
     }
-  ], [])
+  }, [])
 
   useEffect(() => {
-    setLoading(true)
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      // Filter movies for different sections
-      const nowShowingMovies = sampleMovies.filter(movie => movie.status === 'now_showing')
-      const upcomingMovies = sampleMovies.filter(movie => movie.status === 'coming_soon')
-      
-      setFeaturedMovies(nowShowingMovies)
-      setComingSoonMovies(upcomingMovies)
-      setLoading(false)
-    }, 1000)
-  }, [sampleMovies])
+    fetchData()
+  }, [fetchData])
 
   // Enhanced hero carousel auto-rotation with pause/resume
   useEffect(() => {
@@ -414,7 +435,7 @@ export default function Home() {
                         
                         <p className="hero-movie-synopsis">{movie.synopsis}</p>
                         
-                        {movie.cast && (
+                        {movie.cast && Array.isArray(movie.cast) && movie.cast.length > 0 && (
                           <div className="hero-movie-cast">
                             <span className="cast-label">Diễn viên:</span>
                             <span className="cast-list">{movie.cast.join(', ')}</span>
@@ -589,8 +610,8 @@ export default function Home() {
                   aria-describedby="theater-help"
                 >
                   <option value="">Chọn rạp</option>
-                  {selectedCity && theaters[selectedCity as keyof typeof theaters]?.map(theater => (
-                    <option key={theater} value={theater}>{theater}</option>
+                  {selectedCity && theatersByCity[selectedCity]?.map((theaterName: string) => (
+                    <option key={theaterName} value={theaterName}>{theaterName}</option>
                   ))}
                 </select>
                 <small id="theater-help" className="form-help">

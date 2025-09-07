@@ -1,16 +1,10 @@
-
-import { Outlet } from 'react-router-dom'
-
-// Providers
-import AccessibilityProvider from './components/AccessibilityProvider'
-import { PWAProvider } from './components/PWAProvider'
-import { NotificationProvider } from './components/NotificationSystem'
-
-// Components
-import Loading from './components/Loading'
-import ErrorBoundary from './components/ErrorBoundary'
-import PWAInstallBanner from './components/PWAInstallBanner'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Suspense } from 'react'
+import ErrorBoundary from './components/ErrorBoundary'
+import Header from './components/Header'
+import Footer from './components/Footer'
+import Loading from './components/Loading'
+import './App.css'
 
 // Loading Component for Suspense fallback
 const LoadingFallback = () => (
@@ -19,22 +13,36 @@ const LoadingFallback = () => (
   </div>
 )
 
-// Main App Component - serves as layout wrapper with providers
+// Main App Component - serves as layout wrapper
 function App() {
+  const location = useLocation()
+  
+  // Check if current route is admin (admin routes have separate layout)
+  const isAdminRoute = location.pathname.startsWith('/admin')
+  
+  if (isAdminRoute) {
+    return (
+      <ErrorBoundary>
+        <div className="app admin-app">
+          <Suspense fallback={<LoadingFallback />}>
+            <Outlet />
+          </Suspense>
+        </div>
+      </ErrorBoundary>
+    )
+  }
+  
   return (
     <ErrorBoundary>
-      <AccessibilityProvider>
-        <PWAProvider>
-          <NotificationProvider>
-            <div className="app">
-              <PWAInstallBanner />
-              <Suspense fallback={<LoadingFallback />}>
-                <Outlet />
-              </Suspense>
-            </div>
-          </NotificationProvider>
-        </PWAProvider>
-      </AccessibilityProvider>
+      <div className="app">
+        <Header />
+        <main className="main-content">
+          <Suspense fallback={<LoadingFallback />}>
+            <Outlet />
+          </Suspense>
+        </main>
+        <Footer />
+      </div>
     </ErrorBoundary>
   )
 }

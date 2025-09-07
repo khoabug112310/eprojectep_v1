@@ -1,3 +1,42 @@
+/* App Global Styles */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding-top: 80px; /* Account for fixed header */
+}
+
+.loading-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 40px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-content {
+    padding-top: 70px; /* Smaller header on mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding-top: 60px; /* Even smaller header on mobile */
+  }
+}
+
 /* App Layout */
 .App {
   min-height: 100vh;

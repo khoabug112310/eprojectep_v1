@@ -100,97 +100,104 @@ export default function Register() {
   return (
     <div className="auth-page">
       <div className="auth-container">
-        <div className="auth-header">
-          <h2>Đăng ký</h2>
-          <p>Tạo tài khoản mới</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          {errors.general && (
-            <div className="error-message">{errors.general}</div>
-          )}
-
-          <div className="form-group">
-            <label htmlFor="name">Họ tên</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className={errors.name ? 'error' : ''}
-              placeholder="Nhập họ tên của bạn"
-            />
-            {errors.name && <span className="error-text">{errors.name}</span>}
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="auth-icon">📝</div>
+            <h1 className="auth-title">Đăng ký</h1>
+            <p className="auth-subtitle">Tạo tài khoản mới</p>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={errors.email ? 'error' : ''}
-              placeholder="Nhập email của bạn"
-            />
-            {errors.email && <span className="error-text">{errors.email}</span>}
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="phone">Số điện thoại</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className={errors.phone ? 'error' : ''}
-              placeholder="Nhập số điện thoại"
-            />
-            {errors.phone && <span className="error-text">{errors.phone}</span>}
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Mật khẩu</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={errors.password ? 'error' : ''}
-              placeholder="Nhập mật khẩu (ít nhất 8 ký tự)"
-            />
-            {errors.password && <span className="error-text">{errors.password}</span>}
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password_confirmation">Xác nhận mật khẩu</label>
-            <input
-              type="password"
-              id="password_confirmation"
-              name="password_confirmation"
-              value={formData.password_confirmation}
-              onChange={handleChange}
-              className={errors.password_confirmation ? 'error' : ''}
-              placeholder="Nhập lại mật khẩu"
-            />
-            {errors.password_confirmation && (
-              <span className="error-text">{errors.password_confirmation}</span>
+          <form onSubmit={handleSubmit} className="auth-form">
+            {errors.general && (
+              <div className="error-message">
+                <div className="error-icon">⚠️</div>
+                <p>{errors.general}</p>
+              </div>
             )}
+
+            <div className="form-group">
+              <label htmlFor="name" className="form-label">Họ tên</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className={`form-input ${errors.name ? 'error' : ''}`}
+                placeholder="Nhập họ tên của bạn"
+              />
+              {errors.name && <span className="form-error"><span className="error-icon">⚠️</span>{errors.name}</span>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className={`form-input ${errors.email ? 'error' : ''}`}
+                placeholder="Nhập email của bạn"
+              />
+              {errors.email && <span className="form-error"><span className="error-icon">⚠️</span>{errors.email}</span>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="phone" className="form-label">Số điện thoại</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className={`form-input ${errors.phone ? 'error' : ''}`}
+                placeholder="Nhập số điện thoại"
+              />
+              {errors.phone && <span className="form-error"><span className="error-icon">⚠️</span>{errors.phone}</span>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password" className="form-label">Mật khẩu</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className={`form-input ${errors.password ? 'error' : ''}`}
+                placeholder="Nhập mật khẩu (ít nhất 8 ký tự)"
+              />
+              {errors.password && <span className="form-error"><span className="error-icon">⚠️</span>{errors.password}</span>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password_confirmation" className="form-label">Xác nhận mật khẩu</label>
+              <input
+                type="password"
+                id="password_confirmation"
+                name="password_confirmation"
+                value={formData.password_confirmation}
+                onChange={handleChange}
+                className={`form-input ${errors.password_confirmation ? 'error' : ''}`}
+                placeholder="Nhập lại mật khẩu"
+              />
+              {errors.password_confirmation && (
+                <span className="form-error"><span className="error-icon">⚠️</span>{errors.password_confirmation}</span>
+              )}
+            </div>
+
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading && <div className="loading-spinner"></div>}
+              {loading ? 'Đang đăng ký...' : 'Đăng ký'}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            <p>
+              Đã có tài khoản? <Link to="/auth/login" className="auth-link">Đăng nhập</Link>
+            </p>
           </div>
-
-          <button type="submit" className="auth-btn" disabled={loading}>
-            {loading ? 'Đang đăng ký...' : 'Đăng ký'}
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          <p>
-            Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
-          </p>
         </div>
       </div>
     </div>

@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\Movie;
 use App\Models\Theater;
 use App\Models\Showtime;
+use App\Models\Booking;
+use App\Models\Review;
 
 class DatabaseSeeder extends Seeder
 {
@@ -51,6 +53,9 @@ class DatabaseSeeder extends Seeder
             
             // Step 3: Create user-dependent data (reviews depend on users and movies)
             ReviewSeeder::class,
+            
+            // Step 4: Create bookings with sample data
+            BookingSeeder::class,
         ]);
 
         $this->command->info('Database seeding completed successfully!');
@@ -60,6 +65,8 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Theaters: ' . Theater::count());
         $this->command->info('- Showtimes: ' . Showtime::count());
         $this->command->info('- Users: ' . User::count());
+        $this->command->info('- Reviews: ' . Review::count());
+        $this->command->info('- Bookings: ' . Booking::count());
         $this->command->info('==================================================');
         $this->command->info('Default Login Credentials:');
         $this->command->info('Admin: admin@cinebook.com / admin123');

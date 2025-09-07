@@ -6,20 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:analyze": "tsc && vite build --mode analyze",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest",
-    "test:run": "vitest run",
-    "test:watch": "vitest watch",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
-    "test:security": "vitest run --testNamePattern='Security'",
-    "test:validation": "vitest run --testNamePattern='Validation'",
-    "test:performance": "vitest run --testNamePattern='Performance'",
-    "test:integration": "vitest run --testNamePattern='Integration'",
-    "test:all": "npm run test:run && npm run test:coverage",
-    "test:ci": "vitest run --reporter=verbose --coverage --bail=1"
+    "test:run": "vitest run"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -35,8 +25,6 @@
     "@vitejs/plugin-react": "^3.1.0",
     "@testing-library/react": "^14.0.0",
     "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/user-event": "^14.4.3",
-    "@vitest/ui": "^0.28.5",
     "vitest": "^0.28.5",
     "jsdom": "^21.1.0",
     "typescript": "~5.8.3",
@@ -45,7 +33,6 @@
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.16",
-    "typescript-eslint": "^8.15.0"
+    "eslint-plugin-react-refresh": "^0.4.16"
   }
 }

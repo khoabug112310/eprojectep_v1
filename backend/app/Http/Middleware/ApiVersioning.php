@@ -5,16 +5,9 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Services\ApiMonitoringService;
 
 class ApiVersioning
 {
-    protected ApiMonitoringService $monitoringService;
-    
-    public function __construct(ApiMonitoringService $monitoringService)
-    {
-        $this->monitoringService = $monitoringService;
-    }
     /**
      * Supported API versions
      */
@@ -24,10 +17,6 @@ class ApiVersioning
     
     /**
      * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
-     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
     public function handle(Request $request, Closure $next)
     {
@@ -156,17 +145,14 @@ class ApiVersioning
             'timestamp' => now()->toISOString()
         ];
         
-        // Record usage in monitoring service
-        $this->monitoringService->recordVersionUsage($version, $request->getPathInfo(), $context);
-        
         // Log deprecated usage separately
         $deprecationInfo = $this->getDeprecationInfo($version);
         if ($deprecationInfo && $deprecationInfo['deprecated']) {
-            $this->monitoringService->logDeprecatedUsage($version, $request->getPathInfo(), $context);
+            Log::warning('Deprecated API version accessed', $context);
         }
         
         // Log version usage for monitoring and analytics
-        Log::channel('api-analytics')->info('API version usage', $context);
+        Log::info('API version usage', $context);
     }
     
     /**
