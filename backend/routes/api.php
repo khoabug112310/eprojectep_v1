@@ -75,11 +75,13 @@ Route::prefix('v1')->group(function () {
         Route::prefix('admin')->middleware('admin')->group(function () {
             Route::get('/dashboard/stats', [ReportController::class, 'dashboard']);
             Route::get('/movies', [MovieController::class, 'adminIndex']);
+            Route::get('/movies/{id}', [MovieController::class, 'show']);
             Route::post('/movies', [MovieController::class, 'store']);
             Route::put('/movies/{id}', [MovieController::class, 'update']);
             Route::delete('/movies/{id}', [MovieController::class, 'destroy']);
             
             Route::get('/theaters', [TheaterController::class, 'adminIndex']);
+            Route::get('/theaters/{id}', [TheaterController::class, 'show']);
             Route::post('/theaters', [TheaterController::class, 'store']);
             Route::put('/theaters/{id}', [TheaterController::class, 'update']);
             Route::delete('/theaters/{id}', [TheaterController::class, 'destroy']);
@@ -189,6 +191,7 @@ Route::prefix('v1')->middleware(['api.versioning', 'advanced.rate.limit', 'api.c
             
             // Theater management
             Route::get('/theaters', [TheaterController::class, 'adminIndex']);
+            Route::get('/theaters/{id}', [TheaterController::class, 'show']);
             Route::post('/theaters', [TheaterController::class, 'store']);
             Route::put('/theaters/{id}', [TheaterController::class, 'update']);
             Route::delete('/theaters/{id}', [TheaterController::class, 'destroy']);
@@ -348,6 +351,7 @@ Route::prefix('v2')->middleware(['api.versioning', 'advanced.rate.limit', 'api.c
             
             // Theater management
             Route::get('/theaters', [TheaterController::class, 'adminIndex']);
+            Route::get('/theaters/{id}', [TheaterController::class, 'show']);
             Route::post('/theaters', [TheaterController::class, 'store']);
             Route::put('/theaters/{id}', [TheaterController::class, 'update']);
             Route::delete('/theaters/{id}', [TheaterController::class, 'destroy']);

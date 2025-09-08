@@ -9,7 +9,8 @@ interface Theater {
   address: string
   city: string
   total_seats: number
-  facilities: string[]
+  facilities: string[] | string // Can be array or JSON string from API
+  seat_configuration?: object | string // Can be object or JSON string from API
   status: string
   showtimes_count?: number
   revenue?: number
@@ -31,18 +32,95 @@ export default function AdminTheaters() {
 
   const fetchTheaters = async () => {
     try {
-      const response = await api.get('/theaters')
-      const data = response.data.data || []
-      // Add dummy data for demonstration
-      const enhancedData = data.map((theater: Theater) => ({
-        ...theater,
-        showtimes_count: Math.floor(Math.random() * 50) + 10,
-        revenue: Math.floor(Math.random() * 100000000) + 10000000
-      }))
-      setTheaters(enhancedData)
-    } catch (error) {
+      const response = await api.get('/admin/theaters')
+      
+      if (response.data?.success) {
+        // Handle different possible response structures
+        let theatersData: any[] = []
+        
+        // Check if response.data.data is paginated (Laravel paginated response)
+        if (response.data.data && typeof response.data.data === 'object' && response.data.data.data) {
+          // Paginated response: response.data.data.data contains the actual array
+          theatersData = Array.isArray(response.data.data.data) ? response.data.data.data : []
+          console.log('Admin Theaters: Successfully loaded paginated API response', { 
+            totalItems: theatersData.length, 
+            currentPage: response.data.data.current_page,
+            totalPages: response.data.data.last_page,
+            totalRecords: response.data.data.total
+          })
+        } else if (Array.isArray(response.data.data)) {
+          // Direct array response
+          theatersData = response.data.data
+          console.log('Admin Theaters: Successfully loaded direct array API response', { totalItems: theatersData.length })
+        } else {
+          console.warn('Admin Theaters: API returned unexpected data structure:', typeof response.data.data, response.data.data)
+          theatersData = []
+        }
+        
+        // Add dummy data for demonstration and parse JSON fields
+        const enhancedData = theatersData.map((theater: Theater) => {
+          // Parse facilities if it's a JSON string
+          let facilities = []
+          if (theater.facilities) {
+            try {
+              if (typeof theater.facilities === 'string') {
+                facilities = JSON.parse(theater.facilities)
+              } else if (Array.isArray(theater.facilities)) {
+                facilities = theater.facilities
+              }
+            } catch (error) {
+              console.warn('Failed to parse facilities for theater', theater.id, error)
+              facilities = []
+            }
+          }
+          
+          // Parse seat_configuration if it's a JSON string
+          let seatConfiguration = {}
+          if (theater.seat_configuration) {
+            try {
+              if (typeof theater.seat_configuration === 'string') {
+                seatConfiguration = JSON.parse(theater.seat_configuration)
+              } else if (typeof theater.seat_configuration === 'object') {
+                seatConfiguration = theater.seat_configuration
+              }
+            } catch (error) {
+              console.warn('Failed to parse seat_configuration for theater', theater.id, error)
+              seatConfiguration = {}
+            }
+          }
+          
+          return {
+            ...theater,
+            facilities, // Use parsed array
+            seat_configuration: seatConfiguration, // Use parsed object
+            showtimes_count: Math.floor(Math.random() * 50) + 10,
+            revenue: Math.floor(Math.random() * 100000000) + 10000000
+          }
+        })
+        setTheaters(enhancedData)
+      } else {
+        console.warn('Admin Theaters: API response indicates failure:', response.data)
+        setTheaters([])
+        addToast('API response indicates failure', 'error')
+      }
+    } catch (error: any) {
       console.error('Error fetching theaters:', error)
-      addToast('Không thể tải danh sách rạp', 'error')
+      console.error('Error response:', error.response?.data)
+      
+      let errorMessage = 'Không thể tải danh sách rạp'
+      
+      if (error.response?.status === 401) {
+        errorMessage = 'Bạn cần đăng nhập với quyền admin để truy cập'
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Bạn không có quyền truy cập trang này'
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      addToast(errorMessage, 'error')
+      setTheaters([]) // Ensure theaters is an empty array on error
     } finally {
       setLoading(false)
     }
@@ -87,7 +165,7 @@ export default function AdminTheaters() {
         t.address,
         t.city,
         t.total_seats,
-        t.facilities?.join('; ') || '',
+        Array.isArray(t.facilities) ? t.facilities.join('; ') : '',
         t.status,
         t.showtimes_count || 0,
         t.revenue || 0
@@ -220,9 +298,13 @@ export default function AdminTheaters() {
               <div className="theater-facilities">
                 <h4>Tiện ích:</h4>
                 <div className="facilities-list">
-                  {theater.facilities?.map((facility, index) => (
-                    <span key={index} className="facility-tag">{facility}</span>
-                  ))}
+                  {Array.isArray(theater.facilities) && theater.facilities.length > 0 ? (
+                    theater.facilities.map((facility, index) => (
+                      <span key={index} className="facility-tag">{facility}</span>
+                    ))
+                  ) : (
+                    <span className="no-facilities">Không có thông tin tiện ích</span>
+                  )}
                 </div>
               </div>
               <div className="theater-actions">

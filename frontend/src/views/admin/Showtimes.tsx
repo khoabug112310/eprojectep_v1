@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import api from '../../services/api'
 import './Admin.css'
@@ -29,29 +29,98 @@ export default function AdminShowtimes() {
 
   const fetchShowtimes = async () => {
     try {
-      const response = await api.get('/showtimes')
-      setShowtimes(response.data.data || [])
-    } catch (error) {
+      setLoading(true)
+      const response = await api.get('/admin/showtimes')
+      
+      if (response.data?.success) {
+        // Handle different possible response structures
+        let showtimesData: any[] = []
+        
+        // Check if response.data.data is paginated (Laravel paginated response)
+        if (response.data.data && typeof response.data.data === 'object' && response.data.data.data) {
+          // Paginated response: response.data.data.data contains the actual array
+          showtimesData = Array.isArray(response.data.data.data) ? response.data.data.data : []
+          console.log('Admin Showtimes: Successfully loaded paginated API response', { 
+            totalItems: showtimesData.length, 
+            currentPage: response.data.data.current_page,
+            totalPages: response.data.data.last_page,
+            totalRecords: response.data.data.total
+          })
+        } else if (Array.isArray(response.data.data)) {
+          // Direct array response
+          showtimesData = response.data.data
+          console.log('Admin Showtimes: Successfully loaded direct array API response', { totalItems: showtimesData.length })
+        } else {
+          console.warn('Admin Showtimes: API returned unexpected data structure:', typeof response.data.data, response.data.data)
+          showtimesData = []
+        }
+        
+        // Ensure each showtime has proper structure with fallbacks
+        const normalizedShowtimes = showtimesData.map((showtime: any) => ({
+          id: showtime.id || 0,
+          movie: {
+            id: showtime.movie?.id || 0,
+            title: showtime.movie?.title || 'Unknown Movie'
+          },
+          theater: {
+            id: showtime.theater?.id || 0,
+            name: showtime.theater?.name || 'Unknown Theater'
+          },
+          date: showtime.date || showtime.show_date || '',
+          time: showtime.time || showtime.show_time || '',
+          price: showtime.price || 0,
+          status: showtime.status || 'active'
+        }))
+        
+        setShowtimes(normalizedShowtimes)
+      } else {
+        console.warn('Admin Showtimes: API response indicates failure:', response.data)
+        setShowtimes([])
+        addToast('API response indicates failure', 'error')
+      }
+    } catch (error: any) {
       console.error('Error fetching showtimes:', error)
-      addToast('Không thể tải danh sách suất chiếu', 'error')
+      console.error('Error response:', error.response?.data)
+      
+      let errorMessage = 'Không thể tải danh sách suất chiếu'
+      
+      if (error.response?.status === 401) {
+        errorMessage = 'Bạn cần đăng nhập với quyền admin để truy cập'
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Bạn không có quyền truy cập trang này'
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      addToast(errorMessage, 'error')
+      setShowtimes([]) // Ensure showtimes is an empty array on error
     } finally {
       setLoading(false)
     }
   }
 
-  const filteredShowtimes = showtimes.filter(showtime => {
+  // Safe array filtering with validation
+  const filteredShowtimes = Array.isArray(showtimes) ? showtimes.filter(showtime => {
     const matchesDate = !selectedDate || showtime.date === selectedDate
-    const matchesTheater = !selectedTheater || showtime.theater.name === selectedTheater
-    const matchesMovie = !selectedMovie || showtime.movie.title.includes(selectedMovie)
+    const matchesTheater = !selectedTheater || showtime.theater?.name === selectedTheater
+    const matchesMovie = !selectedMovie || showtime.movie?.title?.includes(selectedMovie)
     return matchesDate && matchesTheater && matchesMovie
-  })
+  }) : []
 
   const getTheaters = () => {
-    return [...new Set(showtimes.map(s => s.theater.name))]
+    if (!Array.isArray(showtimes) || showtimes.length === 0) {
+      return []
+    }
+    return [...new Set(showtimes.map(s => s.theater?.name).filter(Boolean))]
   }
 
   const getMovies = () => {
-    return [...new Set(showtimes.map(s => s.movie.title))]
+    if (!Array.isArray(showtimes) || showtimes.length === 0) {
+      return []
+    }
+    return [...new Set(showtimes.map(s => s.movie?.title).filter(Boolean))]
   }
 
   const formatDate = (dateStr: string) => {
@@ -71,16 +140,21 @@ export default function AdminShowtimes() {
 
   const detectConflicts = (showtime: Showtime) => {
     // Simple conflict detection: same theater, same date, overlapping times
+    if (!Array.isArray(showtimes) || showtimes.length === 0) {
+      return false
+    }
+    
     const sameTheaterSameDate = showtimes.filter(s => 
-      s.theater.id === showtime.theater.id && 
+      s.theater?.id === showtime.theater?.id && 
       s.date === showtime.date && 
       s.id !== showtime.id
     )
     
     if (sameTheaterSameDate.length > 0) {
       // Check for time conflicts (simplified)
-      const currentTime = showtime.time
+      const currentTime = showtime.time || ''
       const conflicting = sameTheaterSameDate.some(s => {
+        if (!s.time || !currentTime) return false
         const timeDiff = Math.abs(parseInt(currentTime.split(':')[0]) - parseInt(s.time.split(':')[0]))
         return timeDiff < 3 // Less than 3 hours apart
       })
@@ -203,7 +277,7 @@ export default function AdminShowtimes() {
               const date = new Date()
               date.setDate(date.getDate() + i)
               const dateStr = date.toISOString().split('T')[0]
-              const dayShowtimes = showtimes.filter(s => s.date === dateStr)
+              const dayShowtimes = Array.isArray(showtimes) ? showtimes.filter(s => s.date === dateStr) : []
               
               return (
                 <div key={i} className="calendar-day">
@@ -217,8 +291,8 @@ export default function AdminShowtimes() {
                   <div className="day-showtimes">
                     {dayShowtimes.slice(0, 3).map(showtime => (
                       <div key={showtime.id} className="calendar-showtime">
-                        <span className="time">{showtime.time}</span>
-                        <span className="movie">{showtime.movie.title}</span>
+                        <span className="time">{showtime.time || ''}</span>
+                        <span className="movie">{showtime.movie?.title || 'Unknown Movie'}</span>
                       </div>
                     ))}
                     {dayShowtimes.length > 3 && (
@@ -255,21 +329,21 @@ export default function AdminShowtimes() {
                 <tr key={showtime.id} className={detectConflicts(showtime) ? 'conflict-row' : ''}>
                   <td>
                     <div className="movie-info">
-                      <h4>{showtime.movie.title}</h4>
-                      <p>ID: {showtime.movie.id}</p>
+                      <h4>{showtime.movie?.title || 'Unknown Movie'}</h4>
+                      <p>ID: {showtime.movie?.id || 'N/A'}</p>
                     </div>
                   </td>
                   <td>
                     <div className="theater-info">
-                      <h4>{showtime.theater.name}</h4>
-                      <p>ID: {showtime.theater.id}</p>
+                      <h4>{showtime.theater?.name || 'Unknown Theater'}</h4>
+                      <p>ID: {showtime.theater?.id || 'N/A'}</p>
                     </div>
                   </td>
-                  <td>{formatDate(showtime.date)}</td>
-                  <td>{formatTime(showtime.time)}</td>
-                  <td>{formatCurrency(showtime.price)}</td>
+                  <td>{formatDate(showtime.date || '')}</td>
+                  <td>{formatTime(showtime.time || '')}</td>
+                  <td>{formatCurrency(showtime.price || 0)}</td>
                   <td>
-                    <span className={`status-badge ${showtime.status}`}>
+                    <span className={`status-badge ${showtime.status || 'unknown'}`}>
                       {showtime.status === 'active' ? 'Hoạt động' : 
                        showtime.status === 'inactive' ? 'Không hoạt động' : 'Đã hủy'}
                     </span>
@@ -300,19 +374,19 @@ export default function AdminShowtimes() {
       <div className="summary-section">
         <div className="summary-card">
           <h3>Tổng số suất chiếu</h3>
-          <p>{showtimes.length}</p>
+          <p>{Array.isArray(showtimes) ? showtimes.length : 0}</p>
         </div>
         <div className="summary-card">
           <h3>Đang hoạt động</h3>
-          <p>{showtimes.filter(s => s.status === 'active').length}</p>
+          <p>{Array.isArray(showtimes) ? showtimes.filter(s => s.status === 'active').length : 0}</p>
         </div>
         <div className="summary-card">
           <h3>Đã hủy</h3>
-          <p>{showtimes.filter(s => s.status === 'cancelled').length}</p>
+          <p>{Array.isArray(showtimes) ? showtimes.filter(s => s.status === 'cancelled').length : 0}</p>
         </div>
         <div className="summary-card">
           <h3>Xung đột</h3>
-          <p>{showtimes.filter(s => detectConflicts(s)).length}</p>
+          <p>{Array.isArray(showtimes) ? showtimes.filter(s => detectConflicts(s)).length : 0}</p>
         </div>
       </div>
     </div>

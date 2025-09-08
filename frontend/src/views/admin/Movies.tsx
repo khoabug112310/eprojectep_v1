@@ -6,12 +6,21 @@ import './Admin.css'
 interface Movie {
   id: number
   title: string
-  genre: string
+  synopsis?: string
+  genre: string[] | string // Allow both array and string formats from database
   duration: number
-  rating: number
-  status: 'active' | 'inactive'
+  average_rating?: number
+  rating?: number // Backward compatibility
+  status: 'active' | 'inactive' | 'coming_soon'
   poster_url?: string
+  trailer_url?: string
+  language?: string
+  age_rating?: string
+  release_date?: string
+  director?: string
+  cast?: any[] | string // Allow different cast formats from database
   created_at: string
+  updated_at?: string
 }
 
 export default function Movies() {
@@ -31,21 +40,40 @@ export default function Movies() {
     setError(null)
     
     try {
-      const response = await api.get('/movies')
+      const response = await api.get('/admin/movies')
       
-      // Ensure movies is always an array
-      const moviesData = response.data.data
-      if (Array.isArray(moviesData)) {
+      if (response.data?.success) {
+        // Handle different possible response structures
+        let moviesData: any[] = []
+        
+        // Check if response.data.data is paginated (Laravel paginated response)
+        if (response.data.data && typeof response.data.data === 'object' && response.data.data.data) {
+          // Paginated response: response.data.data.data contains the actual array
+          moviesData = Array.isArray(response.data.data.data) ? response.data.data.data : []
+          console.log('Admin Movies: Successfully loaded paginated API response', { 
+            totalItems: moviesData.length, 
+            currentPage: response.data.data.current_page,
+            totalPages: response.data.data.last_page,
+            totalRecords: response.data.data.total
+          })
+        } else if (Array.isArray(response.data.data)) {
+          // Direct array response
+          moviesData = response.data.data
+          console.log('Admin Movies: Successfully loaded direct array API response', { totalItems: moviesData.length })
+        } else {
+          console.warn('Admin Movies: API returned unexpected data structure:', typeof response.data.data, response.data.data)
+          moviesData = []
+        }
+        
         setMovies(moviesData)
       } else {
-        console.warn('API returned non-array movies data:', moviesData)
+        console.warn('Admin Movies: API response indicates failure:', response.data)
         setMovies([])
+        setError('API response indicates failure')
       }
-    } catch (err: unknown) {
-      console.error('Error fetching movies:', err)
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : 'Không thể tải danh sách phim'
+    } catch (err: any) {
+      console.error('Error fetching admin movies:', err)
+      const errorMessage = err.response?.data?.message || err.message || 'Không thể tải danh sách phim'
       setError(errorMessage)
       setMovies([]) // Ensure movies is an empty array on error
     } finally {
@@ -59,12 +87,10 @@ export default function Movies() {
     }
 
     try {
-      await api.delete(`/movies/${id}`)
+      await api.delete(`/admin/movies/${id}`)
       setMovies(movies.filter(movie => movie.id !== id))
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : 'Không thể xóa phim'
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || 'Không thể xóa phim'
       setError(errorMessage)
     }
   }
@@ -75,13 +101,11 @@ export default function Movies() {
     }
 
     try {
-      await Promise.all(selectedMovies.map(id => api.delete(`/movies/${id}`)))
+      await Promise.all(selectedMovies.map(id => api.delete(`/admin/movies/${id}`)))
       setMovies(movies.filter(movie => !selectedMovies.includes(movie.id)))
       setSelectedMovies([])
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : 'Không thể xóa phim'
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || 'Không thể xóa phim'
       setError(errorMessage)
     }
   }
@@ -106,8 +130,16 @@ export default function Movies() {
   const moviesArray = Array.isArray(movies) ? movies : []
   
   const filteredMovies = moviesArray.filter(movie => {
+    // Handle genre field - it might be array or string from database
+    let genreText = ''
+    if (Array.isArray(movie.genre)) {
+      genreText = movie.genre.join(', ')
+    } else if (typeof movie.genre === 'string') {
+      genreText = movie.genre
+    }
+    
     const matchesSearch = movie.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         movie.genre.toLowerCase().includes(searchTerm.toLowerCase())
+                         genreText.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || movie.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -244,12 +276,14 @@ export default function Movies() {
                     <div className="movie-title">{movie.title}</div>
                   </div>
                 </td>
-                <td>{movie.genre}</td>
+                <td>
+                  {Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre || 'N/A'}
+                </td>
                 <td>{formatDuration(movie.duration)}</td>
                 <td>
                   <div className="rating">
-                    <span className="stars">{'★'.repeat(Math.floor(movie.rating))}</span>
-                    <span className="rating-text">{movie.rating}/5</span>
+                    <span className="stars">{'★'.repeat(Math.floor(movie.average_rating || movie.rating || 0))}</span>
+                    <span className="rating-text">{(movie.average_rating || movie.rating || 0).toFixed(1)}/5</span>
                   </div>
                 </td>
                 <td>

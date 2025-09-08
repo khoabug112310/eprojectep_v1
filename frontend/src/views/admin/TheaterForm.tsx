@@ -60,7 +60,7 @@ export default function TheaterForm() {
   const fetchTheater = async () => {
     try {
       setLoading(true)
-      const response = await api.get(`/theaters/${id}`)
+      const response = await api.get(`/admin/theaters/${id}`)
       const theater = response.data.data
       setFormData({
         name: theater.name || '',
@@ -103,10 +103,10 @@ export default function TheaterForm() {
 
     try {
       if (isEditing) {
-        await api.put(`/theaters/${id}`, formData)
+        await api.put(`/admin/theaters/${id}`, formData)
         addToast('Rạp đã được cập nhật thành công', 'success')
       } else {
-        await api.post('/theaters', formData)
+        await api.post('/admin/theaters', formData)
         addToast('Rạp đã được tạo thành công', 'success')
       }
       navigate('/admin/theaters')

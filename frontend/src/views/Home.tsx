@@ -8,7 +8,7 @@ interface Movie {
   title: string
   poster_url?: string
   average_rating?: number
-  genre?: string
+  genre?: string[] // Will be normalized to array
   status?: 'now_showing' | 'coming_soon' | 'ended' | 'active'
   release_date?: string
   duration?: number
@@ -16,7 +16,7 @@ interface Movie {
   synopsis?: string
   trailer_url?: string
   director?: string
-  cast?: string[] | string | any // Allow different cast formats from database
+  cast?: string[] // Will be normalized to array
 }
 
 export default function Home() {
@@ -65,6 +65,27 @@ export default function Home() {
   }, [theaters])
 
   // Data normalization helpers
+  const normalizeGenre = useCallback((genre: any): string[] => {
+    if (Array.isArray(genre)) {
+      return genre.filter(item => typeof item === 'string')
+    }
+    if (typeof genre === 'string') {
+      try {
+        // Try to parse JSON string
+        const parsed = JSON.parse(genre)
+        if (Array.isArray(parsed)) {
+          return parsed.filter(item => typeof item === 'string')
+        }
+        // If it's a comma-separated string
+        return genre.split(',').map(s => s.trim()).filter(Boolean)
+      } catch {
+        // If JSON parsing fails, treat as comma-separated string
+        return genre.split(',').map(s => s.trim()).filter(Boolean)
+      }
+    }
+    return []
+  }, [])
+
   const normalizeCast = useCallback((cast: any): string[] => {
     if (Array.isArray(cast)) {
       return cast.filter(item => typeof item === 'string')
@@ -89,9 +110,10 @@ export default function Home() {
   const normalizeMovieData = useCallback((movie: any): Movie => {
     return {
       ...movie,
+      genre: normalizeGenre(movie.genre),
       cast: normalizeCast(movie.cast)
     }
-  }, [normalizeCast])
+  }, [normalizeGenre, normalizeCast])
 
   // Default fallback poster URL
   const defaultPosterUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9Ijc1MCIgdmlld0JveD0iMCAwIDUwMCA3NTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iNzUwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNTAgMzAwQzI3NS4yMjkgMzAwIDI5NSAyODAuMjI5IDI5NSAyNTVDMjk1IDIyOS43NzEgMjc1LjIyOSAyMTAgMjUwIDIxMEMyMjQuNzcxIDIxMCAyMDUgMjI5Ljc3MSAyMDUgMjU1QzIwNSAyODAuMjI5IDIyNC43NzEgMzAwIDI1MCAzMDBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yNTAgMzUwQzI3NS4yMjkgMzUwIDI5NSAzMzAuMjI5IDI5NSAzMDVDMjk1IDI3OS43NzEgMjc1LjIyOSAyNjAgMjUwIDI2MEMyMjQuNzcxIDI2MCAyMDUgMjc5Ljc3MSAyMDUgMzA1QzIwNSAzMzAuMjI5IDIyNC43NzEgMzUwIDI1MCAzNTBaIiBmaWxsPSIjOUI5QkEwIi8+Cjx0ZXh0IHg9IjI1MCIgeT0iNDAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOUI5QkEwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K'
@@ -203,7 +225,7 @@ export default function Home() {
           title: "Avatar: The Way of Water",
           poster_url: "https://images.moviesanywhere.com/bf6b9c450e9343fe93ad76efd7c6b6b4/e2956d37-3fa0-4e42-af71-1a9f4a3b9b88.webp",
           average_rating: 4.9,
-          genre: "Khoa Học Viễn Tưởng, Phiêu Lưu",
+          genre: ["Khoa Học Viễn Tưởng", "Phiêu Lưu"],
           status: "now_showing",
           duration: 192,
           age_rating: "T13",
@@ -215,7 +237,7 @@ export default function Home() {
           title: "Black Panther: Wakanda Forever",
           poster_url: "https://terrigen-cdn-dev.marvel.com/content/prod/1x/blackpantherff_lob_crd_03.jpg",
           average_rating: 4.7,
-          genre: "Hành Động, Siêu Anh Hùng",
+          genre: ["Hành Động", "Siêu Anh Hùng"],
           status: "now_showing",
           duration: 161,
           cast: ["Letitia Wright", "Angela Bassett", "Lupita Nyong'o"]
@@ -736,9 +758,13 @@ export default function Home() {
                       <div className="movie-meta">
                         {movie.genre && (
                           <div className="movie-genres">
-                            {movie.genre.split(', ').map((g, index) => (
-                              <span key={index} className="genre-tag">{g}</span>
-                            ))}
+                            {Array.isArray(movie.genre) && movie.genre.length > 0 ? (
+                              movie.genre.map((g, index) => (
+                                <span key={index} className="genre-tag">{g}</span>
+                              ))
+                            ) : (
+                              <span className="genre-tag">Chưa có thể loại</span>
+                            )}
                           </div>
                         )}
                         {movie.duration && (
@@ -813,9 +839,13 @@ export default function Home() {
                       </div>
                     )}
                     <div className="coming-soon-genres">
-                      {movie.genre && movie.genre.split(', ').slice(0, 2).map((g, index) => (
-                        <span key={index} className="genre-tag">{g}</span>
-                      ))}
+                      {Array.isArray(movie.genre) && movie.genre.length > 0 ? (
+                        movie.genre.slice(0, 2).map((g, index) => (
+                          <span key={index} className="genre-tag">{g}</span>
+                        ))
+                      ) : (
+                        <span className="genre-tag">Chưa có thể loại</span>
+                      )}
                     </div>
                   </div>
                 </div>

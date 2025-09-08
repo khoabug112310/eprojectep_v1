@@ -53,24 +53,30 @@ export default function MovieForm() {
   const fetchMovie = async () => {
     try {
       setLoading(true)
-      const response = await api.get(`/movies/${id}`)
-      const movie = response.data.data
-      setFormData({
-        title: movie.title || '',
-        synopsis: movie.synopsis || '',
-        genre: movie.genre || '',
-        language: movie.language || '',
-        duration: movie.duration || 0,
-        release_date: movie.release_date ? movie.release_date.split('T')[0] : '',
-        director: movie.director || '',
-        cast: movie.cast || '',
-        rating: movie.rating || 'PG',
-        poster_url: movie.poster_url || '',
-        trailer_url: movie.trailer_url || '',
-        status: movie.status || 'active'
-      })
-    } catch (error) {
-      addToast('Không thể tải thông tin phim', 'error')
+      const response = await api.get(`/admin/movies/${id}`)
+      
+      if (response.data?.success) {
+        const movie = response.data.data
+        setFormData({
+          title: movie.title || '',
+          synopsis: movie.synopsis || '',
+          genre: Array.isArray(movie.genre) ? movie.genre.join(', ') : (movie.genre || ''),
+          language: movie.language || '',
+          duration: movie.duration || 0,
+          release_date: movie.release_date ? movie.release_date.split('T')[0] : '',
+          director: movie.director || '',
+          cast: Array.isArray(movie.cast) ? movie.cast.map((c: any) => typeof c === 'object' ? c.name : c).join(', ') : (movie.cast || ''),
+          rating: movie.age_rating || movie.rating || 'PG',
+          poster_url: movie.poster_url || '',
+          trailer_url: movie.trailer_url || '',
+          status: movie.status || 'active'
+        })
+      } else {
+        addToast('Không thể tải thông tin phim - API response không hợp lệ', 'error')
+      }
+    } catch (error: any) {
+      console.error('Error fetching movie:', error)
+      addToast(error.response?.data?.message || 'Không thể tải thông tin phim', 'error')
     } finally {
       setLoading(false)
     }
@@ -89,16 +95,37 @@ export default function MovieForm() {
     setSaving(true)
 
     try {
+      // Prepare data for submission - backend expects strings for genre/cast
+      const submitData = {
+        ...formData,
+        // Convert genre array to comma-separated string if it's an array
+        genre: Array.isArray(formData.genre) ? formData.genre.join(',') : formData.genre,
+        // Convert cast array to comma-separated string if it's an array  
+        cast: Array.isArray(formData.cast) ? formData.cast.join(',') : formData.cast,
+        age_rating: formData.rating // Use age_rating field as expected by backend
+      }
+      
+      console.log('Submitting movie data:', submitData)
+      
       if (isEditing) {
-        await api.put(`/movies/${id}`, formData)
+        await api.put(`/admin/movies/${id}`, submitData)
         addToast('Phim đã được cập nhật thành công', 'success')
       } else {
-        await api.post('/movies', formData)
+        await api.post('/admin/movies', submitData)
         addToast('Phim đã được tạo thành công', 'success')
       }
       navigate('/admin/movies')
     } catch (error: any) {
-      addToast(error.response?.data?.message || 'Có lỗi xảy ra', 'error')
+      console.error('Error saving movie:', error)
+      console.error('Error response:', error.response?.data)
+      
+      // Extract validation errors if available
+      if (error.response?.data?.errors) {
+        const errorMessages = Object.values(error.response.data.errors).flat().join(', ')
+        addToast(`Validation errors: ${errorMessages}`, 'error')
+      } else {
+        addToast(error.response?.data?.message || 'Có lỗi xảy ra', 'error')
+      }
     } finally {
       setSaving(false)
     }
