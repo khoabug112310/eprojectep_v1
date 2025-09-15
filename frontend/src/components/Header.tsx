@@ -49,98 +49,104 @@ export default function Header() {
   return (
     <header className={`main-header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="header-container">
-        {/* Logo */}
-        <Link to="/" className="header-logo" onClick={closeMenu}>
-          <span className="logo-icon">🎬</span>
-          <span className="logo-text">CineBook</span>
-        </Link>
+        {/* Single Row - Logo, Search, and Auth */}
+        <div className="header-main-row">
+          {/* Logo on the left */}
+          <Link to="/" className="header-logo" onClick={closeMenu}>
+            <span className="logo-icon">🎬</span>
+            <span className="logo-text">CineBook</span>
+          </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="header-nav desktop-nav">
-          <Link 
-            to="/" 
-            className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
-          >
-            🏠 Trang chủ
-          </Link>
-          <Link 
-            to="/movies" 
-            className={`nav-link ${location.pathname === '/movies' ? 'active' : ''}`}
-          >
-            🎬 Phim
-          </Link>
-          <Link 
-            to="/showtimes" 
-            className={`nav-link ${location.pathname === '/showtimes' ? 'active' : ''}`}
-          >
-            📅 Lịch chiếu
-          </Link>
-          <Link 
-            to="/theaters" 
-            className={`nav-link ${location.pathname === '/theaters' ? 'active' : ''}`}
-          >
-            🏢 Rạp chiếu
-          </Link>
-          <Link 
-            to="/about" 
-            className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`}
-          >
-            ℹ️ Về chúng tôi
-          </Link>
-        </nav>
+          {/* Search bar in the center */}
+          <div className="header-search">
+            <input 
+              type="text" 
+              placeholder="Tìm kiếm phim, rạp chiếu..." 
+              className="search-input"
+            />
+            <button className="search-button">
+              🔍
+            </button>
+          </div>
 
-        {/* Right side actions */}
-        <div className="header-actions">
-          {user ? (
-            <div className="user-menu">
-              <div className="user-info">
-                <span className="user-avatar">👤</span>
-                <span className="user-name">{user.name}</span>
+          {/* Auth buttons on the right */}
+          <div className="header-actions">
+            {user ? (
+              <div className="user-menu">
+                <div className="user-info">
+                  <span className="user-avatar">👤</span>
+                  <span className="user-name">{user.name}</span>
+                </div>
+                <div className="user-dropdown">
+                  <Link to="/profile" className="dropdown-item" onClick={closeMenu}>
+                    👤 Hồ sơ
+                  </Link>
+                  <Link to="/my-bookings" className="dropdown-item" onClick={closeMenu}>
+                    🎫 Vé của tôi
+                  </Link>
+                  <button onClick={handleLogout} className="dropdown-item logout-btn">
+                    🚪 Đăng xuất
+                  </button>
+                </div>
               </div>
-              <div className="user-dropdown">
-                <Link to="/profile" className="dropdown-item" onClick={closeMenu}>
-                  👤 Hồ sơ
+            ) : (
+              <div className="auth-buttons">
+                <Link to="/auth/login" className="btn btn-outline" onClick={closeMenu}>
+                  Đăng nhập
                 </Link>
-                <Link to="/my-bookings" className="dropdown-item" onClick={closeMenu}>
-                  🎫 Vé của tôi
-                </Link>
-                <button onClick={handleLogout} className="dropdown-item logout-btn">
-                  🚪 Đăng xuất
-                </button>
               </div>
-            </div>
-          ) : (
-            <div className="auth-buttons">
-              <Link to="/auth/login" className="btn btn-outline" onClick={closeMenu}>
-                Đăng nhập
-              </Link>
-              <Link to="/auth/register" className="btn btn-primary" onClick={closeMenu}>
-                Đăng ký
-              </Link>
-            </div>
-          )}
+            )}
 
-          {/* Mobile menu toggle */}
-          <button 
-            className="mobile-menu-toggle"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle mobile menu"
-          >
-            <span className={`hamburger ${isMenuOpen ? 'active' : ''}`}>
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
-          </button>
+            {/* Mobile menu toggle */}
+            <button 
+              className="mobile-menu-toggle"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle mobile menu"
+            >
+              <span className={`hamburger ${isMenuOpen ? 'active' : ''}`}>
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation below */}
+        <div className="header-nav-row">
+          {/* Desktop Navigation */}
+          <nav className="header-nav desktop-nav">
+            <Link 
+              to="/movies" 
+              className={`nav-link ${location.pathname === '/movies' ? 'active' : ''}`}
+            >
+              🎬 Phim
+            </Link>
+            <Link 
+              to="/showtimes" 
+              className={`nav-link ${location.pathname === '/showtimes' ? 'active' : ''}`}
+            >
+              📅 Lịch chiếu
+            </Link>
+            <Link 
+              to="/theaters" 
+              className={`nav-link ${location.pathname === '/theaters' ? 'active' : ''}`}
+            >
+              🏢 Rạp chiếu
+            </Link>
+            <Link 
+              to="/about" 
+              className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`}
+            >
+              ℹ️ Về chúng tôi
+            </Link>
+          </nav>
         </div>
       </div>
 
       {/* Mobile Navigation */}
       <nav className={`mobile-nav ${isMenuOpen ? 'open' : ''}`}>
         <div className="mobile-nav-content">
-          <Link to="/" className="mobile-nav-link" onClick={closeMenu}>
-            🏠 Trang chủ
-          </Link>
           <Link to="/movies" className="mobile-nav-link" onClick={closeMenu}>
             🎬 Phim
           </Link>
@@ -173,9 +179,6 @@ export default function Header() {
             <div className="mobile-auth-buttons">
               <Link to="/auth/login" className="mobile-auth-btn" onClick={closeMenu}>
                 Đăng nhập
-              </Link>
-              <Link to="/auth/register" className="mobile-auth-btn primary" onClick={closeMenu}>
-                Đăng ký
               </Link>
             </div>
           )}

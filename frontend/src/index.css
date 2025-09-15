@@ -77,10 +77,14 @@ body {
   font-size: var(--font-size-base);
   line-height: 1.6;
   color: var(--gray-800);
-  background-color: var(--gray-50);
+  background-color: #0a0a0a; /* Dark background to contrast with the content */
+  background-image: radial-gradient(circle at 10% 20%, rgba(255, 215, 0, 0.05) 0%, transparent 20%),
+                    radial-gradient(circle at 90% 80%, rgba(229, 9, 20, 0.05) 0%, transparent 20%);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  min-height: 100vh;
+  padding: 20px 0; /* Add padding to the top and bottom */
 }
 
 /* Typography */
