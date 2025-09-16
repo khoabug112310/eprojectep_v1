@@ -72,19 +72,83 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Custom styles for CineBook */
 body {
-  font-family: var(--font-family);
-  font-size: var(--font-size-base);
-  line-height: 1.6;
-  color: var(--gray-800);
-  background-color: #0a0a0a; /* Dark background to contrast with the content */
-  background-image: radial-gradient(circle at 10% 20%, rgba(255, 215, 0, 0.05) 0%, transparent 20%),
-                    radial-gradient(circle at 90% 80%, rgba(229, 9, 20, 0.05) 0%, transparent 20%);
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  min-height: 100vh;
-  padding: 20px 0; /* Add padding to the top and bottom */
+  background-color: #141414;
+  color: #FFFFFF;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2F2F2F;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FFD700;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #F4C430;
+}
+
+/* Form validation styles */
+.is-invalid {
+  border-color: #FF3B30 !important;
+}
+
+.invalid-feedback {
+  color: #FF3B30;
+  font-size: 0.875em;
+}
+
+/* Button transitions */
+.btn {
+  transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+/* Card hover effects */
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .hide-mobile {
+    display: none;
+  }
+  
+  .text-center-mobile {
+    text-align: center;
+  }
 }
 
 /* Typography */
