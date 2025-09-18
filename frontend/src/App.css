@@ -892,6 +892,85 @@ body {
   background-color: rgba(255, 215, 0, 0.05);
 }
 
+/* Home Page Specific Styles */
+.hero-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-slide {
+  position: relative;
+}
+
+.hero-content h1 {
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.movie-card {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.movie-card:hover {
+  transform: translateY(-10px);
+  border-color: var(--primary-gold);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+.promotions-section {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  background-color: rgba(0,0,0,0.5);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+}
+
+.carousel-indicators button {
+  background-color: var(--primary-white);
+  opacity: 0.5;
+}
+
+.carousel-indicators button.active {
+  background-color: var(--primary-gold);
+  opacity: 1;
+}
+
+/* Additional Home Page Styles */
+.quick-booking-card {
+  background: linear-gradient(135deg, var(--secondary-black) 0%, #1a1a1a 100%);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: var(--border-radius-lg);
+}
+
+.how-it-works-icon {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--secondary-black);
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  border: 2px solid var(--primary-gold);
+}
+
+.testimonial-card {
+  background-color: var(--secondary-black);
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.testimonial-card:hover {
+  border-color: var(--primary-gold);
+  transform: translateY(-5px);
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .hide-mobile {
@@ -900,5 +979,22 @@ body {
   
   .text-center-mobile {
     text-align: center;
+  }
+  
+  .hero-content h1 {
+    font-size: 2rem;
+  }
+  
+  .movie-card {
+    margin-bottom: 1rem;
+  }
+  
+  .quick-booking-card .col-md-3 {
+    margin-bottom: 1rem;
+  }
+  
+  .how-it-works-icon {
+    width: 60px;
+    height: 60px;
   }
 }
