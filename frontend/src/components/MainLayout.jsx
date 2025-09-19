@@ -43,9 +43,8 @@ const MainLayout = () => {
         <Navbar bg="dark" variant="dark" expand="lg" className="py-2">
           <Container>
             <Navbar.Brand as={Link} to="/" className="fw-bold">
-              🎬 CineBook
+              <img src="./image/Logo-Cinebook.png" alt="CineBook" width="30" height="30" className="d-inline-block align-top" />
             </Navbar.Brand>
-            
             <Navbar.Toggle aria-controls="main-navbar" />
             <Navbar.Collapse id="main-navbar">
               {/* Navigation items moved to the left, next to logo */}
