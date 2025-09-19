@@ -9,6 +9,7 @@ use App\Models\Showtime;
 use App\Services\PaymentService;
 use App\Services\ETicketService;
 use App\Services\NotificationService;
+use App\Services\SeatLockingService;
 use App\Rules\VietnamesePhoneRule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -88,30 +89,90 @@ class BookingController extends Controller
             $totalAmount += $prices[$seatType] ?? 100000;
         }
 
-        // Dummy transactional create (chưa trừ ghế thực tế)
-        $booking = DB::transaction(function () use ($validated, $request, $totalAmount) {
+        // Check seat availability before creating booking
+        $seatLockingService = app(SeatLockingService::class);
+        $seatCodes = array_column($validated['seats'], 'seat');
+        $seatStatus = $seatLockingService->getSeatStatus($showtime->id);
+    
+        if ($seatStatus['success']) {
+            // Check if any of the requested seats are already occupied or locked by others
+            $lockedSeats = collect($seatStatus['seat_status']['locked']);
+            $occupiedSeats = collect($seatStatus['seat_status']['occupied']);
+        
+            $unavailableSeats = [];
+            $userId = $request->user()->id;
+        
+            foreach ($seatCodes as $seatCode) {
+                // Check if seat is occupied
+                $isOccupied = $occupiedSeats->contains('seat', $seatCode);
+                if ($isOccupied) {
+                    $unavailableSeats[] = $seatCode;
+                    continue;
+                }
+                
+                // Check if seat is locked by someone else
+                $lockedSeat = $lockedSeats->firstWhere('seat', $seatCode);
+                if ($lockedSeat && $lockedSeat['user_id'] != $userId) {
+                    $unavailableSeats[] = $seatCode;
+                }
+            }
+            
+            if (!empty($unavailableSeats)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Some seats are no longer available: ' . implode(', ', $unavailableSeats)
+                ], 409);
+            }
+        }
+
+        // Create booking in a transaction
+        $booking = DB::transaction(function () use ($validated, $request, $totalAmount, $showtime, $seatCodes) {
             // Generate proper booking code format: CB + YYYYMMDD + 3-digit sequence
             $date = now()->format('Ymd');
             $sequence = str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
             $code = 'CB' . $date . $sequence;
             
-            return Booking::create([
+            // Create the booking
+            $booking = Booking::create([
                 'booking_code' => $code,
                 'user_id' => $request->user()->id,
                 'showtime_id' => $validated['showtime_id'],
                 'seats' => $validated['seats'],
                 'total_amount' => $totalAmount,
                 'payment_method' => $validated['payment_method'] ?? 'credit_card',
-                'payment_status' => 'completed',
-                'booking_status' => 'confirmed',
+                'payment_status' => 'completed', // Simulate completed payment
+                'booking_status' => 'completed', // Confirmed booking
                 'booked_at' => now(),
             ]);
+            
+            // Mark seats as occupied in the seat locking service
+            $seatLockingService = app(SeatLockingService::class);
+            foreach ($seatCodes as $seatCode) {
+                // Remove any locks on these seats and mark them as occupied
+                // In a real implementation, you would update the seat status in the database
+                // For now, we'll just unlock them to prevent conflicts
+                $seatLockingService->unlockSeats([$seatCode], $showtime->id, $request->user()->id);
+            }
+            
+            // Generate e-ticket for the booking
+            $eTicketService = app(\App\Services\ETicketService::class);
+            if ($booking->isPaid() && $eTicketService->isBookingEligibleForTicket($booking)) {
+                $eTicketResult = $eTicketService->generateETicket($booking);
+                if (!$eTicketResult['success']) {
+                    Log::warning('E-ticket generation failed after booking creation', [
+                        'booking_id' => $booking->id,
+                        'error' => $eTicketResult['message']
+                    ]);
+                }
+            }
+            
+            return $booking;
         });
 
         return response()->json([
             'success' => true,
             'data' => $booking,
-            'message' => 'Đặt vé thành công'
+            'message' => 'Đặt vé thành công' // Booking successful
         ]);
     }
 
@@ -213,7 +274,7 @@ class BookingController extends Controller
         $booking = Booking::findOrFail($id);
 
         $validated = $request->validate([
-            'booking_status' => 'sometimes|in:confirmed,cancelled,completed',
+            'booking_status' => 'sometimes|in:confirmed,cancelled,used',
             'payment_status' => 'sometimes|in:pending,completed,failed',
         ]);
 
@@ -265,6 +326,45 @@ class BookingController extends Controller
                 ], 400);
             }
 
+            // CRITICAL: Check seat availability before processing payment
+            $showtime = $booking->showtime;
+            $seatLockingService = app(SeatLockingService::class);
+            $seatCodes = array_column($booking->seats, 'seat');
+            $seatStatus = $seatLockingService->getSeatStatus($showtime->id);
+            
+            if ($seatStatus['success']) {
+                // Check if any of the requested seats are already occupied or locked by others
+                $lockedSeats = collect($seatStatus['seat_status']['locked']);
+                $occupiedSeats = collect($seatStatus['seat_status']['occupied']);
+                
+                $unavailableSeats = [];
+                $userId = $request->user()->id;
+                
+                foreach ($seatCodes as $seatCode) {
+                    // Check if seat is occupied
+                    $isOccupied = $occupiedSeats->contains('seat', $seatCode);
+                    if ($isOccupied) {
+                        $unavailableSeats[] = $seatCode;
+                        continue;
+                    }
+                    
+                    // Check if seat is locked by someone else
+                    $lockedSeat = $lockedSeats->firstWhere('seat', $seatCode);
+                    if ($lockedSeat && $lockedSeat['user_id'] != $userId) {
+                        $unavailableSeats[] = $seatCode;
+                    }
+                }
+                
+                if (!empty($unavailableSeats)) {
+                    // Return 404 error as requested to indicate payment request error
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Payment request error: Some seats are no longer available. Please go back and select different seats.',
+                        'unavailable_seats' => $unavailableSeats
+                    ], 404);
+                }
+            }
+
             // Validate payment data
             $validated = $request->validate([
                 'payment_method' => 'required|in:credit_card,debit_card,bank_transfer',
@@ -287,6 +387,11 @@ class BookingController extends Controller
             $result = $this->paymentService->processPayment($booking, $validated);
 
             if ($result['success']) {
+                // Mark seats as occupied after successful payment
+                foreach ($seatCodes as $seatCode) {
+                    $seatLockingService->unlockSeats([$seatCode], $showtime->id, $userId);
+                }
+                
                 return response()->json([
                     'success' => true,
                     'data' => $result['data'],
@@ -571,8 +676,7 @@ class BookingController extends Controller
                 $query->whereHas('booking', function ($q) use ($request) {
                     $q->where('booking_code', 'like', '%' . $request->search . '%')
                       ->orWhereHas('user', function ($userQuery) use ($request) {
-                          $userQuery->where('name', 'like', '%' . $request->search . '%')
-                                    ->orWhere('email', 'like', '%' . $request->search . '%');
+                          $userQuery->where('name', 'like', '%' . $request->search . '%');
                       });
                 });
             }

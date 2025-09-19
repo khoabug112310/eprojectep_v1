@@ -70,6 +70,9 @@ export const showtimeAPI = {
   getById: (id) => api.get(`/showtimes/${id}`),
   getSeats: (id) => api.get(`/showtimes/${id}/seats`),
   lockSeats: (id, data) => api.post(`/showtimes/${id}/seats/lock`, data),
+  unlockSeats: (id, data) => api.post(`/showtimes/${id}/seats/unlock`, data),
+  extendLock: (id, data) => api.post(`/showtimes/${id}/seats/extend`, data),
+  getSeatStatus: (id) => api.get(`/showtimes/${id}/seats/status`),
 };
 
 // Booking endpoints
@@ -78,6 +81,10 @@ export const bookingAPI = {
   getUserBookings: () => api.get('/user/bookings'),
   getById: (id) => api.get(`/bookings/${id}`),
   cancel: (id) => api.put(`/bookings/${id}/cancel`),
+  // Add method to get ticket data
+  getTicket: (id) => api.get(`/bookings/${id}/ticket`),
+  // Add process payment method
+  processPayment: (id, data) => api.post(`/bookings/${id}/payment`, data),
 };
 
 // Review endpoints

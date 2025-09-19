@@ -78,7 +78,7 @@ const MyBookings = () => {
                   
                   <div className="d-flex justify-content-between align-items-center">
                     <Badge bg={
-                      booking.booking_status === 'confirmed' ? 'success' :
+                      booking.booking_status === 'confirmed' || booking.booking_status === 'completed' ? 'success' :
                       booking.booking_status === 'cancelled' ? 'danger' : 'warning'
                     }>
                       {booking.booking_status?.toUpperCase() || 'CONFIRMED'}

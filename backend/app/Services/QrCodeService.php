@@ -48,8 +48,8 @@ class QrCodeService
             // Save QR code to storage (public disk)
             Storage::disk('public')->put($fileName, $qrCodeImage);
 
-            // Get public URL
-            $qrCodeUrl = Storage::disk('public')->url($fileName);
+            // Get public URL - fallback to direct file access if storage link is not available
+            $qrCodeUrl = $this->getQrCodeUrl($fileName);
 
             return [
                 'success' => true,
@@ -111,7 +111,7 @@ class QrCodeService
                 $fileName = 'qr_codes/custom_' . Str::random(12) . '.' . $options['format'];
                 Storage::disk('public')->put($fileName, $qrCode);
                 
-                $result['data']['qr_code_url'] = Storage::disk('public')->url($fileName);
+                $result['data']['qr_code_url'] = $this->getQrCodeUrl($fileName);
                 $result['data']['qr_code_path'] = $fileName;
             }
 
@@ -207,7 +207,7 @@ class QrCodeService
     }
 
     /**
-     * Get QR code file URL
+     * Get QR code file URL with multiple fallback methods
      *
      * @param string $filePath
      * @return string|null
@@ -215,12 +215,32 @@ class QrCodeService
     public function getQrCodeUrl(string $filePath): ?string
     {
         try {
-            if (Storage::disk('public')->exists($filePath)) {
-                return Storage::disk('public')->url($filePath);
+            // First check if file exists
+            if (!Storage::disk('public')->exists($filePath)) {
+                return null;
             }
-            return null;
+
+            // Try the standard Laravel method first
+            $url = Storage::disk('public')->url($filePath);
+            
+            // If the URL looks correct (contains /storage/), return it
+            if (strpos($url, '/storage/') !== false) {
+                return $url;
+            }
+            
+            // If we're here, the storage link might not be working
+            // Try to construct URL manually using APP_URL
+            $appUrl = config('app.url', 'http://localhost');
+            return rtrim($appUrl, '/') . '/storage/' . $filePath;
+            
         } catch (Exception $e) {
-            return null;
+            // Final fallback - try to construct URL manually
+            try {
+                $appUrl = config('app.url', 'http://localhost');
+                return rtrim($appUrl, '/') . '/storage/' . $filePath;
+            } catch (Exception $fallbackException) {
+                return null;
+            }
         }
     }
 }

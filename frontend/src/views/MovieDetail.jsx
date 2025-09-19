@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Button, Card, Row, Col, Badge, Modal } from 'react-bootstrap';
+import { Button, Card, Row, Col, Badge, Modal, Alert } from 'react-bootstrap';
 import { movieAPI } from '../services/api';
 
 // Function to normalize genre data
@@ -81,6 +81,8 @@ const MovieDetail = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [nowShowingMovies, setNowShowingMovies] = useState([]);
+  const [showAd, setShowAd] = useState(true);
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
@@ -127,6 +129,39 @@ const MovieDetail = () => {
       fetchMovieDetails();
     } else {
       setLoading(false);
+    }
+  }, [id]);
+
+  // Fetch now showing movies
+  useEffect(() => {
+    const fetchNowShowingMovies = async () => {
+      try {
+        const response = await movieAPI.getAll({ status: 'active' });
+        let moviesData = [];
+        
+        if (response.data?.data?.data) {
+          // Paginated response
+          moviesData = response.data.data.data;
+        } else if (response.data?.data) {
+          // Non-paginated response
+          moviesData = response.data.data;
+        } else {
+          moviesData = response.data || [];
+        }
+        
+        // Filter out the current movie and limit to 4 movies
+        const filteredMovies = moviesData
+          .filter(movieItem => movieItem.id !== parseInt(id))
+          .slice(0, 4);
+          
+        setNowShowingMovies(filteredMovies);
+      } catch (error) {
+        console.error('Error fetching now showing movies:', error);
+      }
+    };
+
+    if (id) {
+      fetchNowShowingMovies();
     }
   }, [id]);
 
@@ -204,8 +239,8 @@ const MovieDetail = () => {
             className="img-fluid rounded"
             style={{ 
               width: '100%', 
-              height: '50vh', // Half of viewport height
-              objectFit: 'cover' // Maintain aspect ratio while filling the container
+              height: '50vh',
+              objectFit: 'cover'
             }}
           />
           <div 
@@ -255,14 +290,24 @@ const MovieDetail = () => {
 
       <Row>
         <Col md={4}>
-          <Card>
+          <Card 
+            className="shadow"
+            style={{ 
+              marginTop: '-12.5vh',
+              zIndex: 10,
+              position: 'relative',
+              marginLeft: '15px',
+              marginRight: '15px',
+              marginBottom: '30px'
+            }}
+          >
             <Card.Img 
               variant="top" 
               src={movie.poster_url || "https://placehold.co/300x450/1f1f1f/ffd700?text=Movie+Poster"} 
               style={{ 
                 cursor: 'pointer',
-                height: '50vh', // Half of viewport height
-                objectFit: 'cover' // Maintain aspect ratio while filling the container
+                height: '50vh',
+                objectFit: 'cover'
               }}
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             />
@@ -304,68 +349,161 @@ const MovieDetail = () => {
         </Col>
       </Row>
 
-      {/* Movie Synopsis moved below poster */}
+      {/* Movie Content and Now Showing Section */}
       <Row className="mt-4">
-        <Col md={12}>
+        <Col md={8}>
+          {/* Movie Synopsis */}
           <h3 className="text-gold mb-3">Description</h3>
           <p className="lead">{movie.synopsis}</p>
+
+          <hr className="my-5" />
+
+          {/* Showtimes */}
+          <h3 className="text-gold mb-4">Showtimes</h3>
+          {showtimes.length > 0 ? (
+            <div>
+              {/* Date selection buttons */}
+              <div className="d-flex flex-wrap mb-4">
+                {sortedDates.map(date => (
+                  <Button
+                    key={date}
+                    variant={selectedDate === date ? "primary" : "outline-primary"}
+                    className="me-2 mb-2"
+                    onClick={() => setSelectedDate(date)}
+                  >
+                    {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Show theaters and times only for the selected date */}
+              {selectedDate && groupedShowtimes[selectedDate] && (
+                <Card className="mb-4">
+                  <Card.Header className="bg-dark text-gold">
+                    <h5 className="mb-0">
+                      {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </h5>
+                  </Card.Header>
+                  <Card.Body>
+                    {Object.entries(groupedShowtimes[selectedDate]).map(([theaterId, theaterData]) => (
+                      <div key={theaterId} className="mb-3 pb-3 border-bottom border-secondary">
+                        <h6 className="text-gold">{theaterData.name}</h6>
+                        <div>
+                          {theaterData.showtimes.map(showtime => (
+                            <Button 
+                              key={showtime.id}
+                              as={Link}
+                              to={`/booking/seats/${showtime.id}`}
+                              variant="outline-primary"
+                              size="sm"
+                              className="me-2 mb-2"
+                            >
+                              {showtime.show_time}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </Card.Body>
+                </Card>
+              )}
+            </div>
+          ) : (
+            <p>No showtimes available for this movie.</p>
+          )}
+        </Col>
+        
+        {/* Now Showing Movies Column */}
+        <Col md={4}>
+          <h3 className="text-gold mb-3">Now Showing</h3>
+          {nowShowingMovies.length > 0 ? (
+            <div>
+              {nowShowingMovies.map((movieItem) => (
+                <Card 
+                  key={movieItem.id} 
+                  className="mb-3 shadow-sm"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/movies/${movieItem.id}`)}
+                >
+                  <Row className="g-0">
+                    <Col md={4}>
+                      <Card.Img 
+                        src={movieItem.poster_url || "https://placehold.co/100x150/1f1f1f/ffd700?text=Movie"} 
+                        alt={movieItem.title}
+                        style={{ 
+                          height: '100px',
+                          width: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    </Col>
+                    <Col md={8}>
+                      <Card.Body className="p-2">
+                        <Card.Title 
+                          className="mb-1" 
+                          style={{ 
+                            fontSize: '0.9rem',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {movieItem.title}
+                        </Card.Title>
+                        <div className="d-flex justify-content-between align-items-center">
+                          <small className="text-muted">
+                            {movieItem.duration} min
+                          </small>
+                          <small className="text-gold">
+                            ⭐ {movieItem.average_rating || 'N/A'}
+                          </small>
+                        </div>
+                      </Card.Body>
+                    </Col>
+                  </Row>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted">No other movies currently showing.</p>
+          )}
+
+          {/* Advertisement Section */}
+          {showAd && (
+            <Alert 
+              variant="dark" 
+              className="mt-4 position-relative"
+              style={{ 
+                border: '1px solid #ffd700',
+                backgroundColor: '#1f1f1f'
+              }}
+            >
+              <div 
+                className="position-absolute"
+                style={{ 
+                  top: '5px', 
+                  right: '10px', 
+                  cursor: 'pointer',
+                  fontSize: '1.2rem',
+                  color: '#ffd700'
+                }}
+                onClick={() => setShowAd(false)}
+              >
+                &times;
+              </div>
+              <Alert.Heading className="text-gold">Special Offer!</Alert.Heading>
+              <p>Get 20% off on tickets for selected movies this week!</p>
+              <div className="d-flex justify-content-center">
+                <Button 
+                  variant="outline-warning" 
+                  size="sm"
+                  onClick={() => navigate('/movies')}
+                >
+                  Book Now
+                </Button>
+              </div>
+            </Alert>
+          )}
         </Col>
       </Row>
-
-      <hr className="my-5" />
-
-      <h3 className="text-gold mb-4">Showtimes</h3>
-      {showtimes.length > 0 ? (
-        <div>
-          {/* Date selection buttons */}
-          <div className="d-flex flex-wrap mb-4">
-            {sortedDates.map(date => (
-              <Button
-                key={date}
-                variant={selectedDate === date ? "primary" : "outline-primary"}
-                className="me-2 mb-2"
-                onClick={() => setSelectedDate(date)}
-              >
-                {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-              </Button>
-            ))}
-          </div>
-
-          {/* Show theaters and times only for the selected date */}
-          {selectedDate && groupedShowtimes[selectedDate] && (
-            <Card className="mb-4">
-              <Card.Header className="bg-dark text-gold">
-                <h5 className="mb-0">
-                  {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </h5>
-              </Card.Header>
-              <Card.Body>
-                {Object.entries(groupedShowtimes[selectedDate]).map(([theaterId, theaterData]) => (
-                  <div key={theaterId} className="mb-3 pb-3 border-bottom border-secondary">
-                    <h6 className="text-gold">{theaterData.name}</h6>
-                    <div>
-                      {theaterData.showtimes.map(showtime => (
-                        <Button 
-                          key={showtime.id}
-                          as={Link}
-                          to={`/booking/seats/${showtime.id}`}
-                          variant="outline-primary"
-                          size="sm"
-                          className="me-2 mb-2"
-                        >
-                          {showtime.show_time}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </Card.Body>
-            </Card>
-          )}
-        </div>
-      ) : (
-        <p>No showtimes available for this movie.</p>
-      )}
     </div>
   );
 };

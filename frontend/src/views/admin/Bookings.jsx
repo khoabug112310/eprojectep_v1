@@ -100,7 +100,7 @@ const AdminBookings = () => {
                   <td>{booking.total_amount?.toLocaleString() || 0} VND</td>
                   <td>
                     <Badge bg={
-                      booking.booking_status === 'confirmed' ? 'success' :
+                      booking.booking_status === 'confirmed' || booking.booking_status === 'completed' ? 'success' :
                       booking.booking_status === 'cancelled' ? 'danger' : 'warning'
                     }>
                       {booking.booking_status}

@@ -281,31 +281,6 @@ a:hover {
   border-color: var(--primary-gold) !important;
 }
 
-/* Seat Selection Specific Styles */
-.seat-available {
-  background-color: var(--secondary-black);
-  border: 1px solid var(--text-gray);
-}
-
-.seat-selected {
-  background-color: var(--primary-gold);
-  border: 1px solid var(--primary-gold);
-  color: var(--primary-black);
-}
-
-.seat-occupied {
-  background-color: var(--error-red);
-  border: 1px solid var(--error-red);
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.seat-premium {
-  background-color: var(--secondary-gold);
-  border: 1px solid var(--secondary-gold);
-  color: var(--primary-black);
-}
-
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   h1 { font-size: 2rem; }
@@ -829,23 +804,6 @@ body {
   background-color: var(--primary-black);
   border-top: 1px solid rgba(255, 215, 0, 0.2);
   color: var(--text-gray);
-}
-
-/* Seat Selection Styles */
-.seat-available {
-  background-color: var(--secondary-dark);
-  border: 1px solid var(--text-gray);
-}
-
-.seat-occupied {
-  background-color: var(--error-red);
-  border: 1px solid var(--error-red);
-}
-
-.seat-selected {
-  background-color: var(--primary-gold);
-  border: 1px solid var(--primary-gold);
-  color: var(--primary-black);
 }
 
 /* Admin Dashboard Styles */

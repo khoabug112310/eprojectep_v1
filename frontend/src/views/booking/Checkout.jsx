@@ -1,89 +1,104 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button, Card, Container, Row, Col, Form } from 'react-bootstrap';
-import { bookingAPI, authAPI } from '../../services/api';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Button, Card, Container, Row, Col, Alert, Spinner, Modal } from 'react-bootstrap';
+import { bookingAPI } from '../../services/api';
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const [selectedSeats, setSelectedSeats] = useState([]);
-  const [showtimeId, setShowtimeId] = useState('');
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: ''
-  });
-  const [paymentMethod, setPaymentMethod] = useState('credit_card');
+  const location = useLocation();
+  const { bookingData } = location.state || {};
+  
+  const [booking] = useState(bookingData);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
 
   useEffect(() => {
-    // Get selected seats and showtime from localStorage
-    const storedSeats = localStorage.getItem('selectedSeats');
-    const storedShowtimeId = localStorage.getItem('showtimeId');
-    
-    if (storedSeats && storedShowtimeId) {
-      setSelectedSeats(JSON.parse(storedSeats));
-      setShowtimeId(storedShowtimeId);
-    } else {
+    if (!bookingData) {
       navigate('/movies');
     }
+  }, [bookingData, navigate]);
+
+  // Function to calculate showtime with end time based on movie duration
+  const calculateShowtime = (showtime) => {
+    if (!showtime || !showtime.show_time || !showtime.movie?.duration) return showtime?.show_time || '';
     
-    // Get user profile if logged in
-    const fetchUserProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          const response = await authAPI.getProfile();
-          const userData = response.data.data || response.data;
-          setFormData({
-            name: userData.name || '',
-            email: userData.email || '',
-            phone: userData.phone || ''
-          });
-        }
-      } catch (err) {
-        console.log('User not logged in or profile fetch failed');
-      }
-    };
-    
-    fetchUserProfile();
-  }, [navigate]);
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const calculateTotal = () => {
-    return selectedSeats.reduce((total, seat) => total + (seat.price || 0), 0);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
     try {
-      const bookingData = {
-        showtime_id: showtimeId,
-        seats: selectedSeats,
-        payment_method: paymentMethod
+      // Parse the show time
+      const [hours, minutes] = showtime.show_time.split(':').map(Number);
+      const startTime = new Date();
+      startTime.setHours(hours, minutes, 0, 0);
+      
+      // Calculate end time by adding movie duration (in minutes)
+      const endTime = new Date(startTime.getTime() + showtime.movie.duration * 60000);
+      
+      // Format times
+      const formatTime = (date) => {
+        return date.toTimeString().slice(0, 5); // HH:MM format
       };
+      
+      return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+    } catch (error) {
+      // Fallback to just showing the start time if calculation fails
+      return showtime.show_time;
+    }
+  };
 
-      const response = await bookingAPI.create(bookingData);
-      const booking = response.data.data || response.data;
+  const handlePayment = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const paymentData = {
+        payment_method: 'credit_card', // Default for now
+        // In a real app, you would collect card details here
+      };
       
-      // Store booking ID for confirmation page
-      localStorage.setItem('bookingId', booking.id);
+      const response = await bookingAPI.processPayment(booking.id, paymentData);
       
-      // Navigate to confirmation page
-      navigate('/booking/confirmation');
+      if (response.data.success) {
+        // Store booking ID in localStorage for confirmation page
+        localStorage.setItem('bookingId', booking.id);
+        // Navigate to confirmation page
+        navigate('/booking/confirmation');
+      }
     } catch (err) {
-      alert(err.response?.data?.message || 'Booking failed. Please try again.');
+      console.error('Payment error:', err);
+      
+      // Handle 404 error specifically for seat availability issues
+      if (err.response && err.response.status === 404) {
+        setModalMessage('Some seats are no longer available. Please go back and select different seats.');
+        setShowErrorModal(true);
+      } else if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Payment failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  const handleGoBack = () => {
+    // Navigate back to seat selection with the same showtime
+    navigate('/booking/seats', { 
+      state: { 
+        showtimeId: booking.showtime_id,
+        movie: booking.showtime?.movie,
+        theater: booking.showtime?.theater,
+        showtime: booking.showtime
+      } 
+    });
+  };
+
+  if (!booking) {
+    return (
+      <Container>
+        <Alert variant="danger">Invalid booking data</Alert>
+      </Container>
+    );
+  }
 
   return (
     <Container>
@@ -93,111 +108,108 @@ const Checkout = () => {
         <Col md={8}>
           <Card className="bg-dark mb-4">
             <Card.Body>
-              <Card.Title>Personal Information</Card.Title>
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Full Name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </Form.Group>
-                
-                <Form.Group className="mb-3">
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </Form.Group>
-                
-                <Form.Group className="mb-3">
-                  <Form.Label>Phone Number</Form.Label>
-                  <Form.Control
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
-                  />
-                </Form.Group>
-                
-                <Card.Title className="mt-4">Payment Method</Card.Title>
-                <div className="mb-3">
-                  <Form.Check
-                    type="radio"
-                    id="credit_card"
-                    name="paymentMethod"
-                    label="Credit Card"
-                    value="credit_card"
-                    checked={paymentMethod === 'credit_card'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="mb-2"
-                  />
-                  <Form.Check
-                    type="radio"
-                    id="paypal"
-                    name="paymentMethod"
-                    label="PayPal"
-                    value="paypal"
-                    checked={paymentMethod === 'paypal'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="mb-2"
-                  />
-                  <Form.Check
-                    type="radio"
-                    id="bank_transfer"
-                    name="paymentMethod"
-                    label="Bank Transfer"
-                    value="bank_transfer"
-                    checked={paymentMethod === 'bank_transfer'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  />
+              <h4 className="text-gold mb-4">Booking Summary</h4>
+              
+              <div className="mb-4">
+                <h5 className="text-gold">Movie Details</h5>
+                <p><strong>Title:</strong> {booking.showtime?.movie?.title}</p>
+                <p><strong>Theater:</strong> {booking.showtime?.theater?.name}</p>
+                <p><strong>Date:</strong> {booking.showtime?.show_date && new Date(booking.showtime.show_date).toLocaleDateString('en-GB')}</p>
+                <p><strong>Time:</strong> {booking.showtime && calculateShowtime(booking.showtime)}</p>
+              </div>
+              
+              <div className="mb-4">
+                <h5 className="text-gold">Selected Seats</h5>
+                <div className="d-flex flex-wrap gap-2">
+                  {booking.seats?.map((seat, index) => (
+                    <span key={index} className="badge bg-secondary me-1">
+                      {seat.seat} ({seat.type})
+                    </span>
+                  ))}
                 </div>
-                
-                <Button 
-                  variant="primary" 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-100"
-                >
-                  {loading ? 'Processing...' : `Pay ${calculateTotal().toLocaleString()} VND`}
-                </Button>
-              </Form>
+              </div>
+              
+              <div>
+                <h5 className="text-gold">Payment Details</h5>
+                <div className="d-flex justify-content-between">
+                  <span><strong>Total Amount:</strong></span>
+                  <span className="text-gold">{booking.total_amount?.toLocaleString()} VND</span>
+                </div>
+              </div>
             </Card.Body>
           </Card>
         </Col>
         
         <Col md={4}>
-          <Card className="bg-dark">
+          <Card className="bg-dark sticky-top" style={{ top: '20px' }}>
             <Card.Body>
-              <Card.Title>Order Summary</Card.Title>
+              <h4 className="text-gold mb-4">Payment</h4>
+              
+              {error && (
+                <Alert variant="danger" className="mb-3">
+                  {error}
+                </Alert>
+              )}
+              
               <div className="mb-3">
-                <strong>Selected Seats:</strong>
-                <div className="mt-2">
-                  {selectedSeats.map((seat, index) => (
-                    <div key={index} className="d-flex justify-content-between">
-                      <span>{seat.seat} ({seat.type})</span>
-                      <span>{seat.price?.toLocaleString()} VND</span>
-                    </div>
-                  ))}
-                </div>
+                <p><strong>Payment Method:</strong> Credit Card</p>
+                {/* In a real app, you would have a form for card details */}
               </div>
-              <hr />
-              <div className="d-flex justify-content-between">
-                <strong>Total:</strong>
-                <strong>{calculateTotal().toLocaleString()} VND</strong>
-              </div>
+              
+              <Button 
+                variant="gold" 
+                className="w-100 mb-2"
+                onClick={handlePayment}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Spinner
+                      as="span"
+                      animation="border"
+                      size="sm"
+                      role="status"
+                      aria-hidden="true"
+                    /> Processing...
+                  </>
+                ) : (
+                  'Pay Now'
+                )}
+              </Button>
+              
+              <Button 
+                variant="outline-light" 
+                className="w-100"
+                onClick={handleGoBack}
+              >
+                Back to Seat Selection
+              </Button>
             </Card.Body>
           </Card>
         </Col>
       </Row>
+      
+      {/* Error Modal for Seat Availability Issues */}
+      <Modal show={showErrorModal} onHide={() => setShowErrorModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Seat Not Available</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>{modalMessage}</p>
+          <p className="text-muted">Please select different seats to continue with your booking.</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowErrorModal(false)}>
+            Close
+          </Button>
+          <Button variant="gold" onClick={() => {
+            setShowErrorModal(false);
+            handleGoBack();
+          }}>
+            Select New Seats
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

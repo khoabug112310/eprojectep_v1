@@ -1,13 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, Container, Row, Col, Alert } from 'react-bootstrap';
+import { Button, Card, Container, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import { bookingAPI } from '../../services/api';
 
 const Confirmation = () => {
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
+  const [ticketData, setTicketData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [ticketLoading, setTicketLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Function to calculate showtime with end time based on movie duration
+  const calculateShowtime = (showtime) => {
+    if (!showtime || !showtime.show_time || !showtime.movie?.duration) return showtime?.show_time || '';
+    
+    try {
+      // Parse the show time
+      const [hours, minutes] = showtime.show_time.split(':').map(Number);
+      const startTime = new Date();
+      startTime.setHours(hours, minutes, 0, 0);
+      
+      // Calculate end time by adding movie duration (in minutes)
+      const endTime = new Date(startTime.getTime() + showtime.movie.duration * 60000);
+      
+      // Format times
+      const formatTime = (date) => {
+        return date.toTimeString().slice(0, 5); // HH:MM format
+      };
+      
+      return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+    } catch (error) {
+      // Fallback to just showing the start time if calculation fails
+      return showtime.show_time;
+    }
+  };
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -19,9 +46,15 @@ const Confirmation = () => {
         }
 
         const response = await bookingAPI.getById(bookingId);
-        setBooking(response.data.data || response.data);
+        const bookingData = response.data.data || response.data;
+        setBooking(bookingData);
+        
+        // Fetch ticket data which includes QR code
+        fetchTicketData(bookingId);
+        
         setLoading(false);
       } catch (err) {
+        console.error('Error fetching booking:', err);
         setError('Failed to load booking details');
         setLoading(false);
       }
@@ -30,6 +63,22 @@ const Confirmation = () => {
     fetchBooking();
   }, [navigate]);
 
+  const fetchTicketData = async (bookingId) => {
+    setTicketLoading(true);
+    try {
+      const ticketResponse = await bookingAPI.getTicket(bookingId);
+      if (ticketResponse.data.success) {
+        setTicketData(ticketResponse.data.data);
+      } else {
+        console.warn('Ticket not ready yet:', ticketResponse.data.message);
+      }
+    } catch (ticketError) {
+      console.warn('Failed to fetch ticket data:', ticketError);
+    } finally {
+      setTicketLoading(false);
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -37,9 +86,8 @@ const Confirmation = () => {
   if (loading) {
     return (
       <div className="text-center py-5">
-        <div className="spinner-border text-gold" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+        <Spinner animation="border" variant="gold" />
+        <p className="mt-2">Loading booking details...</p>
       </div>
     );
   }
@@ -62,8 +110,8 @@ const Confirmation = () => {
             <div className="text-success">
               <h1>✓</h1>
             </div>
-            <h3 className="text-success">Booking Successful!</h3>
-            <p>Your tickets have been booked successfully.</p>
+            <h3 className="text-success">Booking Completed!</h3>
+            <p>Your tickets have been booked and confirmed successfully.</p>
           </div>
           
           {booking && (
@@ -79,25 +127,50 @@ const Confirmation = () => {
                       
                       <Row>
                         <Col md={6}>
-                          <p><strong>Movie:</strong> {booking.movie?.title}</p>
-                          <p><strong>Theater:</strong> {booking.theater?.name}</p>
-                          <p><strong>Date:</strong> {booking.showtime?.show_date}</p>
-                          <p><strong>Time:</strong> {booking.showtime?.show_time}</p>
+                          <p><strong>Movie:</strong> {booking.showtime?.movie?.title}</p>
+                          <p><strong>Theater:</strong> {booking.showtime?.theater?.name}</p>
+                          <p><strong>Date:</strong> {booking.showtime?.show_date && new Date(booking.showtime.show_date).toLocaleDateString('en-GB')}</p>
+                          <p><strong>Time:</strong> {booking.showtime && calculateShowtime(booking.showtime)}</p>
                         </Col>
                         <Col md={6}>
                           <p><strong>Seats:</strong> {booking.seats?.map(seat => seat.seat).join(', ')}</p>
                           <p><strong>Total Amount:</strong> {booking.total_amount?.toLocaleString()} VND</p>
                           <p><strong>Status:</strong> 
-                            <span className="text-success"> {booking.booking_status?.toUpperCase()}</span>
+                            <span className="text-success"> BOOKED</span>
                           </p>
                         </Col>
                       </Row>
                       
                       <div className="text-center mt-4">
-                        <div className="qr-code-placeholder bg-light text-dark p-3 d-inline-block">
-                          <p className="mb-0">QR CODE PLACEHOLDER</p>
-                          <p className="mb-0">Scan at theater entrance</p>
-                        </div>
+                        {ticketLoading ? (
+                          <div>
+                            <Spinner animation="border" size="sm" />
+                            <p>Generating QR code...</p>
+                          </div>
+                        ) : ticketData && ticketData.qr_code_url ? (
+                          <div>
+                            <img 
+                              src={ticketData.qr_code_url} 
+                              alt="QR Code" 
+                              className="img-fluid"
+                              style={{ maxWidth: '200px', height: 'auto' }}
+                            />
+                            <p className="mt-2">Scan at theater entrance</p>
+                          </div>
+                        ) : (
+                          <div className="qr-code-placeholder bg-light text-dark p-3 d-inline-block">
+                            <p className="mb-0">QR CODE PLACEHOLDER</p>
+                            <p className="mb-0">Scan at theater entrance</p>
+                            <Button 
+                              variant="outline-primary" 
+                              size="sm" 
+                              className="mt-2"
+                              onClick={() => fetchTicketData(booking.id)}
+                            >
+                              Refresh QR Code
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </Card.Body>
                   </Card>

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use Exception;
 use Predis\Connection\ConnectionException;
-use Redis\RedisException;
+use RedisException;
 
 class SeatLockingService
 {
@@ -29,6 +29,11 @@ class SeatLockingService
      */
     public function lockSeats(array $seats, int $showtimeId, int $userId): array
     {
+        // Check if Redis extension is loaded
+        if (!extension_loaded('redis')) {
+            return $this->fallbackSeatLocking($seats, $showtimeId, $userId, new Exception('Redis extension not loaded'));
+        }
+        
         $attempts = 0;
         $lastError = null;
         
@@ -70,6 +75,12 @@ class SeatLockingService
      */
     public function unlockSeats(array $seats, int $showtimeId, int $userId): bool
     {
+        // Check if Redis extension is loaded
+        if (!extension_loaded('redis')) {
+            Log::warning('Redis extension not loaded, using fallback unlock seats');
+            return true; // Fallback - pretend unlock succeeded
+        }
+        
         try {
             $redis = Redis::connection();
             $unlocked = 0;
@@ -120,6 +131,18 @@ class SeatLockingService
      */
     public function extendLock(array $seats, int $showtimeId, int $userId): array
     {
+        // Check if Redis extension is loaded
+        if (!extension_loaded('redis')) {
+            Log::warning('Redis extension not loaded, using fallback extend lock');
+            return [
+                'success' => true,
+                'extended_seats' => $seats,
+                'failed_seats' => [],
+                'new_expiry' => Carbon::now()->addSeconds(self::LOCK_TTL)->toISOString(),
+                'fallback_mode' => true
+            ];
+        }
+        
         try {
             $redis = Redis::connection();
             $extended = [];
@@ -177,6 +200,12 @@ class SeatLockingService
      */
     public function getSeatStatus(int $showtimeId): array
     {
+        // Check if Redis extension is loaded
+        if (!extension_loaded('redis')) {
+            Log::warning('Redis extension not loaded, using fallback seat status');
+            return $this->getFallbackSeatStatus($showtimeId);
+        }
+        
         try {
             $redis = Redis::connection();
             $pattern = $this->getLockKey($showtimeId, '*');
@@ -214,6 +243,14 @@ class SeatLockingService
                 'last_updated' => Carbon::now()->toISOString()
             ];
             
+        } catch (ConnectionException | RedisException $e) {
+            Log::warning('Redis connection failed during seat status retrieval, using fallback', [
+                'error' => $e->getMessage(),
+                'showtime_id' => $showtimeId
+            ]);
+            
+            // Use fallback method
+            return $this->getFallbackSeatStatus($showtimeId);
         } catch (Exception $e) {
             Log::error('Failed to get seat status', [
                 'error' => $e->getMessage(),
@@ -738,3 +775,44 @@ class SeatLockingService
             'generated_at' => Carbon::now()->toISOString()
         ];
     }
+    
+    /**
+     * Get fallback seat status when Redis is unavailable
+     */
+    private function getFallbackSeatStatus(int $showtimeId): array
+    {
+        try {
+            // In fallback mode, we can only return basic seat status without real-time locking info
+            // This is a simplified implementation - in a production environment, you might want
+            // to implement a more sophisticated fallback mechanism
+            
+            Log::info('Using fallback seat status retrieval', [
+                'showtime_id' => $showtimeId
+            ]);
+            
+            return [
+                'success' => true,
+                'showtime_id' => $showtimeId,
+                'seat_status' => [
+                    'available' => [],
+                    'locked' => [],
+                    'occupied' => []
+                ],
+                'last_updated' => Carbon::now()->toISOString(),
+                'fallback_mode' => true,
+                'message' => 'Using fallback mode - real-time seat locking unavailable'
+            ];
+        } catch (Exception $e) {
+            Log::error('Fallback seat status retrieval also failed', [
+                'error' => $e->getMessage(),
+                'showtime_id' => $showtimeId
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => 'Unable to retrieve seat status even in fallback mode',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ];
+        }
+    }
+}

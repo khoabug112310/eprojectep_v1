@@ -37,3 +37,6 @@ Route::get('/test-users', function () {
 Route::get('/test', function () {
     return response()->json(['message' => 'Test route working']);
 });
+
+// Include QR test routes
+require_once __DIR__ . '/qr_test.php';

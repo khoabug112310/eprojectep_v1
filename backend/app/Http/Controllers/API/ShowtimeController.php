@@ -9,6 +9,7 @@ use App\Models\Theater;
 use App\Services\SeatLockingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Exception;
 
 class ShowtimeController extends Controller
 {
@@ -56,19 +57,86 @@ class ShowtimeController extends Controller
 
     public function seats($id)
     {
-        $showtime = Showtime::with(['movie', 'theater'])->findOrFail($id);
-        
-        // Generate seat map (dummy data for now)
-        $seatMap = $this->generateSeatMap($showtime);
-        
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'showtime' => $showtime,
-                'seat_map' => $seatMap
-            ],
-            'message' => 'Lấy thông tin ghế thành công'
-        ]);
+        try {
+            $showtime = Showtime::with(['movie', 'theater'])->findOrFail($id);
+            
+            // Check if Redis extension is loaded
+            $redisAvailable = extension_loaded('redis');
+            
+            if ($redisAvailable) {
+                // Get seat status from Redis with error handling
+                $seatLockingService = app(SeatLockingService::class);
+                $lockStatus = null;
+                
+                try {
+                    $lockStatus = $seatLockingService->getSeatStatus($showtime->id);
+                } catch (Exception $e) {
+                    // Log the error but continue with base seat map
+                    \Log::warning('Failed to get seat status from Redis', [
+                        'error' => $e->getMessage(),
+                        'showtime_id' => $showtime->id
+                    ]);
+                }
+                
+                // Generate base seat map
+                $baseSeatMap = $this->generateSeatMap($showtime);
+                
+                // Merge with lock status if available
+                if ($lockStatus && $lockStatus['success']) {
+                    $lockedSeats = collect($lockStatus['seat_status']['locked'] ?? []);
+                    $occupiedSeats = collect($lockStatus['seat_status']['occupied'] ?? []);
+                    
+                    foreach ($baseSeatMap as &$seat) {
+                        $seatCode = $seat['seat'];
+                        
+                        // Check if seat is occupied (booked)
+                        if ($occupiedSeats->contains('seat', $seatCode)) {
+                            $seat['status'] = 'occupied';
+                            continue;
+                        }
+                        
+                        // Check if seat is locked by someone
+                        $lockInfo = $lockedSeats->firstWhere('seat', $seatCode);
+                        if ($lockInfo) {
+                            $seat['status'] = 'locked';
+                            $seat['locked_by'] = $lockInfo['user_id'];
+                            $seat['locked_at'] = $lockInfo['locked_at'] ?? now()->toISOString();
+                            $seat['expires_at'] = $lockInfo['expires_at'] ?? now()->addMinutes(15)->toISOString();
+                            
+                            // If current user owns the lock, mark as selected
+                            if (Auth::id() && $lockInfo['user_id'] === Auth::id()) {
+                                $seat['status'] = 'selected';
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Redis not available, generate base seat map only
+                \Log::warning('Redis extension not loaded, using fallback seat map generation');
+                $baseSeatMap = $this->generateSeatMap($showtime);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'showtime' => $showtime,
+                    'seat_map' => $baseSeatMap,
+                    'lock_statistics' => $lockStatus['seat_status'] ?? null
+                ],
+                'message' => 'Seat map retrieved successfully'
+            ]);
+        } catch (Exception $e) {
+            \Log::error('Failed to retrieve seat map', [
+                'error' => $e->getMessage(),
+                'showtime_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve seat map'
+            ], 500);
+        }
     }
 
     /**
@@ -173,45 +241,78 @@ class ShowtimeController extends Controller
     /**
      * Get real-time seat status
      */
-    public function seatStatus($id, SeatLockingService $seatLockingService)
+    public function seatStatus($id)
     {
-        $showtime = Showtime::with(['movie', 'theater'])->findOrFail($id);
-        
-        // Get seat status from Redis
-        $lockStatus = $seatLockingService->getSeatStatus($showtime->id);
-        
-        // Generate base seat map
-        $baseSeatMap = $this->generateSeatMap($showtime);
-        
-        // Merge with lock status
-        if ($lockStatus['success']) {
-            $lockedSeats = collect($lockStatus['seat_status']['locked']);
+        try {
+            $showtime = Showtime::with(['movie', 'theater'])->findOrFail($id);
             
-            foreach ($baseSeatMap as &$seat) {
-                $lockInfo = $lockedSeats->firstWhere('seat', $seat['seat']);
-                if ($lockInfo) {
-                    $seat['status'] = 'locked';
-                    $seat['locked_by'] = $lockInfo['user_id'];
-                    $seat['locked_at'] = $lockInfo['locked_at'] ?? now()->toISOString();
-                    $seat['expires_at'] = $lockInfo['expires_at'] ?? now()->addMinutes(15)->toISOString();
+            // Check if Redis extension is loaded
+            $redisAvailable = extension_loaded('redis');
+            
+            if ($redisAvailable) {
+                // Get seat status from Redis with error handling
+                $seatLockingService = app(SeatLockingService::class);
+                $lockStatus = null;
+                
+                try {
+                    $lockStatus = $seatLockingService->getSeatStatus($showtime->id);
+                } catch (Exception $e) {
+                    // Log the error but continue with base seat map
+                    \Log::warning('Failed to get seat status from Redis in seatStatus endpoint', [
+                        'error' => $e->getMessage(),
+                        'showtime_id' => $showtime->id
+                    ]);
+                }
+                
+                // Generate base seat map
+                $baseSeatMap = $this->generateSeatMap($showtime);
+                
+                // Merge with lock status if available
+                if ($lockStatus && $lockStatus['success']) {
+                    $lockedSeats = collect($lockStatus['seat_status']['locked'] ?? []);
                     
-                    // If current user owns the lock, mark as selected
-                    if (Auth::id() && $lockInfo['user_id'] === Auth::id()) {
-                        $seat['status'] = 'selected';
+                    foreach ($baseSeatMap as &$seat) {
+                        $lockInfo = $lockedSeats->firstWhere('seat', $seat['seat']);
+                        if ($lockInfo) {
+                            $seat['status'] = 'locked';
+                            $seat['locked_by'] = $lockInfo['user_id'];
+                            $seat['locked_at'] = $lockInfo['locked_at'] ?? now()->toISOString();
+                            $seat['expires_at'] = $lockInfo['expires_at'] ?? now()->addMinutes(15)->toISOString();
+                            
+                            // If current user owns the lock, mark as selected
+                            if (Auth::id() && $lockInfo['user_id'] === Auth::id()) {
+                                $seat['status'] = 'selected';
+                            }
+                        }
                     }
                 }
+            } else {
+                // Redis not available, generate base seat map only
+                \Log::warning('Redis extension not loaded in seatStatus endpoint, using fallback seat map generation');
+                $baseSeatMap = $this->generateSeatMap($showtime);
             }
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'showtime' => $showtime,
+                    'seat_map' => $baseSeatMap ?? $this->generateSeatMap($showtime),
+                    'lock_statistics' => $lockStatus['seat_status'] ?? null
+                ],
+                'message' => 'Seat status retrieved successfully'
+            ]);
+        } catch (Exception $e) {
+            \Log::error('Failed to retrieve seat status in seatStatus endpoint', [
+                'error' => $e->getMessage(),
+                'showtime_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve seat status'
+            ], 500);
         }
-        
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'showtime' => $showtime,
-                'seat_map' => $baseSeatMap,
-                'lock_statistics' => $lockStatus['seat_status'] ?? null
-            ],
-            'message' => 'Real-time seat status retrieved successfully'
-        ]);
     }
 
     // Admin methods
@@ -326,22 +427,98 @@ class ShowtimeController extends Controller
 
     private function generateSeatMap($showtime)
     {
-        // Generate dummy seat map
-        $rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-        $seats = [];
+        // Use actual theater configuration
+        $theater = $showtime->theater;
+        $prices = is_string($showtime->prices) ? json_decode($showtime->prices, true) : $showtime->prices;
         
-        foreach ($rows as $row) {
-            for ($i = 1; $i <= 10; $i++) {
-                $seatNumber = $row . $i;
-                $seats[] = [
-                    'seat' => $seatNumber,
-                    'status' => 'available', // available, occupied, locked
-                    'type' => 'gold', // gold, platinum, box
-                    'price' => 100000
-                ];
+        // Get all bookings for this showtime to determine occupied seats
+        $bookings = $showtime->bookings()->where('booking_status', 'completed')->get();
+        $occupiedSeats = [];
+        
+        foreach ($bookings as $booking) {
+            $seats = is_string($booking->seats) ? json_decode($booking->seats, true) : $booking->seats;
+            if (is_array($seats)) {
+                foreach ($seats as $seat) {
+                    if (is_array($seat) && isset($seat['seat'])) {
+                        $occupiedSeats[] = $seat['seat'];
+                    } elseif (is_string($seat)) {
+                        $occupiedSeats[] = $seat;
+                    }
+                }
             }
         }
-
+        
+        if (!$theater || !$theater->seat_configuration) {
+            // Fallback to dummy seat map if no configuration
+            $rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+            $seats = [];
+            
+            foreach ($rows as $row) {
+                for ($i = 1; $i <= 10; $i++) {
+                    $seatNumber = $row . $i;
+                    $seats[] = [
+                        'seat' => $seatNumber,
+                        'status' => in_array($seatNumber, $occupiedSeats) ? 'occupied' : 'available',
+                        'type' => 'gold',
+                        'price' => $prices['gold'] ?? 100000
+                    ];
+                }
+            }
+            
+            return $seats;
+        }
+        
+        // Generate seat map based on theater configuration with unified layout
+        $seatConfig = is_string($theater->seat_configuration) ? 
+                      json_decode($theater->seat_configuration, true) : 
+                      $theater->seat_configuration;
+        
+        $seats = [];
+        
+        // Calculate total rows and columns for unified layout
+        $maxCols = 0;
+        $totalRows = 0;
+        
+        // Get max columns and total rows needed
+        foreach ($seatConfig as $section => $config) {
+            $maxCols = max($maxCols, $config['cols'] ?? 10);
+            $totalRows += $config['rows'] ?? 5;
+        }
+        
+        // Create unified seat layout
+        $currentRow = 0;
+        $rowPrefixes = range('A', chr(ord('A') + $totalRows - 1));
+        
+        // Process sections in the order: box (top center), platinum, gold
+        $sectionOrder = ['box', 'platinum', 'gold'];
+        
+        foreach ($sectionOrder as $section) {
+            if (!isset($seatConfig[$section])) continue;
+            
+            $config = $seatConfig[$section];
+            $sectionRows = $config['rows'] ?? 5;
+            $sectionCols = $config['cols'] ?? 10;
+            
+            // Calculate offset to center the section
+            $colOffset = intval(($maxCols - $sectionCols) / 2);
+            
+            for ($rowIdx = 0; $rowIdx < $sectionRows; $rowIdx++) {
+                $rowChar = $rowPrefixes[$currentRow];
+                
+                for ($col = 1; $col <= $sectionCols; $col++) {
+                    $seatNumber = $rowChar . ($col + $colOffset);
+                    $seats[] = [
+                        'seat' => $seatNumber,
+                        'status' => in_array($seatNumber, $occupiedSeats) ? 'occupied' : 'available',
+                        'type' => $section,
+                        'price' => $config['price'] ?? ($prices[$section] ?? 100000)
+                    ];
+                }
+                
+                $currentRow++;
+            }
+        }
+        
         return $seats;
     }
 }

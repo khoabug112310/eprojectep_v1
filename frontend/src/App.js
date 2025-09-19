@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Container } from 'react-bootstrap';
 import MainLayout from './components/MainLayout';
 import Home from './views/Home';
 import Movies from './views/Movies';
@@ -24,6 +25,13 @@ import EditShowtime from './views/admin/EditShowtime';
 import AdminUsers from './views/admin/Users';
 import EditUser from './views/admin/EditUser';
 import TestAPI from './views/TestAPI';
+import NavbarComponent from './components/Navbar';
+import Footer from './components/Footer';
+import Theaters from './views/Theaters';
+import TheaterDetails from './views/TheaterDetails';
+import ShowtimeDetails from './views/ShowtimeDetails';
+import ForgotPassword from './views/auth/ForgotPassword';
+import AdminRoutes from './views/admin/Routes';
 import './App.css';
 
 // Protected route component for admin
@@ -49,79 +57,41 @@ const ProtectedAdminRoute = ({ children }) => {
 
 function App() {
   return (
-    <Routes>
-      {/* Public routes with main layout */}
-      <Route path="/" element={<MainLayout />}>
-        <Route index element={<Home />} />
-        <Route path="movies" element={<Movies />} />
-        <Route path="movies/:id" element={<MovieDetail />} />
-        <Route path="auth/login" element={<Login />} />
-        <Route path="auth/register" element={<Register />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="my-bookings" element={<MyBookings />} />
-        <Route path="booking/seats/:showtimeId" element={<Seats />} />
-        <Route path="booking/checkout" element={<Checkout />} />
-        <Route path="booking/confirmation" element={<Confirmation />} />
-        <Route path="test-api" element={<TestAPI />} />
-      </Route>
-
-      {/* Admin routes with admin layout */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={
-          <ProtectedAdminRoute>
-            <Dashboard />
-          </ProtectedAdminRoute>
-        } />
-        <Route path="movies" element={
-          <ProtectedAdminRoute>
-            <AdminMovies />
-          </ProtectedAdminRoute>
-        } />
-        <Route path="movies/:id/edit" element={
-          <ProtectedAdminRoute>
-            <EditMovie />
-          </ProtectedAdminRoute>
-        } />
-        <Route path="theaters" element={
-          <ProtectedAdminRoute>
-            <AdminTheaters />
-          </ProtectedAdminRoute>
-        } />
-        <Route path="theaters/:id/edit" element={
-          <ProtectedAdminRoute>
-            <EditTheater />
-          </ProtectedAdminRoute>
-        } />
-        <Route path="showtimes" element={
-          <ProtectedAdminRoute>
-            <AdminShowtimes />
-          </ProtectedAdminRoute>
-        } />
-        <Route path="showtimes/:id/edit" element={
-          <ProtectedAdminRoute>
-            <EditShowtime />
-          </ProtectedAdminRoute>
-        } />
-        <Route path="bookings" element={
-          <ProtectedAdminRoute>
-            <AdminBookings />
-          </ProtectedAdminRoute>
-        } />
-        <Route path="users" element={
-          <ProtectedAdminRoute>
-            <AdminUsers />
-          </ProtectedAdminRoute>
-        } />
-        <Route path="users/:id/edit" element={
-          <ProtectedAdminRoute>
-            <EditUser />
-          </ProtectedAdminRoute>
-        } />
-      </Route>
-
-      {/* Admin login (outside of admin layout) */}
-      <Route path="/admin/login" element={<AdminLogin />} />
-    </Routes>
+    <div className="App">
+      <NavbarComponent />
+      <Container fluid className="py-4">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/movies" element={<Movies />} />
+          <Route path="/movies/:id" element={<MovieDetail />} />
+          <Route path="/theaters" element={<Theaters />} />
+          <Route path="/theaters/:id" element={<TheaterDetails />} />
+          <Route path="/showtimes/:id" element={<ShowtimeDetails />} />
+          
+          {/* Booking Routes */}
+          <Route path="/booking/seats" element={<Seats />} />
+          <Route path="/booking/seats/:id" element={<Seats />} />
+          <Route path="/booking/checkout" element={<Checkout />} />
+          <Route path="/booking/confirmation" element={<Confirmation />} />
+          
+          {/* Auth Routes */}
+          <Route path="/auth/login" element={<Login />} />
+          <Route path="/auth/register" element={<Register />} />
+          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          
+          {/* User Routes */}
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/my-bookings" element={<MyBookings />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/*" element={<AdminRoutes />} />
+          
+          {/* Fallback Route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Container>
+      <Footer />
+    </div>
   );
 }
 
