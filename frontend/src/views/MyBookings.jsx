@@ -12,7 +12,9 @@ const MyBookings = () => {
     const fetchBookings = async () => {
       try {
         const response = await bookingAPI.getUserBookings();
-        setBookings(response.data.data || response.data);
+        // For paginated responses, the actual data is in response.data.data.data
+        const bookingsData = response.data.data?.data || response.data.data || [];
+        setBookings(Array.isArray(bookingsData) ? bookingsData : []);
         setLoading(false);
       } catch (err) {
         setError('Failed to load bookings');

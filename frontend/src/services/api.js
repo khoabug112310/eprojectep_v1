@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Create axios instance with default config
+// Create axios instance with default config for v1 API
 const api = axios.create({
   baseURL: 'http://localhost:8000/api/v1', // Laravel backend URL
   headers: {
@@ -94,18 +94,21 @@ export const adminAPI = {
   
   // Movies
   getAdminMovies: (params) => api.get('/admin/movies', { params }),
+  getMovieById: (id) => api.get(`/admin/movies/${id}`),
   createMovie: (data) => api.post('/admin/movies', data),
   updateMovie: (id, data) => api.put(`/admin/movies/${id}`, data),
   deleteMovie: (id) => api.delete(`/admin/movies/${id}`),
   
   // Theaters
   getAdminTheaters: (params) => api.get('/admin/theaters', { params }),
+  getTheaterById: (id) => api.get(`/admin/theaters/${id}`),
   createTheater: (data) => api.post('/admin/theaters', data),
   updateTheater: (id, data) => api.put(`/admin/theaters/${id}`, data),
   deleteTheater: (id) => api.delete(`/admin/theaters/${id}`),
   
   // Showtimes
   getAdminShowtimes: (params) => api.get('/admin/showtimes', { params }),
+  getShowtimeById: (id) => api.get(`/admin/showtimes/${id}`),
   createShowtime: (data) => api.post('/admin/showtimes', data),
   updateShowtime: (id, data) => api.put(`/admin/showtimes/${id}`, data),
   deleteShowtime: (id) => api.delete(`/admin/showtimes/${id}`),
@@ -115,8 +118,9 @@ export const adminAPI = {
   updateBooking: (id, data) => api.put(`/admin/bookings/${id}`, data),
   deleteBooking: (id) => api.delete(`/admin/bookings/${id}`),
   
-  // Users
+  // Users (using v1 API with admin prefix)
   getAdminUsers: (params) => api.get('/admin/users', { params }),
+  getUserById: (id) => api.get(`/admin/users/${id}`),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
   

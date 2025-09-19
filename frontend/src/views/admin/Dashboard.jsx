@@ -15,7 +15,23 @@ const Dashboard = () => {
     const fetchDashboardStats = async () => {
       try {
         const response = await adminAPI.getDashboardStats();
-        setStats(response.data.data || response.data);
+        const data = response.data.data || response.data;
+        
+        // Ensure data structure is correct
+        setStats({
+          revenue: {
+            today: data.revenue?.today || 0,
+            this_week: data.revenue?.this_week || 0,
+            this_month: data.revenue?.this_month || 0
+          },
+          bookings: {
+            today: data.bookings?.today || 0,
+            this_week: data.bookings?.this_week || 0,
+            this_month: data.bookings?.this_month || 0
+          },
+          popular_movies: Array.isArray(data.popular_movies) ? data.popular_movies : [],
+          theater_performance: Array.isArray(data.theater_performance) ? data.theater_performance : []
+        });
         setLoading(false);
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
@@ -36,6 +52,16 @@ const Dashboard = () => {
     );
   }
 
+  // Helper function to get max value safely
+  const getMaxValue = (array, property) => {
+    if (!array || array.length === 0) return 1;
+    const values = array.map(item => item[property] || 0).filter(val => !isNaN(val));
+    return values.length > 0 ? Math.max(...values) : 1;
+  };
+
+  const maxMovieBookings = getMaxValue(stats.popular_movies, 'bookings');
+  const maxTheaterRevenue = getMaxValue(stats.theater_performance, 'revenue');
+
   return (
     <Container fluid>
       <h2 className="text-gold mb-4">Admin Dashboard</h2>
@@ -47,7 +73,7 @@ const Dashboard = () => {
             <Card.Body>
               <Card.Title>Today&#39;s Revenue</Card.Title>
               <Card.Text className="display-6 text-gold">
-                {stats.revenue.today?.toLocaleString() || 0} VND
+                {(stats.revenue.today || 0).toLocaleString()} VND
               </Card.Text>
             </Card.Body>
           </Card>
@@ -57,7 +83,7 @@ const Dashboard = () => {
             <Card.Body>
               <Card.Title>Weekly Revenue</Card.Title>
               <Card.Text className="display-6 text-gold">
-                {stats.revenue.this_week?.toLocaleString() || 0} VND
+                {(stats.revenue.this_week || 0).toLocaleString()} VND
               </Card.Text>
             </Card.Body>
           </Card>
@@ -67,7 +93,7 @@ const Dashboard = () => {
             <Card.Body>
               <Card.Title>Monthly Revenue</Card.Title>
               <Card.Text className="display-6 text-gold">
-                {stats.revenue.this_month?.toLocaleString() || 0} VND
+                {(stats.revenue.this_month || 0).toLocaleString()} VND
               </Card.Text>
             </Card.Body>
           </Card>
@@ -113,19 +139,23 @@ const Dashboard = () => {
           <Card className="bg-dark text-white">
             <Card.Body>
               <Card.Title>Popular Movies</Card.Title>
-              {stats.popular_movies?.slice(0, 5).map((movie, index) => (
-                <div key={index} className="mb-3">
-                  <div className="d-flex justify-content-between">
-                    <span>{movie.title}</span>
-                    <span>{movie.bookings} bookings</span>
+              {stats.popular_movies && stats.popular_movies.length > 0 ? (
+                stats.popular_movies.slice(0, 5).map((movie, index) => (
+                  <div key={index} className="mb-3">
+                    <div className="d-flex justify-content-between">
+                      <span>{movie.title}</span>
+                      <span>{movie.bookings || 0} bookings</span>
+                    </div>
+                    <ProgressBar 
+                      now={((movie.bookings || 0) / maxMovieBookings) * 100} 
+                      variant="gold"
+                      className="mt-1"
+                    />
                   </div>
-                  <ProgressBar 
-                    now={(movie.bookings / Math.max(...stats.popular_movies.map(m => m.bookings))) * 100} 
-                    variant="gold"
-                    className="mt-1"
-                  />
-                </div>
-              ))}
+                ))
+              ) : (
+                <p>No popular movies data available</p>
+              )}
             </Card.Body>
           </Card>
         </Col>
@@ -135,19 +165,23 @@ const Dashboard = () => {
           <Card className="bg-dark text-white">
             <Card.Body>
               <Card.Title>Theater Performance</Card.Title>
-              {stats.theater_performance?.slice(0, 5).map((theater, index) => (
-                <div key={index} className="mb-3">
-                  <div className="d-flex justify-content-between">
-                    <span>{theater.name}</span>
-                    <span>{theater.revenue?.toLocaleString() || 0} VND</span>
+              {stats.theater_performance && stats.theater_performance.length > 0 ? (
+                stats.theater_performance.slice(0, 5).map((theater, index) => (
+                  <div key={index} className="mb-3">
+                    <div className="d-flex justify-content-between">
+                      <span>{theater.name}</span>
+                      <span>{(theater.revenue || 0).toLocaleString()} VND</span>
+                    </div>
+                    <ProgressBar 
+                      now={((theater.revenue || 0) / maxTheaterRevenue) * 100} 
+                      variant="gold"
+                      className="mt-1"
+                    />
                   </div>
-                  <ProgressBar 
-                    now={(theater.revenue / Math.max(...stats.theater_performance.map(t => t.revenue))) * 100} 
-                    variant="gold"
-                    className="mt-1"
-                  />
-                </div>
-              ))}
+                ))
+              ) : (
+                <p>No theater performance data available</p>
+              )}
             </Card.Body>
           </Card>
         </Col>

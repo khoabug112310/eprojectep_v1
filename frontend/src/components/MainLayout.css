@@ -1,0 +1,67 @@
+/* Header styling with compact layout */
+header .navbar {
+  padding: 5px 0;
+}
+
+/* Compact navigation bar */
+header .navbar-nav .nav-link {
+  padding: 6px 12px;
+}
+
+/* Search bar styling */
+header .form-control {
+  height: 40px;
+  padding: 8px 12px;
+}
+
+/* Search button styling as per specifications */
+header .btn-search {
+  background-color: #000000 !important;
+  color: #FFD700 !important;
+  border-color: #FFD700 !important;
+  height: 40px;
+  padding: 8px 16px;
+}
+
+header .btn-search:hover {
+  background: linear-gradient(to right, #FFD700, #FFA500) !important;
+  color: #000000 !important;
+  border-color: #FFD700 !important;
+}
+
+/* Navigation dropdowns */
+header .dropdown-menu {
+  background-color: #343a40;
+  border: 1px solid #495057;
+}
+
+header .dropdown-item {
+  color: #f8f9fa;
+}
+
+header .dropdown-item:hover {
+  background-color: #495057;
+  color: #FFD700;
+}
+
+/* Compact layout adjustments */
+header .navbar-collapse {
+  gap: 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  header .navbar-nav .nav-link {
+    padding: 4px 8px;
+  }
+  
+  header .form-control {
+    height: 36px;
+    padding: 6px 10px;
+  }
+  
+  header .btn-search {
+    height: 36px;
+    padding: 6px 12px;
+  }
+}

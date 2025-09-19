@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Showtimes API</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Test Showtimes API</h1>
+    <button onclick="testShowtimes()">Test Showtimes</button>
+    <div id="results"></div>
+
+    <script>
+        async function testShowtimes() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                // Replace with an actual movie ID from your database
+                const movieId = 1; // Change this to a valid movie ID
+                
+                const response = await axios.get(`http://localhost:8000/api/v1/movies/${movieId}/showtimes`);
+                
+                let output = `<p>Status: ${response.status}</p>`;
+                output += `<p>Number of showtimes: ${response.data.data.length}</p>`;
+                
+                // Group by date to see how many dates we have
+                const dates = {};
+                response.data.data.forEach(showtime => {
+                    const date = showtime.show_date;
+                    if (!dates[date]) {
+                        dates[date] = [];
+                    }
+                    dates[date].push(showtime);
+                });
+                
+                output += `<p>Total unique dates: ${Object.keys(dates).length}</p>`;
+                output += '<h3>Showtimes by date:</h3><ul>';
+                
+                Object.keys(dates).forEach(date => {
+                    output += `<li>${date}: ${dates[date].length} showtimes</li>`;
+                });
+                
+                output += '</ul>';
+                
+                // Show first few showtimes as examples
+                output += '<h3>Sample showtimes:</h3><pre>' + JSON.stringify(response.data.data.slice(0, 5), null, 2) + '</pre>';
+                
+                resultsDiv.innerHTML = output;
+            } catch (error) {
+                let errorOutput = `<p>Error: ${error.message}</p>`;
+                if (error.response) {
+                    errorOutput += `<p>Status: ${error.response.status}</p>`;
+                    errorOutput += `<pre>${JSON.stringify(error.response.data, null, 2)}</pre>`;
+                }
+                resultsDiv.innerHTML = errorOutput;
+            }
+        }
+    </script>
+</body>
+</html>

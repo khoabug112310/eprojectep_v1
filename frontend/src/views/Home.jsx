@@ -226,11 +226,14 @@ const Home = () => {
               <Col key={movie.id} md={6} lg={3} className="mb-4">
                 <Card className="h-100 movie-card">
                   <div className="position-relative">
-                    <Card.Img 
-                      variant="top" 
-                      src={movie.poster_url || "https://placehold.co/300x450/1f1f1f/ffd700?text=Movie"} 
-                      style={{ height: '350px', objectFit: 'cover' }}
-                    />
+                    {/* Make the movie poster clickable to go to movie detail page */}
+                    <Link to={`/movies/${movie.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <Card.Img 
+                        variant="top" 
+                        src={movie.poster_url || "https://placehold.co/300x450/1f1f1f/ffd700?text=Movie"} 
+                        style={{ height: '350px', objectFit: 'cover', cursor: 'pointer' }}
+                      />
+                    </Link>
                     <Badge bg="gold" className="position-absolute top-0 end-0 m-2">
                       ⭐ {movie.average_rating || 'N/A'}
                     </Badge>
@@ -279,11 +282,14 @@ const Home = () => {
               <Col key={movie.id} md={6} lg={3} className="mb-4">
                 <Card className="h-100 movie-card">
                   <div className="position-relative">
-                    <Card.Img 
-                      variant="top" 
-                      src={movie.poster_url || "https://placehold.co/300x450/1f1f1f/ffd700?text=Coming+Soon"} 
-                      style={{ height: '350px', objectFit: 'cover' }}
-                    />
+                    {/* Make the movie poster clickable to go to movie detail page */}
+                    <Link to={`/movies/${movie.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <Card.Img 
+                        variant="top" 
+                        src={movie.poster_url || "https://placehold.co/300x450/1f1f1f/ffd700?text=Coming+Soon"} 
+                        style={{ height: '350px', objectFit: 'cover', cursor: 'pointer' }}
+                      />
+                    </Link>
                     <Badge bg="warning" className="position-absolute top-0 end-0 m-2 text-dark">
                       Coming Soon
                     </Badge>

@@ -86,11 +86,14 @@ const Movies = () => {
             return (
               <Col key={movie.id} md={6} lg={4} xl={3} className="mb-4">
                 <Card className="h-100">
-                  <Card.Img 
-                    variant="top" 
-                    src={movie.poster_url || "https://placehold.co/300x450/1f1f1f/ffd700?text=Movie+Poster"} 
-                    style={{ height: '350px', objectFit: 'cover' }}
-                  />
+                  {/* Make the entire card image clickable to go to movie detail */}
+                  <Link to={`/movies/${movie.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Card.Img 
+                      variant="top" 
+                      src={movie.poster_url || "https://placehold.co/300x450/1f1f1f/ffd700?text=Movie+Poster"} 
+                      style={{ height: '350px', objectFit: 'cover', cursor: 'pointer' }}
+                    />
+                  </Link>
                   <Card.Body className="d-flex flex-column">
                     <Card.Title>{movie.title}</Card.Title>
                     <Card.Text className="text-muted">
@@ -99,7 +102,7 @@ const Movies = () => {
                     <div className="d-flex justify-content-between align-items-center mt-auto">
                       <span className="text-gold">⭐ {movie.average_rating || 'N/A'}</span>
                       <Button as={Link} to={`/movies/${movie.id}`} variant="outline-primary" size="sm">
-                        Book Now
+                        View Details
                       </Button>
                     </div>
                   </Card.Body>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Button, Card, Row, Col, Badge } from 'react-bootstrap';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Button, Card, Row, Col, Badge, Modal } from 'react-bootstrap';
 import { movieAPI } from '../services/api';
 
 // Function to normalize genre data
@@ -47,22 +47,75 @@ const normalizeCast = (cast) => {
   return [cast];
 };
 
+// Function to group showtimes by date and theater
+const groupShowtimesByDateAndTheater = (showtimes) => {
+  const grouped = {};
+  
+  showtimes.forEach(showtime => {
+    const date = showtime.show_date;
+    const theaterId = showtime.theater?.id;
+    const theaterName = showtime.theater?.name || 'Unknown Theater';
+    
+    if (!grouped[date]) {
+      grouped[date] = {};
+    }
+    
+    if (!grouped[date][theaterId]) {
+      grouped[date][theaterId] = {
+        name: theaterName,
+        showtimes: []
+      };
+    }
+    
+    grouped[date][theaterId].showtimes.push(showtime);
+  });
+  
+  return grouped;
+};
+
 const MovieDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [movie, setMovie] = useState(null);
   const [showtimes, setShowtimes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [showTrailer, setShowTrailer] = useState(false);
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
       try {
+        // Validate ID format
+        if (!id || isNaN(id)) {
+          console.error('Invalid movie ID');
+          setLoading(false);
+          return;
+        }
+
         const movieResponse = await movieAPI.getById(id);
         const showtimesResponse = await movieAPI.getShowtimes(id);
         
-        setMovie(movieResponse.data.data || movieResponse.data);
-        // Handle paginated response for showtimes
-        const showtimesData = showtimesResponse.data.data?.data || showtimesResponse.data.data || [];
+        // Handle movie data
+        const movieData = movieResponse.data?.data || movieResponse.data;
+        if (movieData) {
+          setMovie(movieData);
+        } else {
+          console.error('Movie data not found in response');
+        }
+        
+        // Handle showtimes data
+        let showtimesData = [];
+        if (showtimesResponse.data?.data?.data) {
+          // Paginated response
+          showtimesData = showtimesResponse.data.data.data;
+        } else if (showtimesResponse.data?.data) {
+          // Non-paginated response
+          showtimesData = showtimesResponse.data.data;
+        } else {
+          showtimesData = showtimesResponse.data || [];
+        }
         setShowtimes(showtimesData);
+        
         setLoading(false);
       } catch (error) {
         console.error('Error fetching movie details:', error);
@@ -72,8 +125,25 @@ const MovieDetail = () => {
 
     if (id) {
       fetchMovieDetails();
+    } else {
+      setLoading(false);
     }
   }, [id]);
+
+  // Set the first date as selected by default when showtimes change
+  useEffect(() => {
+    if (showtimes.length > 0 && selectedDate === null) {
+      const groupedShowtimes = groupShowtimesByDateAndTheater(showtimes);
+      const sortedDates = Object.keys(groupedShowtimes)
+        .sort((a, b) => new Date(a) - new Date(b))
+        .filter(date => new Date(date) >= new Date()) // Only future dates
+        .slice(0, 7); // Limit to 7 nearest dates
+      
+      if (sortedDates.length > 0) {
+        setSelectedDate(sortedDates[0]);
+      }
+    }
+  }, [showtimes, selectedDate]);
 
   if (loading) {
     return (
@@ -89,7 +159,7 @@ const MovieDetail = () => {
     return (
       <div className="text-center py-5">
         <h3>Movie not found</h3>
-        <Link to="/movies" className="btn btn-primary">Back to Movies</Link>
+        <Button variant="primary" onClick={() => navigate('/movies')}>Back to Movies</Button>
       </div>
     );
   }
@@ -97,15 +167,104 @@ const MovieDetail = () => {
   // Normalize genre and cast data
   const genres = normalizeGenre(movie.genre);
   const cast = normalizeCast(movie.cast);
+  
+  // Group showtimes by date and theater
+  const groupedShowtimes = groupShowtimesByDateAndTheater(showtimes);
+  
+  // Get sorted dates and limit to 7 nearest dates
+  const sortedDates = Object.keys(groupedShowtimes)
+    .sort((a, b) => new Date(a) - new Date(b))
+    .filter(date => new Date(date) >= new Date()) // Only future dates
+    .slice(0, 7); // Limit to 7 nearest dates
+
+  // Extract YouTube video ID from trailer URL if available
+  const getYoutubeVideoId = (url) => {
+    if (!url) return null;
+    
+    // Regular expression to extract YouTube video ID
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const youtubeVideoId = getYoutubeVideoId(movie.trailer_url);
+  const youtubeEmbedUrl = youtubeVideoId 
+    ? `https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&mute=0` 
+    : null;
 
   return (
     <div>
+      {/* YouTube Trailer Poster with Play Button */}
+      {movie.poster_url && youtubeVideoId && (
+        <div className="mb-4 position-relative" style={{ cursor: 'pointer' }} onClick={() => setShowTrailer(true)}>
+          <img 
+            src={movie.poster_url || "https://placehold.co/300x450/1f1f1f/ffd700?text=Movie+Poster"} 
+            alt={`${movie.title} Trailer`}
+            className="img-fluid rounded"
+            style={{ 
+              width: '100%', 
+              height: '50vh', // Half of viewport height
+              objectFit: 'cover' // Maintain aspect ratio while filling the container
+            }}
+          />
+          <div 
+            className="position-absolute top-50 start-50 translate-middle"
+            style={{ 
+              width: '60px', 
+              height: '60px', 
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="24" 
+              height="24" 
+              fill="currentColor" 
+              className="bi bi-play-fill text-white" 
+              viewBox="0 0 16 16"
+            >
+              <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {/* YouTube Trailer Modal */}
+      <Modal show={showTrailer} onHide={() => setShowTrailer(false)} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>{movie.title} - Trailer</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {youtubeEmbedUrl && (
+            <div className="ratio ratio-16x9">
+              <iframe 
+                src={youtubeEmbedUrl}
+                title={`${movie.title} Trailer`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          )}
+        </Modal.Body>
+      </Modal>
+
       <Row>
         <Col md={4}>
           <Card>
             <Card.Img 
               variant="top" 
               src={movie.poster_url || "https://placehold.co/300x450/1f1f1f/ffd700?text=Movie+Poster"} 
+              style={{ 
+                cursor: 'pointer',
+                height: '50vh', // Half of viewport height
+                objectFit: 'cover' // Maintain aspect ratio while filling the container
+              }}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             />
           </Card>
         </Col>
@@ -116,27 +275,40 @@ const MovieDetail = () => {
             <Badge bg="secondary" className="me-2">{movie.age_rating}</Badge>
             <Badge bg="secondary">{movie.duration} min</Badge>
           </div>
-          <p className="lead">{movie.synopsis}</p>
           
           <div className="mb-3">
             <strong>Genre:</strong> {genres.join(', ')}
           </div>
           
           <div className="mb-3">
-            <strong>Director:</strong> {movie.director}
+            <strong>Director:</strong> {movie.director || 'N/A'}
           </div>
           
           <div className="mb-3">
-            <strong>Cast:</strong> {cast.map(person => person.name || person).join(', ')}
+            <strong>Cast:</strong> {cast && cast.length > 0 ? cast.map(person => person.name || person).join(', ') : 'N/A'}
           </div>
           
           <div className="mb-3">
             <strong>Rating:</strong> <span className="text-gold">⭐ {movie.average_rating || 'N/A'}</span>
           </div>
           
-          <Button as={Link} to={`/booking/seats/${showtimes[0]?.id || 'sample'}`} variant="primary" size="lg">
-            Book Tickets
+          <Button 
+            as={Link} 
+            to={showtimes.length > 0 ? `/booking/seats/${showtimes[0]?.id}` : '#'} 
+            variant="primary" 
+            size="lg"
+            disabled={showtimes.length === 0}
+          >
+            {showtimes.length > 0 ? 'Book Tickets' : 'No Showtimes Available'}
           </Button>
+        </Col>
+      </Row>
+
+      {/* Movie Synopsis moved below poster */}
+      <Row className="mt-4">
+        <Col md={12}>
+          <h3 className="text-gold mb-3">Description</h3>
+          <p className="lead">{movie.synopsis}</p>
         </Col>
       </Row>
 
@@ -144,30 +316,53 @@ const MovieDetail = () => {
 
       <h3 className="text-gold mb-4">Showtimes</h3>
       {showtimes.length > 0 ? (
-        <Row>
-          {showtimes.map((showtime) => (
-            <Col key={showtime.id} md={6} lg={4} className="mb-3">
-              <Card>
-                <Card.Body>
-                  <Card.Title>{showtime.theater?.name}</Card.Title>
-                  <Card.Text>
-                    <strong>Date:</strong> {showtime.show_date}<br />
-                    <strong>Time:</strong> {showtime.show_time}<br />
-                    <strong>Available Seats:</strong> {showtime.available_seats?.length || 'N/A'}
-                  </Card.Text>
-                  <Button 
-                    as={Link} 
-                    to={`/booking/seats/${showtime.id}`} 
-                    variant="outline-primary" 
-                    size="sm"
-                  >
-                    Select Seats
-                  </Button>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+        <div>
+          {/* Date selection buttons */}
+          <div className="d-flex flex-wrap mb-4">
+            {sortedDates.map(date => (
+              <Button
+                key={date}
+                variant={selectedDate === date ? "primary" : "outline-primary"}
+                className="me-2 mb-2"
+                onClick={() => setSelectedDate(date)}
+              >
+                {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </Button>
+            ))}
+          </div>
+
+          {/* Show theaters and times only for the selected date */}
+          {selectedDate && groupedShowtimes[selectedDate] && (
+            <Card className="mb-4">
+              <Card.Header className="bg-dark text-gold">
+                <h5 className="mb-0">
+                  {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </h5>
+              </Card.Header>
+              <Card.Body>
+                {Object.entries(groupedShowtimes[selectedDate]).map(([theaterId, theaterData]) => (
+                  <div key={theaterId} className="mb-3 pb-3 border-bottom border-secondary">
+                    <h6 className="text-gold">{theaterData.name}</h6>
+                    <div>
+                      {theaterData.showtimes.map(showtime => (
+                        <Button 
+                          key={showtime.id}
+                          as={Link}
+                          to={`/booking/seats/${showtime.id}`}
+                          variant="outline-primary"
+                          size="sm"
+                          className="me-2 mb-2"
+                        >
+                          {showtime.show_time}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </Card.Body>
+            </Card>
+          )}
+        </div>
       ) : (
         <p>No showtimes available for this movie.</p>
       )}
