@@ -50,10 +50,10 @@ export const normalizeFacilities = (facilities) => {
  * @returns {string} - Formatted currency string
  */
 export const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('vi-VN', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'VND'
-  }).format(amount);
+    currency: 'USD'
+  }).format(amount / 25000); // Convert VND to USD (approximate rate)
 };
 
 /**

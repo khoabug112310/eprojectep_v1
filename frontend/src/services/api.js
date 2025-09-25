@@ -96,8 +96,14 @@ export const reviewAPI = {
 
 // Admin endpoints
 export const adminAPI = {
-  // Dashboard
+  // Dashboard - Updated to match backend route
   getDashboardStats: () => api.get('/admin/dashboard/stats'),
+  getRevenueReports: (params) => api.get('/admin/reports/revenue', { params }),
+  getBookingReports: (params) => api.get('/admin/reports/bookings', { params }),
+  getMovieReports: (params) => api.get('/admin/reports/movies', { params }),
+  getUserReports: (params) => api.get('/admin/reports/users', { params }),
+  getPaymentAnalytics: (params) => api.get('/admin/reports/payment-analytics', { params }),
+  getTicketAnalytics: (params) => api.get('/admin/reports/ticket-analytics', { params }),
   
   // Movies
   getAdminMovies: (params) => api.get('/admin/movies', { params }),
@@ -122,12 +128,14 @@ export const adminAPI = {
   
   // Bookings
   getAdminBookings: (params) => api.get('/admin/bookings', { params }),
+  getBookingById: (id) => api.get(`/admin/bookings/${id}`),
   updateBooking: (id, data) => api.put(`/admin/bookings/${id}`, data),
   deleteBooking: (id) => api.delete(`/admin/bookings/${id}`),
   
   // Users (using v1 API with admin prefix)
   getAdminUsers: (params) => api.get('/admin/users', { params }),
   getUserById: (id) => api.get(`/admin/users/${id}`),
+  createUser: (data) => api.post('/admin/users', data),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
   
@@ -136,6 +144,11 @@ export const adminAPI = {
   approveReview: (id) => api.put(`/admin/reviews/${id}/approve`),
   rejectReview: (id) => api.put(`/admin/reviews/${id}/reject`),
   deleteReview: (id) => api.delete(`/admin/reviews/${id}`),
+  
+  // Profile
+  getProfile: () => api.get('/auth/me'),
+  updateProfile: (data) => api.put('/auth/profile', data),
+  changePassword: (data) => api.put('/auth/change-password', data),
 };
 
 export default api;

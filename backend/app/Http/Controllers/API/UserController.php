@@ -56,6 +56,32 @@ class UserController extends Controller
         ]);
     }
 
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'phone' => 'nullable|string|unique:users,phone',
+            'role' => 'required|in:user,admin',
+            'status' => 'required|in:active,inactive',
+            'date_of_birth' => 'nullable|date',
+            'preferred_city' => 'nullable|string|max:100',
+            'preferred_language' => 'nullable|string|max:20',
+        ]);
+
+        // Hash the password
+        $validated['password'] = Hash::make($validated['password']);
+
+        $user = User::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'data' => $user,
+            'message' => 'Tạo người dùng thành công'
+        ], 201);
+    }
+
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
@@ -63,13 +89,19 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:users,email,' . $id,
-            'phone' => 'sometimes|string|unique:users,phone,' . $id,
+            'phone' => 'nullable|string|unique:users,phone,' . $id,
+            'password' => 'nullable|string|min:6',
             'role' => 'sometimes|in:user,admin',
             'status' => 'sometimes|in:active,inactive',
             'date_of_birth' => 'sometimes|date',
             'preferred_city' => 'sometimes|string|max:100',
             'preferred_language' => 'sometimes|string|max:20',
         ]);
+
+        // Hash password if provided
+        if (isset($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        }
 
         $user->update($validated);
 

@@ -62,6 +62,9 @@ class ShowtimeSeeder extends Seeder
                 }
             }
         }
+        
+        // Add specific showtimes for September 27-29, 2024
+        $this->addSpecificSeptemberShowtimes($movies, $theaters, $timeSlots);
     }
     
     /**
@@ -153,5 +156,72 @@ class ShowtimeSeeder extends Seeder
         }
         
         return $availableSeats;
+    }
+    
+    /**
+     * Add specific showtimes for September 27-29, 2024
+     */
+    private function addSpecificSeptemberShowtimes($movies, $theaters, $timeSlots)
+    {
+        // Specific dates for September 27-29, 2024
+        $specificDates = [
+            '2024-09-27', // Friday
+            '2024-09-28', // Saturday  
+            '2024-09-29'  // Sunday
+        ];
+        
+        foreach ($specificDates as $date) {
+            $isWeekend = Carbon::parse($date)->isWeekend();
+            
+            foreach ($theaters as $theater) {
+                // For these special dates, show more movies (4-6 per theater)
+                $dailyMovies = $movies->shuffle()->take(rand(4, 6));
+                
+                foreach ($dailyMovies as $movie) {
+                    // More showtimes for these special dates (3-5 per movie)
+                    $showtimesCount = rand(3, 5);
+                    
+                    // Get available time slots
+                    $availableSlots = collect($timeSlots)->flatten()->shuffle()->take($showtimesCount);
+                    
+                    foreach ($availableSlots as $time) {
+                        // Check if this exact showtime already exists
+                        $existingShowtime = Showtime::where('movie_id', $movie->id)
+                            ->where('theater_id', $theater->id)
+                            ->where('show_date', $date)
+                            ->where('show_time', $time)
+                            ->first();
+                            
+                        if (!$existingShowtime) {
+                            // Calculate day offset for pricing
+                            $dayOffset = Carbon::parse($date)->diffInDays(Carbon::now());
+                            
+                            // Generate pricing with weekend premium
+                            $pricing = $this->generatePricing($theater, $time, $dayOffset);
+                            
+                            // Apply special weekend pricing for these dates
+                            if ($isWeekend) {
+                                foreach ($pricing as $seatType => $price) {
+                                    $pricing[$seatType] = (int) round($price * 1.15 / 1000) * 1000;
+                                }
+                            }
+                            
+                            // Generate available seats
+                            $availableSeats = $this->generateAvailableSeats($theater);
+                            
+                            Showtime::create([
+                                'movie_id' => $movie->id,
+                                'theater_id' => $theater->id,
+                                'show_date' => $date,
+                                'show_time' => $time,
+                                'prices' => json_encode($pricing),
+                                'available_seats' => json_encode($availableSeats),
+                                'status' => 'active',
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

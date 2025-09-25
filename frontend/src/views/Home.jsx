@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Button, Card, Container, Row, Col, Carousel, Badge } from 'react-bootstrap';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button, Card, Container, Row, Col, Carousel, Badge, Form, Alert } from 'react-bootstrap';
 import { movieAPI, theaterAPI } from '../services/api';
+import HomeFooter from '../components/HomeFooter';
 
 // Function to normalize genre data
 const normalizeGenre = (genre) => {
@@ -52,6 +53,20 @@ const Home = () => {
   const [theaters, setTheaters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isQuickBookingVisible, setIsQuickBookingVisible] = useState(true);
+  
+  // Quick booking state
+  const [selectedMovie, setSelectedMovie] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTheater, setSelectedTheater] = useState('');
+  const [selectedShowtime, setSelectedShowtime] = useState('');
+  const [availableShowtimes, setAvailableShowtimes] = useState([]);
+  const [availableDates, setAvailableDates] = useState([]);
+  const [availableTheaters, setAvailableTheaters] = useState([]);
+  const [theaterShowtimes, setTheaterShowtimes] = useState([]);
+  const [loadingShowtimes, setLoadingShowtimes] = useState(false);
+  const [quickBookingError, setQuickBookingError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,6 +78,9 @@ const Home = () => {
         
         const moviesData = moviesResponse.data.data?.data || moviesResponse.data.data || [];
         const theatersData = theatersResponse.data.data?.data || theatersResponse.data.data || [];
+        
+        console.log('Movies data:', moviesData);
+        console.log('Theaters data:', theatersData);
         
         setMovies(moviesData);
         setTheaters(theatersData);
@@ -77,6 +95,27 @@ const Home = () => {
     fetchData();
   }, []);
 
+  // Handle scroll to hide/show quick booking
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      
+      // Hide quick booking when scrolled down more than half viewport height
+      if (scrollY > windowHeight * 0.5) {
+        setIsQuickBookingVisible(false);
+      } else {
+        setIsQuickBookingVisible(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   // Get featured movies (first 5)
   const featuredMovies = movies.slice(0, 5);
   
@@ -85,6 +124,209 @@ const Home = () => {
   
   // Get coming soon movies (next 8)
   const comingSoon = movies.slice(13, 21);
+
+  // Generate next 7 days from today
+  const getNext7Days = () => {
+    const dates = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      dates.push(dateStr);
+    }
+    console.log('Generated next 7 days:', dates);
+    return dates;
+  };
+
+  // Fetch showtimes and available dates when movie is selected
+  useEffect(() => {
+    const fetchShowtimes = async () => {
+      if (selectedMovie) {
+        setLoadingShowtimes(true);
+        console.log('Fetching showtimes for movie:', selectedMovie);
+        try {
+          // Fetch showtimes for the selected movie
+          const response = await movieAPI.getShowtimes(selectedMovie);
+          console.log('Showtimes response:', response);
+          console.log('Raw response data:', response.data);
+          let showtimesData = [];
+          
+          if (response.data?.data?.data) {
+            showtimesData = response.data.data.data;
+            console.log('Using paginated data path');
+          } else if (response.data?.data) {
+            showtimesData = response.data.data;
+            console.log('Using non-paginated data path');
+          } else {
+            showtimesData = response.data || [];
+            console.log('Using fallback data path');
+          }
+          
+          console.log('Processed showtimes data:', showtimesData);
+          console.log('Showtimes data length:', showtimesData.length);
+          
+          // Get next 7 days starting from today
+          const next7Days = getNext7Days();
+          console.log('Next 7 days:', next7Days);
+          
+          // Log all showtime dates to debug
+          const allShowtimeDates = showtimesData.map(s => s.show_date.split('T')[0]);
+          console.log('All showtime dates from API:', allShowtimeDates);
+          
+          // Filter showtimes for the next 7 days only
+          const futureShowtimes = showtimesData.filter(showtime => {
+            // Convert ISO date to YYYY-MM-DD format for comparison
+            const showtimeDate = showtime.show_date.split('T')[0]; // Extract date part from ISO string
+            return next7Days.includes(showtimeDate);
+          });
+          
+          console.log('Filtered showtimes for next 7 days:', futureShowtimes);
+          setAvailableShowtimes(futureShowtimes);
+          
+          // Extract unique dates from filtered showtimes, maintain order of next 7 days
+          const showtimeDates = [...new Set(futureShowtimes.map(showtime => showtime.show_date.split('T')[0]))];
+          const availableDatesInOrder = next7Days.filter(date => showtimeDates.includes(date));
+          
+          console.log('Available dates in order:', availableDatesInOrder);
+          setAvailableDates(availableDatesInOrder);
+          
+        } catch (error) {
+          console.error('Error fetching showtimes:', error);
+          setAvailableShowtimes([]);
+          setAvailableDates([]);
+        } finally {
+          setLoadingShowtimes(false);
+        }
+      } else {
+        setAvailableShowtimes([]);
+        setAvailableDates([]);
+        setAvailableTheaters([]);
+        setTheaterShowtimes([]);
+        setSelectedDate('');
+        setSelectedTheater('');
+        setSelectedShowtime('');
+      }
+    };
+    
+    fetchShowtimes();
+  }, [selectedMovie]);
+
+  // Filter theaters when date is selected
+  useEffect(() => {
+    if (selectedDate && availableShowtimes.length > 0) {
+      console.log('Filtering theaters for date:', selectedDate);
+      
+      // Filter showtimes by selected date
+      const dateShowtimes = availableShowtimes.filter(showtime => 
+        showtime.show_date.split('T')[0] === selectedDate // Handle ISO date format
+      );
+      
+      console.log('Showtimes for selected date:', dateShowtimes);
+      
+      // Extract unique theaters for that date
+      const uniqueTheaters = [];
+      const theaterIds = new Set();
+      
+      dateShowtimes.forEach(showtime => {
+        if (showtime.theater && !theaterIds.has(showtime.theater.id)) {
+          theaterIds.add(showtime.theater.id);
+          uniqueTheaters.push(showtime.theater);
+        }
+      });
+      
+      console.log('Available theaters:', uniqueTheaters);
+      setAvailableTheaters(uniqueTheaters);
+    } else {
+      setAvailableTheaters([]);
+      setTheaterShowtimes([]);
+      setSelectedTheater('');
+      setSelectedShowtime('');
+    }
+  }, [selectedDate, availableShowtimes]);
+
+  // Filter showtimes for selected theater and date
+  useEffect(() => {
+    if (selectedTheater && selectedDate && availableShowtimes.length > 0) {
+      console.log('Filtering showtimes for theater ID:', selectedTheater, '(type:', typeof selectedTheater, ') and date:', selectedDate);
+      console.log('Available showtimes sample:', availableShowtimes[0]);
+      
+      // Filter showtimes for the selected theater and date
+      const theaterTimes = availableShowtimes.filter(showtime => {
+        const matchesTheater = parseInt(showtime.theater_id) === parseInt(selectedTheater);
+        const matchesDate = showtime.show_date.split('T')[0] === selectedDate;
+        console.log(`Showtime ${showtime.id}: theater_id=${showtime.theater_id} (${typeof showtime.theater_id}), selected=${selectedTheater} (${typeof selectedTheater}), matches theater=${matchesTheater}, matches date=${matchesDate}`);
+        return matchesTheater && matchesDate;
+      });
+      
+      console.log('Filtered theater times:', theaterTimes);
+      setTheaterShowtimes(theaterTimes);
+    } else {
+      setTheaterShowtimes([]);
+      setSelectedShowtime('');
+    }
+  }, [selectedTheater, selectedDate, availableShowtimes]);
+
+  // Reset selections when dependencies change
+  useEffect(() => {
+    setSelectedDate('');
+    setSelectedTheater('');
+    setSelectedShowtime('');
+  }, [selectedMovie]);
+  
+  useEffect(() => {
+    setSelectedTheater('');
+    setSelectedShowtime('');
+  }, [selectedDate]);
+  
+  useEffect(() => {
+    setSelectedShowtime('');
+  }, [selectedTheater]);
+
+  // Handle quick booking form submission
+  const handleQuickBooking = () => {
+    setQuickBookingError('');
+    
+    if (!selectedMovie) {
+      setQuickBookingError('Please select a movie');
+      return;
+    }
+    
+    if (!selectedDate) {
+      setQuickBookingError('Please select a date');
+      return;
+    }
+    
+    if (!selectedTheater) {
+      setQuickBookingError('Please select a theater');
+      return;
+    }
+    
+    if (!selectedShowtime) {
+      setQuickBookingError('Please select a showtime');
+      return;
+    }
+    
+    // Navigate directly to seat selection page
+    navigate(`/booking/seats/${selectedShowtime}`);
+  };
+
+  // Format date display
+  const formatDateDisplay = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Format showtime display
+  const formatTimeDisplay = (showtime) => {
+    return showtime.show_time;
+  };
 
   if (loading) {
     return (
@@ -110,7 +352,36 @@ const Home = () => {
     <div>
       {/* Hero Section with Featured Movies Carousel */}
       <section className="hero-section mb-5">
-        <Carousel indicators={true} controls={true} interval={5000} pause={false}>
+        <style>
+          {`
+            .hero-carousel .carousel-control-prev,
+            .hero-carousel .carousel-control-next {
+              width: 40px;
+              height: 40px;
+              top: 50%;
+              transform: translateY(-50%);
+              opacity: 0.7;
+              border-radius: 50%;
+              background-color: rgba(0, 0, 0, 0.5);
+            }
+            .hero-carousel .carousel-control-prev {
+              left: 10px;
+            }
+            .hero-carousel .carousel-control-next {
+              right: 10px;
+            }
+            .hero-carousel .carousel-control-prev-icon,
+            .hero-carousel .carousel-control-next-icon {
+              width: 20px;
+              height: 20px;
+            }
+            .hero-carousel .carousel-control-prev:hover,
+            .hero-carousel .carousel-control-next:hover {
+              opacity: 1;
+            }
+          `}
+        </style>
+        <Carousel indicators={true} controls={true} interval={5000} pause={false} className="hero-carousel">
           {featuredMovies.map((movie) => {
             const genres = normalizeGenre(movie.genre);
             return (
@@ -118,7 +389,8 @@ const Home = () => {
                 <div 
                   className="d-flex align-items-center hero-slide" 
                   style={{ 
-                    minHeight: '70vh',
+                    minHeight: '55vh',
+                    maxHeight: '55vh',
                     background: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${movie.poster_url || "https://placehold.co/1200x600/1f1f1f/ffd700?text=Featured+Movie"})`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center'
@@ -137,13 +409,14 @@ const Home = () => {
                             <Badge bg="secondary">{movie.duration} min</Badge>
                           </div>
                           <p className="lead">{movie.synopsis?.substring(0, 200) || 'No description available'}...</p>
-                          <div className="mt-4">
+                          <div className="mt-4 d-flex flex-wrap gap-2">
                             <Button 
                               as={Link} 
                               to={`/movies/${movie.id}`} 
                               variant="primary" 
                               size="lg" 
-                              className="me-3"
+                              className="px-4 py-2"
+                              style={{ minWidth: '150px', fontWeight: '600' }}
                             >
                               View Details
                             </Button>
@@ -152,6 +425,8 @@ const Home = () => {
                               to={`/movies/${movie.id}`} 
                               variant="outline-light" 
                               size="lg"
+                              className="px-4 py-2"
+                              style={{ minWidth: '150px', fontWeight: '600' }}
                             >
                               Book Tickets
                             </Button>
@@ -168,47 +443,157 @@ const Home = () => {
       </section>
 
       {/* Quick Booking Section */}
-      <Container className="mb-5">
-        <Card className="bg-dark border-gold">
+      {isQuickBookingVisible && (
+        <Container className="mb-5">
+          <Card className="bg-dark border-gold" style={{
+            transition: 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out',
+            opacity: isQuickBookingVisible ? 1 : 0,
+            transform: isQuickBookingVisible ? 'translateY(0)' : 'translateY(-20px)'
+          }}>
           <Card.Body>
             <h2 className="text-gold text-center mb-4">Quick Booking</h2>
-            <Row className="align-items-center">
-              <Col md={3} className="mb-3 mb-md-0">
-                <div className="d-flex align-items-center">
-                  <i className="bi bi-film text-gold me-2 fs-4"></i>
-                  <div>
-                    <h5 className="text-white mb-0">Find Movies</h5>
-                    <p className="text-muted mb-0">Browse our collection</p>
-                  </div>
+            
+            {quickBookingError && (
+              <Alert variant="danger" className="mb-3">
+                {quickBookingError}
+              </Alert>
+            )}
+            
+            <Row className="align-items-end">
+              <Col lg={2} md={3} className="mb-3">
+                <div className="d-flex align-items-center mb-2">
+                  <i className="bi bi-film text-gold me-2 fs-5"></i>
+                  <label className="text-white fw-semibold">Movie</label>
                 </div>
+                <Form.Select 
+                  value={selectedMovie} 
+                  onChange={(e) => setSelectedMovie(e.target.value)}
+                  className="bg-secondary text-white border-gold"
+                  size="sm"
+                >
+                  <option value="">Choose Movie...</option>
+                  {movies.filter(movie => movie.status === 'active').map((movie) => (
+                    <option key={movie.id} value={movie.id}>
+                      {movie.title}
+                    </option>
+                  ))}
+                </Form.Select>
               </Col>
-              <Col md={3} className="mb-3 mb-md-0">
-                <div className="d-flex align-items-center">
-                  <i className="bi bi-geo-alt text-gold me-2 fs-4"></i>
-                  <div>
-                    <h5 className="text-white mb-0">Choose Theater</h5>
-                    <p className="text-muted mb-0">Select your location</p>
-                  </div>
+              
+              <Col lg={2} md={3} className="mb-3">
+                <div className="d-flex align-items-center mb-2">
+                  <i className="bi bi-calendar3 text-gold me-2 fs-5"></i>
+                  <label className="text-white fw-semibold">Date</label>
                 </div>
+                <Form.Select 
+                  value={selectedDate} 
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="bg-secondary text-white border-gold"
+                  size="sm"
+                  disabled={!selectedMovie || loadingShowtimes}
+                >
+                  <option value="">
+                    {loadingShowtimes ? 'Loading...' : 
+                     !selectedMovie ? 'Select movie first' : 
+                     availableDates.length === 0 ? 'No dates available' : 
+                     'Choose Date...'}
+                  </option>
+                  {availableDates.map((date) => (
+                    <option key={date} value={date}>
+                      {formatDateDisplay(date)}
+                    </option>
+                  ))}
+                </Form.Select>
               </Col>
-              <Col md={3} className="mb-3 mb-md-0">
-                <div className="d-flex align-items-center">
-                  <i className="bi bi-calendar-check text-gold me-2 fs-4"></i>
-                  <div>
-                    <h5 className="text-white mb-0">Pick Time</h5>
-                    <p className="text-muted mb-0">Select showtime</p>
-                  </div>
+              
+              <Col lg={2} md={3} className="mb-3">
+                <div className="d-flex align-items-center mb-2">
+                  <i className="bi bi-geo-alt text-gold me-2 fs-5"></i>
+                  <label className="text-white fw-semibold">Theater</label>
                 </div>
+                <Form.Select 
+                  value={selectedTheater} 
+                  onChange={(e) => setSelectedTheater(e.target.value)}
+                  className="bg-secondary text-white border-gold"
+                  size="sm"
+                  disabled={!selectedDate}
+                >
+                  <option value="">
+                    {!selectedDate ? 'Select date first' : 
+                     availableTheaters.length === 0 ? 'No theaters available' : 
+                     'Choose Theater...'}
+                  </option>
+                  {availableTheaters.map((theater) => (
+                    <option key={theater.id} value={theater.id}>
+                      {theater.name}
+                    </option>
+                  ))}
+                </Form.Select>
               </Col>
-              <Col md={3} className="text-center">
-                <Button as={Link} to="/movies" variant="primary" size="lg">
+              
+              <Col lg={2} md={3} className="mb-3">
+                <div className="d-flex align-items-center mb-2">
+                  <i className="bi bi-clock text-gold me-2 fs-5"></i>
+                  <label className="text-white fw-semibold">Time</label>
+                </div>
+                <Form.Select 
+                  value={selectedShowtime} 
+                  onChange={(e) => setSelectedShowtime(e.target.value)}
+                  className="bg-secondary text-white border-gold"
+                  size="sm"
+                  disabled={!selectedTheater}
+                >
+                  <option value="">
+                    {!selectedTheater ? 'Select theater first' : 
+                     theaterShowtimes.length === 0 ? 'No times available' : 
+                     'Choose Time...'}
+                  </option>
+                  {theaterShowtimes.map((showtime) => (
+                    <option key={showtime.id} value={showtime.id}>
+                      {formatTimeDisplay(showtime)}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Col>
+              
+              <Col lg={4} md={12} className="text-center mb-3">
+                <Button 
+                  onClick={handleQuickBooking}
+                  variant="primary" 
+                  size="lg" 
+                  className="w-100"
+                  disabled={!selectedMovie || !selectedDate || !selectedTheater || !selectedShowtime}
+                >
+                  <i className="bi bi-ticket-perforated me-2"></i>
                   Book Now
+                </Button>
+                {loadingShowtimes && (
+                  <div className="mt-2">
+                    <div className="spinner-border spinner-border-sm text-gold" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+                )}
+              </Col>
+            </Row>
+            
+            {/* Alternative actions */}
+            <Row className="mt-3">
+              <Col className="text-center">
+                <small className="text-muted">Or browse by: </small>
+                <Button as={Link} to="/movies" variant="link" size="sm" className="text-gold p-1">
+                  All Movies
+                </Button>
+                <span className="text-muted">|</span>
+                <Button as={Link} to="/theaters" variant="link" size="sm" className="text-gold p-1">
+                  All Theaters
                 </Button>
               </Col>
             </Row>
           </Card.Body>
         </Card>
       </Container>
+      )}
 
       {/* Now Showing Section */}
       <Container className="mb-5">
@@ -370,171 +755,8 @@ const Home = () => {
         </Row>
       </Container>
 
-      {/* Promotions Section */}
-      <section className="promotions-section py-5">
-        <Container>
-          <h2 className="text-gold text-center mb-4">Special Offers & Promotions</h2>
-          <p className="text-center text-gray mb-5">Enjoy exclusive deals and discounts on your movie experience</p>
-          <Row>
-            <Col md={4} className="mb-4">
-              <Card className="h-100 bg-dark border-gold">
-                <Card.Body className="text-center">
-                  <div className="mb-3">
-                    <div className="bg-gold rounded-circle d-inline-flex align-items-center justify-content-center" 
-                         style={{ width: '70px', height: '70px' }}>
-                      <i className="bi bi-people text-dark fs-2"></i>
-                    </div>
-                  </div>
-                  <h3 className="text-gold">Family Pack</h3>
-                  <p className="text-gray">Book 4 tickets and get 1 free for select movies. Perfect for family outings!</p>
-                  <Button as={Link} to="/movies" variant="primary">Learn More</Button>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={4} className="mb-4">
-              <Card className="h-100 bg-dark border-gold">
-                <Card.Body className="text-center">
-                  <div className="mb-3">
-                    <div className="bg-gold rounded-circle d-inline-flex align-items-center justify-content-center" 
-                         style={{ width: '70px', height: '70px' }}>
-                      <i className="bi bi-mortarboard text-dark fs-2"></i>
-                    </div>
-                  </div>
-                  <h3 className="text-gold">Student Discount</h3>
-                  <p className="text-gray">20% off for students with valid ID. Show your student card at the counter.</p>
-                  <Button as={Link} to="/movies" variant="primary">Learn More</Button>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={4} className="mb-4">
-              <Card className="h-100 bg-dark border-gold">
-                <Card.Body className="text-center">
-                  <div className="mb-3">
-                    <div className="bg-gold rounded-circle d-inline-flex align-items-center justify-content-center" 
-                         style={{ width: '70px', height: '70px' }}>
-                      <i className="bi bi-sunrise text-dark fs-2"></i>
-                    </div>
-                  </div>
-                  <h3 className="text-gold">Early Bird</h3>
-                  <p className="text-gray">15% off for shows before 12 PM. Catch the early show and save!</p>
-                  <Button as={Link} to="/movies" variant="primary">Learn More</Button>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Container>
-      </section>
-
-      {/* How It Works Section */}
-      <Container className="mb-5">
-        <h2 className="text-gold text-center mb-5">How It Works</h2>
-        <Row>
-          <Col md={3} className="text-center mb-4">
-            <div className="bg-dark rounded-circle d-inline-flex align-items-center justify-content-center mb-3 mx-auto" 
-                 style={{ width: '80px', height: '80px' }}>
-              <span className="text-gold fs-3">1</span>
-            </div>
-            <h4 className="text-white">Choose Movie</h4>
-            <p className="text-gray">Browse our collection and select the movie you want to watch</p>
-          </Col>
-          <Col md={3} className="text-center mb-4">
-            <div className="bg-dark rounded-circle d-inline-flex align-items-center justify-content-center mb-3 mx-auto" 
-                 style={{ width: '80px', height: '80px' }}>
-              <span className="text-gold fs-3">2</span>
-            </div>
-            <h4 className="text-white">Select Showtime</h4>
-            <p className="text-gray">Pick your preferred date, time, and theater location</p>
-          </Col>
-          <Col md={3} className="text-center mb-4">
-            <div className="bg-dark rounded-circle d-inline-flex align-items-center justify-content-center mb-3 mx-auto" 
-                 style={{ width: '80px', height: '80px' }}>
-              <span className="text-gold fs-3">3</span>
-            </div>
-            <h4 className="text-white">Pick Seats</h4>
-            <p className="text-gray">Choose your favorite seats from our interactive seat map</p>
-          </Col>
-          <Col md={3} className="text-center mb-4">
-            <div className="bg-dark rounded-circle d-inline-flex align-items-center justify-content-center mb-3 mx-auto" 
-                 style={{ width: '80px', height: '80px' }}>
-              <span className="text-gold fs-3">4</span>
-            </div>
-            <h4 className="text-white">Enjoy Movie</h4>
-            <p className="text-gray">Receive your e-ticket and enjoy your movie experience</p>
-          </Col>
-        </Row>
-      </Container>
-
-      {/* Testimonials Section */}
-      <section className="py-5 bg-dark">
-        <Container>
-          <h2 className="text-gold text-center mb-5">What Our Customers Say</h2>
-          <Row>
-            <Col md={4} className="mb-4">
-              <Card className="h-100 bg-secondary">
-                <Card.Body>
-                  <div className="d-flex align-items-center mb-3">
-                    <div className="bg-dark rounded-circle d-flex align-items-center justify-content-center me-3" 
-                         style={{ width: '50px', height: '50px' }}>
-                      <span className="text-gold">JD</span>
-                    </div>
-                    <div>
-                      <h5 className="text-white mb-0">John Doe</h5>
-                      <div className="text-gold">
-                        {'★'.repeat(5)}
-                      </div>
-                    </div>
-                  </div>
-                  <Card.Text className="text-gray">
-                    "The booking process was so smooth and easy. I love the seat selection feature!"
-                  </Card.Text>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={4} className="mb-4">
-              <Card className="h-100 bg-secondary">
-                <Card.Body>
-                  <div className="d-flex align-items-center mb-3">
-                    <div className="bg-dark rounded-circle d-flex align-items-center justify-content-center me-3" 
-                         style={{ width: '50px', height: '50px' }}>
-                      <span className="text-gold">MS</span>
-                    </div>
-                    <div>
-                      <h5 className="text-white mb-0">Mary Smith</h5>
-                      <div className="text-gold">
-                        {'★'.repeat(4)}
-                      </div>
-                    </div>
-                  </div>
-                  <Card.Text className="text-gray">
-                    "Great movie selection and the theaters are always clean and comfortable."
-                  </Card.Text>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={4} className="mb-4">
-              <Card className="h-100 bg-secondary">
-                <Card.Body>
-                  <div className="d-flex align-items-center mb-3">
-                    <div className="bg-dark rounded-circle d-flex align-items-center justify-content-center me-3" 
-                         style={{ width: '50px', height: '50px' }}>
-                      <span className="text-gold">RP</span>
-                    </div>
-                    <div>
-                      <h5 className="text-white mb-0">Robert Park</h5>
-                      <div className="text-gold">
-                        {'★'.repeat(5)}
-                      </div>
-                    </div>
-                  </div>
-                  <Card.Text className="text-gray">
-                    "The early bird discount saved me money and the staff were very helpful."
-                  </Card.Text>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Container>
-      </section>
+      {/* Home Footer Sections */}
+      <HomeFooter />
     </div>
   );
 };

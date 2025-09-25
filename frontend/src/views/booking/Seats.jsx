@@ -17,9 +17,11 @@ const Seats = () => {
   const [seats, setSeats] = useState([]);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState('');  
   const [lockError, setLockError] = useState('');
   const [lockLoading, setLockLoading] = useState(false);
+  const [otherShowtimes, setOtherShowtimes] = useState([]);
+  const [showtimesLoading, setShowtimesLoading] = useState(false);
   const refreshIntervalRef = useRef(null); // Use ref instead of state for interval
 
   console.log('Seats component rendered with showtimeId:', showtimeId);
@@ -48,6 +50,65 @@ const Seats = () => {
       return showtime.show_time;
     }
   };
+
+  // Fetch other showtimes for the same movie at the same theater
+  const fetchOtherShowtimes = useCallback(async (showtimeData = null) => {
+    const currentShowtime = showtimeData || showtime;
+    if (!currentShowtime?.movie_id || !currentShowtime?.theater_id) return;
+    
+    console.log('Fetching other showtimes for:', {
+      movie_id: currentShowtime.movie_id,
+      theater_id: currentShowtime.theater_id,
+      show_date: currentShowtime.show_date,
+      current_showtime_id: showtimeId
+    });
+    
+    setShowtimesLoading(true);
+    try {
+      // Extract date part from show_date (handle both YYYY-MM-DD and YYYY-MM-DD HH:MM:SS formats)
+      const showDate = currentShowtime.show_date?.split('T')[0] || currentShowtime.show_date?.split(' ')[0];
+      
+      // Get all showtimes for the movie at the same theater
+      const response = await showtimeAPI.getAll({
+        movie_id: currentShowtime.movie_id,
+        theater_id: currentShowtime.theater_id,
+        show_date: showDate
+      });
+      
+      console.log('Showtimes API response:', response.data);
+      
+      if (response.data.success) {
+        let showtimesData = response.data.data?.data || response.data.data || [];
+        
+        console.log('All showtimes for movie:', showtimesData);
+        
+        // Filter out current showtime and only show other times
+        const otherTimes = showtimesData.filter(st => {
+          const isSameDate = (st.show_date?.split('T')[0] || st.show_date?.split(' ')[0]) === showDate;
+          const isDifferentShowtime = st.id !== parseInt(showtimeId);
+          
+          console.log(`Showtime ${st.id}: same_date=${isSameDate}, different_id=${isDifferentShowtime}`);
+          
+          return isSameDate && isDifferentShowtime;
+        });
+        
+        console.log('Filtered other showtimes:', otherTimes);
+        
+        // Sort by show time
+        otherTimes.sort((a, b) => {
+          const timeA = a.show_time.replace(':', '');
+          const timeB = b.show_time.replace(':', '');
+          return timeA.localeCompare(timeB);
+        });
+        
+        setOtherShowtimes(otherTimes);
+      }
+    } catch (error) {
+      console.error('Error fetching other showtimes:', error);
+    } finally {
+      setShowtimesLoading(false);
+    }
+  }, [showtime?.movie_id, showtime?.theater_id, showtime?.show_date, showtimeId]);
 
   // Fetch seat data
   const fetchSeats = useCallback(async () => {
@@ -110,6 +171,9 @@ const Seats = () => {
         // Update seats state
         setSeats(processedSeats);
         setShowtime(response.data.data.showtime);
+        
+        // Fetch other showtimes with the fresh showtime data
+        fetchOtherShowtimes(response.data.data.showtime);
         
         // Update selected seats based on new data
         setSelectedSeats(prevSelectedSeats => {
@@ -428,145 +492,35 @@ const Seats = () => {
       
       return (
         <div className="seat-map-container">
-          {/* Box Seats - Center Top */}
-          {hasBoxSeats && (
-            <div className="seat-section mb-4">
-              <h5 className="text-center text-warning mb-3">Box Seats</h5>
-              {Object.keys(seatsByType.box).map(row => (
-                <div key={`box-${row}`} className="seat-row d-flex align-items-center justify-content-center mb-2">
-                  <div className="row-label me-3 fw-bold" style={{ minWidth: '30px' }}>
-                    {row}
-                  </div>
-                  <div className="seats-container d-flex flex-wrap justify-content-center">
-                    {seatsByType.box[row].map((seat, index) => (
-                      <button
-                        key={`box-${row}-${seat.seat}`}
-                        className={getSeatButtonClass(seat)}
-                        onClick={() => handleSeatClick(seat)}
-                        disabled={seat.status === 'occupied' || seat.status === 'locked'}
-                        style={{
-                          width: '50px',
-                          height: '50px',
-                          minWidth: '50px',
-                          padding: '0',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 'bold',
-                          margin: '0 5px 5px 0'
-                        }}
-                      >
-                        {seat.seat.replace(row, '')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {/* Platinum Seats - Middle */}
-          {hasPlatinumSeats && (
-            <div className="seat-section mb-4">
-              <h5 className="text-center text-info mb-3">Platinum Seats</h5>
-              {Object.keys(seatsByType.platinum).map(row => (
-                <div key={`platinum-${row}`} className="seat-row d-flex align-items-center justify-content-center mb-2">
-                  <div className="row-label me-3 fw-bold" style={{ minWidth: '30px' }}>
-                    {row}
-                  </div>
-                  <div className="seats-container d-flex flex-wrap justify-content-center">
-                    {seatsByType.platinum[row].map((seat, index) => (
-                      <button
-                        key={`platinum-${row}-${seat.seat}`}
-                        className={getSeatButtonClass(seat)}
-                        onClick={() => handleSeatClick(seat)}
-                        disabled={seat.status === 'occupied' || seat.status === 'locked'}
-                        style={{
-                          width: '50px',
-                          height: '50px',
-                          minWidth: '50px',
-                          padding: '0',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 'bold',
-                          margin: '0 5px 5px 0'
-                        }}
-                      >
-                        {seat.seat.replace(row, '')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {/* Gold Seats - Bottom */}
-          {hasGoldSeats && (
-            <div className="seat-section">
-              <h5 className="text-center text-light mb-3">Gold Seats</h5>
-              {Object.keys(seatsByType.gold).map(row => (
-                <div key={`gold-${row}`} className="seat-row d-flex align-items-center justify-content-center mb-2">
-                  <div className="row-label me-3 fw-bold" style={{ minWidth: '30px' }}>
-                    {row}
-                  </div>
-                  <div className="seats-container d-flex flex-wrap justify-content-center">
-                    {seatsByType.gold[row].map((seat, index) => (
-                      <button
-                        key={`gold-${row}-${seat.seat}`}
-                        className={getSeatButtonClass(seat)}
-                        onClick={() => handleSeatClick(seat)}
-                        disabled={seat.status === 'occupied' || seat.status === 'locked'}
-                        style={{
-                          width: '50px',
-                          height: '50px',
-                          minWidth: '50px',
-                          padding: '0',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 'bold',
-                          margin: '0 5px 5px 0'
-                        }}
-                      >
-                        {seat.seat.replace(row, '')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {/* Fallback for seats without type */}
-          {hasOtherSeats && (
-            <div className="seat-section mt-4">
-              <h5 className="text-center mb-3">Other Seats</h5>
-              {(() => {
-                const groupedOtherSeats = groupSeatsByRow(otherSeats.map(seat => ({...seat})));
-                return Object.keys(groupedOtherSeats).map(row => (
-                  <div key={`other-${row}`} className="seat-row d-flex align-items-center justify-content-center mb-2">
-                    <div className="row-label me-3 fw-bold" style={{ minWidth: '30px' }}>
+          {/* Unified seat layout without type headers */}
+          <div className="seat-section">
+            {/* Box Seats - Center Top (no header) */}
+            {hasBoxSeats && (
+              <div className="mb-3">
+                {Object.keys(seatsByType.box).map(row => (
+                  <div key={`box-${row}`} className="seat-row d-flex align-items-center justify-content-center mb-1">
+                    <div className="row-label me-2 fw-bold" style={{ minWidth: '25px', fontSize: '14px' }}>
                       {row}
                     </div>
                     <div className="seats-container d-flex flex-wrap justify-content-center">
-                      {groupedOtherSeats[row].map((seat, index) => (
+                      {seatsByType.box[row].map((seat, index) => (
                         <button
-                          key={`other-${row}-${seat.seat}`}
+                          key={`box-${row}-${seat.seat}`}
                           className={getSeatButtonClass(seat)}
                           onClick={() => handleSeatClick(seat)}
                           disabled={seat.status === 'occupied' || seat.status === 'locked'}
                           style={{
-                            width: '50px',
-                            height: '50px',
-                            minWidth: '50px',
+                            width: '40px',
+                            height: '30px',
+                            minWidth: '40px',
                             padding: '0',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontWeight: 'bold',
-                            margin: '0 5px 5px 0'
+                            margin: '0 2px 2px 0',
+                            fontSize: '12px',
+                            borderRadius: '6px'
                           }}
                         >
                           {seat.seat.replace(row, '')}
@@ -574,10 +528,127 @@ const Seats = () => {
                       ))}
                     </div>
                   </div>
-                ));
-              })()}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+            
+            {/* Platinum Seats - Middle (no header) */}
+            {hasPlatinumSeats && (
+              <div className="mb-3">
+                {Object.keys(seatsByType.platinum).map(row => (
+                  <div key={`platinum-${row}`} className="seat-row d-flex align-items-center justify-content-center mb-1">
+                    <div className="row-label me-2 fw-bold" style={{ minWidth: '25px', fontSize: '14px' }}>
+                      {row}
+                    </div>
+                    <div className="seats-container d-flex flex-wrap justify-content-center">
+                      {seatsByType.platinum[row].map((seat, index) => (
+                        <button
+                          key={`platinum-${row}-${seat.seat}`}
+                          className={getSeatButtonClass(seat)}
+                          onClick={() => handleSeatClick(seat)}
+                          disabled={seat.status === 'occupied' || seat.status === 'locked'}
+                          style={{
+                            width: '40px',
+                            height: '30px',
+                            minWidth: '40px',
+                            padding: '0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                            margin: '0 2px 2px 0',
+                            fontSize: '12px',
+                            borderRadius: '6px'
+                          }}
+                        >
+                          {seat.seat.replace(row, '')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Gold Seats - Bottom (no header) */}
+            {hasGoldSeats && (
+              <div className="mb-3">
+                {Object.keys(seatsByType.gold).map(row => (
+                  <div key={`gold-${row}`} className="seat-row d-flex align-items-center justify-content-center mb-1">
+                    <div className="row-label me-2 fw-bold" style={{ minWidth: '25px', fontSize: '14px' }}>
+                      {row}
+                    </div>
+                    <div className="seats-container d-flex flex-wrap justify-content-center">
+                      {seatsByType.gold[row].map((seat, index) => (
+                        <button
+                          key={`gold-${row}-${seat.seat}`}
+                          className={getSeatButtonClass(seat)}
+                          onClick={() => handleSeatClick(seat)}
+                          disabled={seat.status === 'occupied' || seat.status === 'locked'}
+                          style={{
+                            width: '40px',
+                            height: '30px',
+                            minWidth: '40px',
+                            padding: '0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                            margin: '0 2px 2px 0',
+                            fontSize: '12px',
+                            borderRadius: '6px'
+                          }}
+                        >
+                          {seat.seat.replace(row, '')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Fallback for seats without type (no header) */}
+            {hasOtherSeats && (
+              <div>
+                {(() => {
+                  const groupedOtherSeats = groupSeatsByRow(otherSeats.map(seat => ({...seat})));
+                  return Object.keys(groupedOtherSeats).map(row => (
+                    <div key={`other-${row}`} className="seat-row d-flex align-items-center justify-content-center mb-1">
+                      <div className="row-label me-2 fw-bold" style={{ minWidth: '25px', fontSize: '14px' }}>
+                        {row}
+                      </div>
+                      <div className="seats-container d-flex flex-wrap justify-content-center">
+                        {groupedOtherSeats[row].map((seat, index) => (
+                          <button
+                            key={`other-${row}-${seat.seat}`}
+                            className={getSeatButtonClass(seat)}
+                            onClick={() => handleSeatClick(seat)}
+                            disabled={seat.status === 'occupied' || seat.status === 'locked'}
+                            style={{
+                              width: '40px',
+                              height: '30px',
+                              minWidth: '40px',
+                              padding: '0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 'bold',
+                              margin: '0 2px 2px 0',
+                              fontSize: '12px',
+                              borderRadius: '6px'
+                            }}
+                          >
+                            {seat.seat.replace(row, '')}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
+          </div>
         </div>
       );
     } catch (error) {
@@ -590,114 +661,179 @@ const Seats = () => {
     <Container>
       <h2 className="text-gold mb-4">Select Seats</h2>
       
-      <Row>
-        {/* Left Column - Movie Info and Selected Seats */}
-        <Col md={4} className="sticky-top" style={{ top: '20px' }}>
-          <Card className="bg-dark mb-4">
-            <Card.Body>
+      {/* Top Section - Movie Information */}
+      <Card className="bg-dark mb-4">
+        <Card.Body>
+          <Row>
+            <Col md={3}>
+              {showtime?.movie?.poster_url && (
+                <img 
+                  src={showtime.movie.poster_url} 
+                  alt={showtime.movie.title}
+                  className="img-fluid rounded"
+                  style={{ maxHeight: '200px', width: '100%', objectFit: 'cover' }}
+                />
+              )}
+            </Col>
+            <Col md={9}>
               <h4 className="text-gold mb-3">Movie Information</h4>
               {showtime?.movie && (
-                <>
-                  <div className="text-center mb-3">
-                    {showtime.movie.poster_url && (
-                      <img 
-                        src={showtime.movie.poster_url} 
-                        alt={showtime.movie.title}
-                        className="img-fluid rounded"
-                        style={{ maxHeight: '200px' }}
-                      />
+                <Row>
+                  <Col md={6}>
+                    <h5>{showtime.movie.title}</h5>
+                    <p><strong>Theater:</strong> {showtime.theater?.name}</p>
+                    <p><strong>Date:</strong> {showtime.show_date && new Date(showtime.show_date).toLocaleDateString('en-GB')}</p>
+                    <p><strong>Time:</strong> {showtime && calculateShowtime(showtime)}</p>
+                  </Col>
+                  <Col md={6}>
+                    {showtime.theater?.facilities && (
+                      <div>
+                        <strong>Facilities:</strong>
+                        <div className="mt-2">
+                          {normalizeFacilities(showtime.theater.facilities).map((facility, index) => (
+                            <Badge key={index} bg="secondary" className="me-1 mb-1">
+                              {facility}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
                     )}
-                  </div>
-                  <h5>{showtime.movie.title}</h5>
-                  <p><strong>Theater:</strong> {showtime.theater?.name}</p>
-                  <p><strong>Date:</strong> {showtime.show_date && new Date(showtime.show_date).toLocaleDateString('en-GB')}</p>
-                  <p><strong>Time:</strong> {showtime && calculateShowtime(showtime)}</p>
-                  {showtime.theater?.facilities && (
-                    <div>
-                      <strong>Facilities:</strong>
-                      <div className="mt-2">
-                        {normalizeFacilities(showtime.theater.facilities).map((facility, index) => (
-                          <Badge key={index} bg="secondary" className="me-1 mb-1">
-                            {facility}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </Card.Body>
-          </Card>
+                  </Col>
+                </Row>
+              )}  
+            </Col>
+          </Row>
           
-          {/* Selected Seats Section - Fixed height to prevent layout jumping */}
-          <Card className="bg-dark">
-            <Card.Body>
-              <h4 className="text-gold mb-3">Selected Seats</h4>
-              <div style={{ minHeight: '150px' }}>
-                {selectedSeats.length > 0 ? (
+          {/* Other Showtimes Section */}
+          {showtime?.movie && (
+            <Row className="mt-4">
+              <Col>
+                <h5 className="text-gold mb-3">Other Showtimes Today</h5>
+                {showtimesLoading ? (
+                  <div className="text-center py-2">
+                    <Spinner animation="border" size="sm" variant="gold" />
+                    <span className="ms-2">Loading other showtimes...</span>
+                  </div>
+                ) : otherShowtimes.length > 0 ? (
                   <div className="d-flex flex-wrap gap-2">
-                    {selectedSeats.map((seat, index) => (
-                      <div key={index} className="d-flex align-items-center bg-secondary p-2 rounded">
-                        <span className="me-2">{seat.seat}</span>
-                        <Badge bg={
-                          seat.type === 'box' ? 'warning' : 
-                          seat.type === 'platinum' ? 'info' : 'light'
-                        }>
-                          {seat.type}
-                        </Badge>
-                        <span className="ms-2 text-gold">{seat.price?.toLocaleString()} VND</span>
-                      </div>
-                    ))}
+                    {otherShowtimes.map((otherShowtime) => {
+                      const timeRange = calculateShowtime({
+                        ...otherShowtime,
+                        movie: showtime.movie
+                      });
+                      
+                      return (
+                        <Button
+                          key={otherShowtime.id}
+                          variant="outline-primary"
+                          size="sm"
+                          className="px-3 py-2"
+                          onClick={() => {
+                            // Navigate to the other showtime
+                            navigate(`/booking/seats/${otherShowtime.id}`);
+                          }}
+                          style={{
+                            minWidth: '120px',
+                            borderRadius: '8px',
+                            fontSize: '13px'
+                          }}
+                        >
+                          <div className="d-flex flex-column align-items-center">
+                            <strong>{timeRange}</strong>
+                            <small className="text-muted">Available</small>
+                          </div>
+                        </Button>
+                      );
+                    })}
                   </div>
                 ) : (
-                  <p className="text-muted">No seats selected</p>
+                  <p className="text-muted mb-0">No other showtimes available today</p>
                 )}
-                
-                <div className="mt-3 pt-3 border-top">
-                  <div className="d-flex justify-content-between">
-                    <strong>Total:</strong>
-                    <strong className="text-gold">
-                      {selectedSeats.reduce((sum, seat) => sum + (seat.price || 0), 0)?.toLocaleString()} VND
-                    </strong>
-                  </div>
-                </div>
+              </Col>
+            </Row>
+          )}
+        </Card.Body>
+      </Card>
 
-                {lockError && (
-                  <Alert variant="danger" className="mt-3 mb-0">
-                    {lockError}
-                  </Alert>
-                )}
-                
-                <Button 
-                  variant="gold" 
-                  className="w-100 mt-3"
-                  onClick={lockSelectedSeats}
-                  disabled={selectedSeats.length === 0 || lockLoading}
-                >
-                  {lockLoading ? (
-                    <>
-                      <Spinner
-                        as="span"
-                        animation="border"
-                        size="sm"
-                        role="status"
-                        aria-hidden="true"
-                      /> Locking...
-                    </>
+      {/* Main Content Row */}
+      <Row>
+        {/* Left Column - Selected Seats */}
+        <Col md={3}>
+          <div className="sticky-top" style={{ top: '110px', zIndex: '10' }}>
+            <Card className="bg-dark" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+              <Card.Body className="p-3">
+                <h5 className="text-gold mb-2">Selected Seats</h5>
+                <div style={{ minHeight: '150px' }}>
+                  {selectedSeats.length > 0 ? (
+                    <div className="d-flex flex-column gap-1">
+                      {selectedSeats.map((seat, index) => (
+                        <div key={index} className="d-flex align-items-center justify-content-between bg-secondary p-1 rounded small">
+                          <span className="fw-bold">{seat.seat}</span>
+                          <Badge bg={
+                            seat.type === 'box' ? 'warning' : 
+                            seat.type === 'platinum' ? 'info' : 'light'
+                          } className="small">
+                            {seat.type}
+                          </Badge>
+                          <span className="text-gold small">{(seat.price / 25000)?.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</span>
+                        </div>
+                      ))}
+                    </div>
                   ) : (
-                    'Proceed to Checkout'
+                    <p className="text-muted small mb-0">No seats selected</p>
                   )}
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
+                  
+                  <div className="mt-2 pt-2 border-top">
+                    <div className="d-flex justify-content-between">
+                      <strong className="small">Total:</strong>
+                      <strong className="text-gold small">
+                        {(selectedSeats.reduce((sum, seat) => sum + (seat.price || 0), 0) / 25000)?.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {lockError && (
+                    <Alert variant="danger" className="mt-2 mb-0 small">
+                      {lockError}
+                    </Alert>
+                  )}
+                  
+                  <Button 
+                    variant="gold" 
+                    size="sm"
+                    className="w-100 mt-2"
+                    onClick={lockSelectedSeats}
+                    disabled={selectedSeats.length === 0 || lockLoading}
+                  >
+                    {lockLoading ? (
+                      <>
+                        <Spinner
+                          as="span"
+                          animation="border"
+                          size="sm"
+                          role="status"
+                          aria-hidden="true"
+                        /> Locking...
+                      </>
+                    ) : (
+                      'Proceed to Checkout'
+                    )}
+                  </Button>
+                </div>
+              </Card.Body>
+            </Card>
+          </div>
         </Col>
         
-        {/* Right Column - Seat Map and Legend */}
-        <Col md={8}>
-          <Card className="bg-dark mb-4">
+        {/* Right Column - Seat Map */}
+        <Col md={9}>
+          <Card className="bg-dark">
             <Card.Body>
-              <h4 className="text-gold mb-4 text-center">Screen</h4>
+              <div className="text-center mb-3">
+                <div className="bg-light text-dark py-2 px-4 rounded" style={{ display: 'inline-block', fontSize: '14px', fontWeight: 'bold' }}>
+                  SCREEN
+                </div>
+              </div>
               
               {loading ? (
                 <div className="text-center py-5">
@@ -719,32 +855,32 @@ const Seats = () => {
               )}
 
               {/* Legend */}
-              <div className="mt-4">
-                <h5 className="text-gold mb-3">Legend</h5>
-                <div className="d-flex flex-wrap gap-3">
-                  <div className="d-flex align-items-center">
-                    <div className="btn btn-outline-light me-2" style={{ width: '30px', height: '30px', padding: '0' }}></div>
-                    <span>Available (Gold)</span>
+              <div className="mt-3">
+                <h6 className="text-gold mb-2">Legend</h6>
+                <div className="row">
+                  <div className="col-6 col-md-4 d-flex align-items-center mb-1">
+                    <div className="btn btn-outline-light me-1" style={{ width: '25px', height: '18px', padding: '0', fontSize: '10px', borderRadius: '4px' }}></div>
+                    <small>Gold</small>
                   </div>
-                  <div className="d-flex align-items-center">
-                    <div className="btn btn-outline-info me-2" style={{ width: '30px', height: '30px', padding: '0' }}></div>
-                    <span>Available (Platinum)</span>
+                  <div className="col-6 col-md-4 d-flex align-items-center mb-1">
+                    <div className="btn btn-outline-info me-1" style={{ width: '25px', height: '18px', padding: '0', fontSize: '10px', borderRadius: '4px' }}></div>
+                    <small>Platinum</small>
                   </div>
-                  <div className="d-flex align-items-center">
-                    <div className="btn btn-outline-warning me-2" style={{ width: '30px', height: '30px', padding: '0' }}></div>
-                    <span>Available (Box)</span>
+                  <div className="col-6 col-md-4 d-flex align-items-center mb-1">
+                    <div className="btn btn-outline-warning me-1" style={{ width: '25px', height: '18px', padding: '0', fontSize: '10px', borderRadius: '4px' }}></div>
+                    <small>Box</small>
                   </div>
-                  <div className="d-flex align-items-center">
-                    <div className="btn btn-primary me-2" style={{ width: '30px', height: '30px', padding: '0' }}></div>
-                    <span>Selected</span>
+                  <div className="col-6 col-md-4 d-flex align-items-center mb-1">
+                    <div className="btn btn-primary me-1" style={{ width: '25px', height: '18px', padding: '0', fontSize: '10px', borderRadius: '4px' }}></div>
+                    <small>Selected</small>
                   </div>
-                  <div className="d-flex align-items-center">
-                    <div className="btn btn-secondary me-2" style={{ width: '30px', height: '30px', padding: '0' }}></div>
-                    <span>Occupied</span>
+                  <div className="col-6 col-md-4 d-flex align-items-center mb-1">
+                    <div className="btn btn-secondary me-1" style={{ width: '25px', height: '18px', padding: '0', fontSize: '10px', borderRadius: '4px' }}></div>
+                    <small>Occupied</small>
                   </div>
-                  <div className="d-flex align-items-center">
-                    <div className="btn btn-warning me-2" style={{ width: '30px', height: '30px', padding: '0' }}></div>
-                    <span>Locked by others</span>
+                  <div className="col-6 col-md-4 d-flex align-items-center mb-1">
+                    <div className="btn btn-warning me-1" style={{ width: '25px', height: '18px', padding: '0', fontSize: '10px', borderRadius: '4px' }}></div>
+                    <small>Locked</small>
                   </div>
                 </div>
               </div>
@@ -752,6 +888,60 @@ const Seats = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Bottom Section - User Ratings */}
+      <Card className="bg-dark mt-4">
+        <Card.Body>
+          <h4 className="text-gold mb-3">User Reviews</h4>
+          <div className="text-center py-4">
+            <p className="text-muted mb-3">Share your experience with other moviegoers</p>
+            <div className="d-flex justify-content-center align-items-center gap-4">
+              <div className="text-center">
+                <div className="h5 text-warning mb-1">★★★★☆</div>
+                <small className="text-muted">Average Rating</small>
+              </div>
+              <div className="text-center">
+                <div className="h5 text-info mb-1">4.2/5</div>
+                <small className="text-muted">Based on 128 reviews</small>
+              </div>
+              <Button variant="outline-gold" size="sm">
+                Write a Review
+              </Button>
+            </div>
+          </div>
+          
+          {/* Sample reviews */}
+          <div className="mt-4">
+            <div className="border-bottom pb-3 mb-3">
+              <div className="d-flex justify-content-between align-items-start">
+                <div>
+                  <strong className="text-warning">★★★★★</strong>
+                  <span className="ms-2">John D.</span>
+                </div>
+                <small className="text-muted">2 days ago</small>
+              </div>
+              <p className="mt-2 mb-0">"Great movie experience! The theater facilities were excellent and the sound quality was amazing."</p>
+            </div>
+            
+            <div className="border-bottom pb-3 mb-3">
+              <div className="d-flex justify-content-between align-items-start">
+                <div>
+                  <strong className="text-warning">★★★★☆</strong>
+                  <span className="ms-2">Sarah M.</span>
+                </div>
+                <small className="text-muted">5 days ago</small>
+              </div>
+              <p className="mt-2 mb-0">"Good movie, comfortable seats. The platinum seats were worth the extra cost."</p>
+            </div>
+            
+            <div className="text-center">
+              <Button variant="link" className="text-gold">
+                View All Reviews
+              </Button>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
     </Container>
   );
 };

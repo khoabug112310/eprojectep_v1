@@ -34,17 +34,17 @@
     <div class="ticket-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
         <div class="left-info">
             <div class="info-item" style="margin-bottom: 15px;">
-                <span style="color: #ffd700; font-weight: 600; display: block;">📅 Ngày chiếu:</span>
+                <span style="color: #ffd700; font-weight: 600; display: block;">📅 Show Date:</span>
                 <span style="font-size: 18px; font-weight: bold;">{{ \Carbon\Carbon::parse($showtime->show_date)->format('d/m/Y') }}</span>
             </div>
             
             <div class="info-item" style="margin-bottom: 15px;">
-                <span style="color: #ffd700; font-weight: 600; display: block;">🕐 Giờ chiếu:</span>
+                <span style="color: #ffd700; font-weight: 600; display: block;">🕐 Show Time:</span>
                 <span style="font-size: 18px; font-weight: bold;">{{ \Carbon\Carbon::parse($showtime->show_time)->format('H:i') }}</span>
             </div>
 
             <div class="info-item" style="margin-bottom: 15px;">
-                <span style="color: #ffd700; font-weight: 600; display: block;">🏢 Rạp chiếu:</span>
+                <span style="color: #ffd700; font-weight: 600; display: block;">🏢 Theater:</span>
                 <span style="font-size: 16px;">{{ $theater->name }}</span>
                 <span style="color: #cccccc; font-size: 14px; display: block;">{{ $theater->address }}</span>
             </div>
@@ -52,7 +52,7 @@
 
         <div class="right-info">
             <div class="info-item" style="margin-bottom: 15px;">
-                <span style="color: #ffd700; font-weight: 600; display: block;">🪑 Ghế ngồi:</span>
+                <span style="color: #ffd700; font-weight: 600; display: block;">🪑 Seats:</span>
                 <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
                     @foreach($booking->seats as $seat)
                         <span style="
@@ -71,14 +71,14 @@
             </div>
 
             <div class="info-item" style="margin-bottom: 15px;">
-                <span style="color: #ffd700; font-weight: 600; display: block;">🎫 Mã đặt vé:</span>
+                <span style="color: #ffd700; font-weight: 600; display: block;">🎫 Booking Code:</span>
                 <span style="font-size: 20px; font-weight: bold; color: #e50914;">{{ $booking->booking_code }}</span>
             </div>
 
             <div class="info-item">
-                <span style="color: #ffd700; font-weight: 600; display: block;">💰 Tổng tiền:</span>
+                <span style="color: #ffd700; font-weight: 600; display: block;">💰 Total Amount:</span>
                 <span style="font-size: 18px; font-weight: bold; color: #28a745;">
-                    {{ number_format($booking->total_amount, 0, '.', ',') }} VND
+                    ${{ number_format($booking->total_amount / 25000, 2) }}
                 </span>
             </div>
         </div>
@@ -175,9 +175,9 @@
         @if($customer->phone)
         <p><strong>Điện thoại:</strong> {{ $customer->phone }}</p>
         @endif
-        <p><strong>Ngày đặt:</strong> {{ $booking->created_at->format('d/m/Y H:i') }}</p>
+        <p><strong>Booking Date:</strong> {{ $booking->created_at->format('d/m/Y H:i') }}</p>
         @if($booking->payment)
-        <p><strong>Phương thức thanh toán:</strong> {{ ucfirst(str_replace('_', ' ', $booking->payment->payment_method)) }}</p>
+        <p><strong>Payment Method:</strong> {{ ucfirst(str_replace('_', ' ', $booking->payment->payment_method)) }}</p>
         @endif
     </div>
 </div>

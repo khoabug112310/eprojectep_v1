@@ -43,7 +43,7 @@ const MainLayout = () => {
         <Navbar bg="dark" variant="dark" expand="lg" className="py-2">
           <Container>
             <Navbar.Brand as={Link} to="/" className="fw-bold">
-              <img src="./image/Logo-Cinebook.png" alt="CineBook" width="30" height="30" className="d-inline-block align-top" />
+              <img src="./image/Gemini_Generated_Image_a55g0ka55g0ka55g.png" alt="CineBook" width="40" height="40" className="d-inline-block align-top" />
             </Navbar.Brand>
             <Navbar.Toggle aria-controls="main-navbar" />
             <Navbar.Collapse id="main-navbar">

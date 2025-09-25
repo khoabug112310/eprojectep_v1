@@ -26,7 +26,7 @@ class MovieSeeder extends Seeder
                 'age_rating' => 'T16',
                 'release_date' => '2024-02-10',
                 'poster_url' => 'https://picsum.photos/300/450?random=1',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'trailer_url' => 'https://www.youtube.com/embed/giXco2jaZ_4',
                 'cast' => json_encode([
                     ['name' => 'Phương Anh Đào', 'role' => 'Mai'],
                     ['name' => 'Tuấn Trần', 'role' => 'Dương'],
@@ -91,7 +91,7 @@ class MovieSeeder extends Seeder
                 'age_rating' => 'T13',
                 'release_date' => '2024-01-15',
                 'poster_url' => 'https://picsum.photos/300/450?random=4',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'trailer_url' => 'https://www.youtube.com/embed/JfVOs4VSpmA',
                 'cast' => json_encode([
                     ['name' => 'Tom Holland', 'role' => 'Peter Parker / Spider-Man'],
                     ['name' => 'Zendaya', 'role' => 'MJ'],
@@ -112,7 +112,7 @@ class MovieSeeder extends Seeder
                 'age_rating' => 'T13',
                 'release_date' => '2024-01-20',
                 'poster_url' => 'https://picsum.photos/300/450?random=5',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'trailer_url' => 'https://www.youtube.com/embed/d9MyW72ELq0',
                 'cast' => json_encode([
                     ['name' => 'Sam Worthington', 'role' => 'Jake Sully'],
                     ['name' => 'Zoe Saldana', 'role' => 'Neytiri'],
@@ -133,7 +133,7 @@ class MovieSeeder extends Seeder
                 'age_rating' => 'T13',
                 'release_date' => '2024-02-14',
                 'poster_url' => 'https://picsum.photos/300/450?random=6',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'trailer_url' => 'https://www.youtube.com/embed/WGt-8adyabk',
                 'cast' => json_encode([
                     ['name' => 'Tom Cruise', 'role' => 'Pete "Maverick" Mitchell'],
                     ['name' => 'Miles Teller', 'role' => 'Bradley "Rooster" Bradshaw'],

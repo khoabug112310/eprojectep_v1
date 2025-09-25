@@ -23,17 +23,56 @@ class MovieController extends Controller
 
         // Filter by genre
         if ($request->filled('genre')) {
-            $query->where('genre', $request->genre);
+            // Handle both string and JSON array genres
+            $genre = $request->genre;
+            $query->where(function ($q) use ($genre) {
+                $q->where('genre', 'like', '%' . $genre . '%')
+                  ->orWhereRaw("JSON_CONTAINS(genre, '\"$genre\"')");
+            });
         }
 
-        // Filter by language
-        if ($request->filled('language')) {
-            $query->where('language', $request->language);
+        // Filter by showtime (morning, afternoon, evening, night)
+        if ($request->filled('showtime')) {
+            $showtime = $request->showtime;
+            // Join with showtimes table to filter by actual showtimes
+            $query->whereHas('showtimes', function ($q) use ($showtime) {
+                switch ($showtime) {
+                    case 'morning':
+                        $q->whereBetween('show_time', ['09:00:00', '11:59:59']);
+                        break;
+                    case 'afternoon':
+                        $q->whereBetween('show_time', ['12:00:00', '16:59:59']);
+                        break;
+                    case 'evening':
+                        $q->whereBetween('show_time', ['17:00:00', '20:59:59']);
+                        break;
+                    case 'night':
+                        $q->where(function ($subQ) {
+                            $subQ->whereBetween('show_time', ['21:00:00', '23:59:59'])
+                                 ->orWhereBetween('show_time', ['00:00:00', '08:59:59']);
+                        });
+                        break;
+                }
+            });
+        }
+
+        // Filter by status (now-showing, coming-soon)
+        if ($request->filled('status')) {
+            $status = $request->status;
+            if ($status === 'now-showing') {
+                $query->where('status', 'active')
+                      ->where('release_date', '<=', now());
+            } elseif ($status === 'coming-soon') {
+                $query->where(function ($q) {
+                    $q->where('status', 'coming_soon')
+                      ->orWhere('release_date', '>', now());
+                });
+            }
         }
 
         // Sort
         $sortBy = $request->get('sort_by', 'title');
-        $sortDirection = 'asc';
+        $sortOrder = $request->get('sort_order', 'asc');
         
         switch ($sortBy) {
             case 'rating':
@@ -42,8 +81,11 @@ class MovieController extends Controller
             case 'release_date':
                 $query->orderBy('release_date', 'desc');
                 break;
+            case 'newest':
+                $query->orderBy('created_at', 'desc');
+                break;
             default:
-                $query->orderBy('title', 'asc');
+                $query->orderBy($sortBy, $sortOrder);
         }
 
         $movies = $query->paginate(20);
@@ -197,63 +239,5 @@ class MovieController extends Controller
             'success' => true,
             'message' => 'Xóa phim thành công'
         ]);
-    }
-
-    public function uploadPoster(SecureFileUploadRequest $request, FileUploadSecurityService $securityService)
-    {
-        try {
-            $file = $request->file('poster');
-            
-            // Perform comprehensive security validation
-            $validation = $securityService->validateAndSecureFile($file, 'poster');
-            
-            if (!$validation['valid']) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'File upload security validation failed',
-                    'errors' => $validation['errors']
-                ], 422);
-            }
-            
-            // Store the secure file
-            $fileInfo = $validation['file_info'];
-            $securePath = $fileInfo['secure_path'];
-            
-            // Save file to storage using the secure filename
-            $storedPath = $file->storeAs('public/posters', $fileInfo['secure_name']);
-            $publicUrl = Storage::url($storedPath);
-            
-            $responseData = [
-                'url' => $publicUrl,
-                'filename' => $fileInfo['secure_name'],
-                'original_name' => $fileInfo['original_name'],
-                'size' => $fileInfo['size'],
-                'mime_type' => $fileInfo['mime_type'],
-                'hash' => $fileInfo['hash']
-            ];
-            
-            // Include warnings if any
-            if (!empty($validation['warnings'])) {
-                $responseData['warnings'] = $validation['warnings'];
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => $responseData,
-                'message' => 'Upload poster thành công'
-            ]);
-            
-        } catch (\Exception $e) {
-            \Log::error('Poster upload failed', [
-                'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
-                'file_name' => $request->hasFile('poster') ? $request->file('poster')->getClientOriginalName() : null
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Upload failed due to system error'
-            ], 500);
-        }
     }
 }

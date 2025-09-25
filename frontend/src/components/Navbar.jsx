@@ -40,7 +40,8 @@ const NavbarComponent = () => {
     <Navbar bg="dark" variant="dark" expand="lg" className="py-2">
       <Container>
         <Navbar.Brand as={Link} to="/" className="fw-bold">
-          🎬 CineBook
+          <img src="./image/Gemini_Generated_Image_a55g0ka55g0ka55g.png" alt="CineBook" width="140" height="80" className="d-inline-block align-top me-2" />
+          
         </Navbar.Brand>
         
         <Navbar.Toggle aria-controls="main-navbar" />

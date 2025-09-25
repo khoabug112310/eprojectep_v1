@@ -182,17 +182,17 @@ const Checkout = () => {
                 <h5 className="text-gold">Payment Details</h5>
                 <div className="d-flex justify-content-between">
                   <span><strong>Subtotal:</strong></span>
-                  <span>{booking.total_amount?.toLocaleString()} VND</span>
+                  <span>{(booking.total_amount / 25000)?.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</span>
                 </div>
                 {appliedDiscount && (
                   <div className="d-flex justify-content-between">
                     <span><strong>Discount ({appliedDiscount.code}):</strong></span>
-                    <span className="text-success">-{discountAmount.toLocaleString()} VND</span>
+                    <span className="text-success">-{(discountAmount / 25000).toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</span>
                   </div>
                 )}
                 <div className="d-flex justify-content-between mt-2">
                   <span><strong>Total Amount:</strong></span>
-                  <span className="text-gold h5">{totalAmount.toLocaleString()} VND</span>
+                  <span className="text-gold h5">{(totalAmount / 25000).toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</span>
                 </div>
               </div>
             </Card.Body>
@@ -200,7 +200,7 @@ const Checkout = () => {
         </Col>
         
         <Col md={4}>
-          <Card className="bg-dark sticky-top" style={{ top: '20px' }}>
+          <Card className="bg-dark sticky-top" style={{ top: '110px', zIndex: '10' }}>
             <Card.Body>
               <h4 className="text-gold mb-4">Payment</h4>
               

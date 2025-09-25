@@ -1,16 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Card, Container, Form, Alert, Row, Col } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
 
-const EditTheater = () => {
-  const { id } = useParams();
+const CreateTheater = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isCreateMode, setIsCreateMode] = useState(!id);
   const [formData, setFormData] = useState({
     name: '',
     city: '',
@@ -19,44 +16,6 @@ const EditTheater = () => {
     facilities: '',
     status: 'active'
   });
-
-  useEffect(() => {
-    if (id) {
-      // Edit mode
-      setIsCreateMode(false);
-      fetchTheater();
-    } else {
-      // Create mode
-      setIsCreateMode(true);
-      setLoading(false);
-    }
-  }, [id]);
-
-  const fetchTheater = async () => {
-    try {
-      const response = await adminAPI.getTheaterById(id);
-      const theater = response.data.data || response.data;
-      
-      // Convert facilities array to comma-separated string
-      const facilitiesString = Array.isArray(theater.facilities) 
-        ? theater.facilities.join(', ') 
-        : theater.facilities || '';
-      
-      setFormData({
-        name: theater.name || '',
-        city: theater.city || '',
-        address: theater.address || '',
-        total_seats: theater.total_seats || '',
-        facilities: facilitiesString,
-        status: theater.status || 'active'
-      });
-      setLoading(false);
-    } catch (err) {
-      console.error('Error fetching theater:', err);
-      setError('Failed to load theater data');
-      setLoading(false);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -79,28 +38,22 @@ const EditTheater = () => {
         total_seats: parseInt(formData.total_seats) || 0
       };
 
-      let response;
-      if (isCreateMode) {
-        console.log('Creating theater with data:', submitData);
-        response = await adminAPI.createTheater(submitData);
-        setSuccess('Theater created successfully!');
-      } else {
-        console.log('Updating theater with data:', submitData);
-        response = await adminAPI.updateTheater(id, submitData);
-        setSuccess('Theater updated successfully!');
-      }
+      console.log('Creating theater with data:', submitData);
+      const response = await adminAPI.createTheater(submitData);
+      console.log('Create theater response:', response);
       
+      setSuccess('Theater created successfully!');
       setTimeout(() => {
         navigate('/admin/theaters');
       }, 2000);
     } catch (err) {
-      console.error(`Error ${isCreateMode ? 'creating' : 'updating'} theater:`, err);
+      console.error('Error creating theater:', err);
       if (err.response?.data?.errors) {
         // Handle validation errors
         const errors = Object.values(err.response.data.errors).flat();
         setError(errors.join(', '));
       } else {
-        setError(err.response?.data?.message || `Failed to ${isCreateMode ? 'create' : 'update'} theater`);
+        setError(err.response?.data?.message || 'Failed to create theater');
       }
     } finally {
       setSaving(false);
@@ -115,22 +68,18 @@ const EditTheater = () => {
     'Thái Nguyên', 'Thanh Hóa', 'Rạch Giá', 'Cà Mau', 'Pleiku'
   ];
 
-  if (loading) {
-    return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-gold" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
-  }
+  // Common theater facilities
+  const commonFacilities = [
+    'WiFi miễn phí', 'Bãi đỗ xe', 'Quầy bán đồ ăn', 'Máy lạnh', 
+    'Ghế VIP', 'Hệ thống âm thanh Dolby', 'Màn hình IMAX', 
+    'Toilet sạch sẽ', 'Thang máy', 'Khu vực chờ', 'ATM', 
+    'Cửa hàng tiện lợi', 'Phòng game', 'Nhà hàng'
+  ];
 
   return (
     <Container fluid>
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-gold">
-          {isCreateMode ? 'Create New Theater' : `Edit Theater (ID: ${id})`}
-        </h2>
+        <h2 className="text-gold">Create New Theater</h2>
         <Button variant="secondary" onClick={() => navigate('/admin/theaters')}>
           Back to Theaters
         </Button>
@@ -215,6 +164,30 @@ const EditTheater = () => {
                   <Form.Text className="text-muted">
                     Separate multiple facilities with commas. Leave empty if none.
                   </Form.Text>
+                  
+                  {/* Quick add buttons for common facilities */}
+                  <div className="mt-2">
+                    <small className="text-muted d-block mb-2">Quick add common facilities:</small>
+                    <div className="d-flex flex-wrap gap-1">
+                      {commonFacilities.slice(0, 8).map(facility => (
+                        <Button
+                          key={facility}
+                          variant="outline-secondary"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            const currentFacilities = formData.facilities.split(',').map(f => f.trim()).filter(f => f);
+                            if (!currentFacilities.includes(facility)) {
+                              const newFacilities = [...currentFacilities, facility].join(', ');
+                              setFormData(prev => ({ ...prev, facilities: newFacilities }));
+                            }
+                          }}
+                        >
+                          + {facility}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 </Form.Group>
               </Col>
 
@@ -308,12 +281,12 @@ const EditTheater = () => {
                 {saving ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    {isCreateMode ? 'Creating...' : 'Updating...'}
+                    Creating...
                   </>
                 ) : (
                   <>
-                    <i className={`bi bi-${isCreateMode ? 'building-add' : 'check-circle'} me-2`}></i>
-                    {isCreateMode ? 'Create Theater' : 'Update Theater'}
+                    <i className="bi bi-building-add me-2"></i>
+                    Create Theater
                   </>
                 )}
               </Button>
@@ -325,4 +298,4 @@ const EditTheater = () => {
   );
 };
 
-export default EditTheater;
+export default CreateTheater;

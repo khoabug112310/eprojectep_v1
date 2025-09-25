@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button, Card, Container, Form, Alert, Spinner } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
 
-const EditShowtime = () => {
-  const { id } = useParams();
+const CreateShowtime = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [movies, setMovies] = useState([]);
   const [theaters, setTheaters] = useState([]);
   const [formData, setFormData] = useState({
@@ -29,63 +27,6 @@ const EditShowtime = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
-        // Fetch showtime data
-        const showtimeResponse = await adminAPI.getShowtimeById(id);
-        const showtimeData = showtimeResponse.data?.data;
-        
-        if (!showtimeData) {
-          throw new Error('Showtime data not found');
-        }
-        
-        // Parse prices if they are a string
-        let prices = showtimeData.prices;
-        if (typeof prices === 'string') {
-          try {
-            prices = JSON.parse(prices);
-          } catch (e) {
-            console.warn('Failed to parse prices, using defaults', e);
-            prices = { gold: 100000, platinum: 150000, box: 200000 };
-          }
-        } else if (!prices || typeof prices !== 'object') {
-          prices = { gold: 100000, platinum: 150000, box: 200000 };
-        }
-        
-        // Format date and time for input fields
-        let showDate = showtimeData.show_date;
-        if (showDate) {
-          if (typeof showDate === 'string') {
-            // Handle both 'YYYY-MM-DD' and 'YYYY-MM-DD HH:MM:SS' formats
-            showDate = showDate.split('T')[0] || showDate.split(' ')[0];
-          } else if (showDate instanceof Date) {
-            showDate = showDate.toISOString().split('T')[0];
-          }
-        }
-        
-        let showTime = showtimeData.show_time;
-        if (showTime) {
-          if (typeof showTime === 'string') {
-            // Handle both 'HH:MM' and 'YYYY-MM-DD HH:MM:SS' formats
-            if (showTime.includes(':')) {
-              const timeParts = showTime.split('T');
-              showTime = timeParts.length > 1 ? timeParts[1].substring(0, 5) : showTime.split(' ')[1]?.substring(0, 5) || showTime.substring(0, 5);
-            }
-          } else if (showTime instanceof Date) {
-            const hours = showTime.getHours().toString().padStart(2, '0');
-            const minutes = showTime.getMinutes().toString().padStart(2, '0');
-            showTime = `${hours}:${minutes}`;
-          }
-        }
-        
-        setFormData({
-          movie_id: showtimeData.movie_id || '',
-          theater_id: showtimeData.theater_id || '',
-          show_date: showDate || '',
-          show_time: showTime || '',
-          prices: prices,
-          status: showtimeData.status || 'active'
-        });
-        
         // Fetch movies
         const movieResponse = await adminAPI.getAdminMovies({ per_page: 100 });
         const moviesData = movieResponse.data?.data?.data || movieResponse.data?.data || [];
@@ -99,15 +40,13 @@ const EditShowtime = () => {
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
-        setAlert({ show: true, variant: 'danger', message: 'Failed to load showtime data: ' + (error.response?.data?.message || error.message) });
+        setAlert({ show: true, variant: 'danger', message: 'Failed to load movies and theaters: ' + (error.response?.data?.message || error.message) });
         setLoading(false);
       }
     };
 
-    if (id) {
-      fetchData();
-    }
-  }, [id]);
+    fetchData();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -165,7 +104,7 @@ const EditShowtime = () => {
     }
     
     try {
-      setUpdating(true);
+      setLoading(true);
       // Convert prices to JSON string as expected by backend
       // Ensure date is in correct format
       const submitData = {
@@ -175,25 +114,25 @@ const EditShowtime = () => {
         prices: JSON.stringify(formData.prices)
       };
       
-      await adminAPI.updateShowtime(id, submitData);
-      setAlert({ show: true, variant: 'success', message: 'Showtime updated successfully!' });
+      await adminAPI.createShowtime(submitData);
+      setAlert({ show: true, variant: 'success', message: 'Showtime created successfully!' });
       
       // Redirect to showtimes list after a short delay
       setTimeout(() => {
         navigate('/admin/showtimes');
       }, 1500);
     } catch (error) {
-      console.error('Error updating showtime:', error);
-      setAlert({ show: true, variant: 'danger', message: error.response?.data?.message || error.message || 'Failed to update showtime' });
-      setUpdating(false);
+      console.error('Error creating showtime:', error);
+      setAlert({ show: true, variant: 'danger', message: error.response?.data?.message || error.message || 'Failed to create showtime' });
+      setLoading(false);
     }
   };
 
-  if (loading) {
+  if (loading && movies.length === 0 && theaters.length === 0) {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" variant="gold" />
-        <p className="mt-2">Loading showtime data...</p>
+        <p className="mt-2">Loading data...</p>
       </div>
     );
   }
@@ -201,7 +140,7 @@ const EditShowtime = () => {
   return (
     <Container fluid>
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-gold">Edit Showtime</h2>
+        <h2 className="text-gold">Create New Showtime</h2>
         <Button variant="secondary" onClick={() => navigate('/admin/showtimes')}>
           <i className="bi bi-arrow-left me-1"></i> Back to Showtimes
         </Button>
@@ -381,15 +320,15 @@ const EditShowtime = () => {
               <Button variant="secondary" onClick={() => navigate('/admin/showtimes')}>
                 <i className="bi bi-x-circle me-1"></i> Cancel
               </Button>
-              <Button variant="primary" type="submit" disabled={updating}>
-                {updating ? (
+              <Button variant="primary" type="submit" disabled={loading}>
+                {loading ? (
                   <>
                     <Spinner animation="border" size="sm" className="me-2" />
-                    Updating...
+                    Creating...
                   </>
                 ) : (
                   <>
-                    <i className="bi bi-check-circle me-1"></i> Update Showtime
+                    <i className="bi bi-check-circle me-1"></i> Create Showtime
                   </>
                 )}
               </Button>
@@ -401,4 +340,4 @@ const EditShowtime = () => {
   );
 };
 
-export default EditShowtime;
+export default CreateShowtime;

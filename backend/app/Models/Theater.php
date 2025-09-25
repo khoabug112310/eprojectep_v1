@@ -15,12 +15,14 @@ class Theater extends Model
         'address',
         'city',
         'total_seats',
+        'seat_configuration',
         'facilities',
         'status',
     ];
 
     protected $casts = [
         'facilities' => 'array',
+        'seat_configuration' => 'array',
     ];
 
     public function showtimes()

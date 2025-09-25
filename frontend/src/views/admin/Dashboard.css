@@ -1,0 +1,217 @@
+/* DatePicker Dark Theme Styling */
+.react-datepicker {
+  background-color: #333 !important;
+  border: 1px solid #FFD700 !important;
+  color: #fff !important;
+}
+
+.react-datepicker__header {
+  background-color: #444 !important;
+  border-bottom: 1px solid #FFD700 !important;
+  color: #fff !important;
+}
+
+.react-datepicker__current-month {
+  color: #FFD700 !important;
+}
+
+.react-datepicker__day-name {
+  color: #ccc !important;
+}
+
+.react-datepicker__day {
+  color: #fff !important;
+}
+
+.react-datepicker__day:hover {
+  background-color: #FFD700 !important;
+  color: #000 !important;
+}
+
+.react-datepicker__day--selected {
+  background-color: #FFD700 !important;
+  color: #000 !important;
+}
+
+.react-datepicker__day--keyboard-selected {
+  background-color: rgba(255, 215, 0, 0.3) !important;
+  color: #fff !important;
+}
+
+.react-datepicker__navigation {
+  border: 0.45rem solid transparent !important;
+}
+
+.react-datepicker__navigation--previous {
+  border-right-color: #FFD700 !important;
+}
+
+.react-datepicker__navigation--next {
+  border-left-color: #FFD700 !important;
+}
+
+.react-datepicker__input-container input {
+  background-color: #333 !important;
+  border: 1px solid #555 !important;
+  color: #fff !important;
+  padding: 8px 12px !important;
+  border-radius: 4px !important;
+}
+
+.react-datepicker__input-container input:focus {
+  border-color: #FFD700 !important;
+  box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.25) !important;
+  outline: none !important;
+}
+
+/* Chart Tooltip Styling */
+.recharts-tooltip-wrapper {
+  background-color: #333 !important;
+  border: 1px solid #FFD700 !important;
+  border-radius: 4px !important;
+}
+
+.recharts-default-tooltip {
+  background-color: #333 !important;
+  border: 1px solid #FFD700 !important;
+  color: #fff !important;
+}
+
+/* Progress Bar Gold Variant */
+.progress-bar.bg-gold {
+  background-color: #FFD700 !important;
+}
+
+/* Custom Button Styling */
+.btn-outline-primary {
+  border-color: #FFD700;
+  color: #FFD700;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  background-color: #FFD700;
+  border-color: #FFD700;
+  color: #000;
+}
+
+.btn-primary {
+  background-color: #FFD700;
+  border-color: #FFD700;
+  color: #000;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: #E6C200;
+  border-color: #E6C200;
+  color: #000;
+}
+
+/* Enhanced Dashboard Styles */
+.border-gold {
+  border-color: #ffd700 !important;
+}
+
+.bg-gradient-gold {
+  background: linear-gradient(135deg, #ffd700, #ffed4e) !important;
+  color: #000 !important;
+}
+
+.text-gold {
+  color: #ffd700 !important;
+}
+
+.btn-outline-gold {
+  color: #ffd700;
+  border-color: #ffd700;
+}
+
+.btn-outline-gold:hover {
+  background-color: #ffd700;
+  border-color: #ffd700;
+  color: #000;
+}
+
+/* Spinning animation for refresh button */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* KPI Items */
+.kpi-item {
+  padding: 1rem;
+  border-radius: 8px;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.kpi-item:hover {
+  background: rgba(255, 215, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Analytics Section */
+.analytics-section {
+  padding: 1rem;
+  border-left: 3px solid #ffd700;
+  background: rgba(255, 215, 0, 0.05);
+  border-radius: 0 8px 8px 0;
+}
+
+/* Custom Card Hover Effects */
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.2);
+}
+
+/* Progress Bar Enhancements */
+.progress {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Custom Badge Styles */
+.badge {
+  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
+}
+
+/* Table Enhancements */
+.table-dark th {
+  border-color: #495057;
+  background-color: #212529;
+}
+
+.table-dark td {
+  border-color: #495057;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(255, 215, 0, 0.1) !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .kpi-item {
+    margin-bottom: 1rem;
+  }
+  
+  .analytics-section {
+    margin-bottom: 1rem;
+    border-left: none;
+    border-top: 3px solid #ffd700;
+    border-radius: 8px 8px 0 0;
+  }
+}

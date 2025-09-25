@@ -47,12 +47,18 @@ class TheaterController extends Controller
     {
         $query = Theater::query();
 
-        // Search by name or city
+        // Search by name, city, or address
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('city', 'like', '%' . $request->search . '%');
+                  ->orWhere('city', 'like', '%' . $request->search . '%')
+                  ->orWhere('address', 'like', '%' . $request->search . '%');
             });
+        }
+
+        // Filter by city
+        if ($request->filled('city')) {
+            $query->where('city', $request->city);
         }
 
         // Filter by status
@@ -90,6 +96,19 @@ class TheaterController extends Controller
             $validated['facilities'] = explode(',', $validated['facilities']);
         }
 
+        // Provide default seat configuration if not provided
+        if (!isset($validated['seat_configuration'])) {
+            $validated['seat_configuration'] = json_encode([
+                'total_rows' => 10,
+                'seats_per_row' => 12,
+                'sections' => [
+                    'gold' => ['rows' => 'A,B,C,D,E', 'price' => 100000],
+                    'platinum' => ['rows' => 'F,G,H,I', 'price' => 150000],
+                    'box' => ['rows' => 'J', 'price' => 200000]
+                ]
+            ]);
+        }
+
         $theater = Theater::create($validated);
 
         return response()->json([
@@ -116,6 +135,19 @@ class TheaterController extends Controller
         // Convert facilities string to array
         if (isset($validated['facilities'])) {
             $validated['facilities'] = explode(',', $validated['facilities']);
+        }
+
+        // Provide default seat configuration if not provided
+        if (isset($validated['seat_configuration']) && empty($validated['seat_configuration'])) {
+            $validated['seat_configuration'] = json_encode([
+                'total_rows' => 10,
+                'seats_per_row' => 12,
+                'sections' => [
+                    'gold' => ['rows' => 'A,B,C,D,E', 'price' => 100000],
+                    'platinum' => ['rows' => 'F,G,H,I', 'price' => 150000],
+                    'box' => ['rows' => 'J', 'price' => 200000]
+                ]
+            ]);
         }
 
         $theater->update($validated);

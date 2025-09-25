@@ -212,26 +212,36 @@ const MovieDetail = () => {
     .filter(date => new Date(date) >= new Date()) // Only future dates
     .slice(0, 7); // Limit to 7 nearest dates
 
-  // Extract YouTube video ID from trailer URL if available
-  const getYoutubeVideoId = (url) => {
+  // Convert YouTube URL to embed format
+  const getYouTubeEmbedUrl = (url) => {
     if (!url) return null;
     
-    // Regular expression to extract YouTube video ID
+    // If it's already an embed URL, return as is
+    if (url.includes('/embed/')) {
+      return url;
+    }
+    
+    // Extract video ID from various YouTube URL formats
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     
-    return (match && match[2].length === 11) ? match[2] : null;
+    if (match && match[2].length === 11) {
+      // Convert to embed URL with autoplay and sound enabled
+      return `https://www.youtube.com/embed/${match[2]}?autoplay=1&mute=0`;
+    }
+    
+    return null;
   };
-
-  const youtubeVideoId = getYoutubeVideoId(movie.trailer_url);
-  const youtubeEmbedUrl = youtubeVideoId 
-    ? `https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&mute=0` 
-    : null;
+  
+  const trailerUrl = getYouTubeEmbedUrl(movie.trailer_url);
+  
+  // Check if trailer URL is available
+  const hasTrailer = trailerUrl && trailerUrl.trim() !== '';
 
   return (
     <div>
-      {/* YouTube Trailer Poster with Play Button */}
-      {movie.poster_url && youtubeVideoId && (
+      {/* Trailer Poster with Play Button */}
+      {movie.poster_url && hasTrailer && (
         <div className="mb-4 position-relative" style={{ cursor: 'pointer' }} onClick={() => setShowTrailer(true)}>
           <img 
             src={movie.poster_url || "https://placehold.co/300x450/1f1f1f/ffd700?text=Movie+Poster"} 
@@ -269,16 +279,16 @@ const MovieDetail = () => {
         </div>
       )}
 
-      {/* YouTube Trailer Modal */}
+      {/* Trailer Modal */}
       <Modal show={showTrailer} onHide={() => setShowTrailer(false)} size="lg" centered>
         <Modal.Header closeButton>
           <Modal.Title>{movie.title} - Trailer</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {youtubeEmbedUrl && (
+          {trailerUrl && (
             <div className="ratio ratio-16x9">
               <iframe 
-                src={youtubeEmbedUrl}
+                src={trailerUrl}
                 title={`${movie.title} Trailer`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen

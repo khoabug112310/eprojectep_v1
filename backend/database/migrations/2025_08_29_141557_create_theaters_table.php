@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('address');
             $table->string('city', 100);
             $table->integer('total_seats');
-            $table->json('seat_configuration');
+            $table->json('seat_configuration')->nullable();
             $table->json('facilities')->nullable();
             $table->enum('status', ['active', 'inactive', 'maintenance'])->default('active');
             $table->timestamps();

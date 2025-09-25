@@ -37,6 +37,28 @@ class ShowtimeController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Filter by showtime (morning, afternoon, evening, night)
+        if ($request->filled('showtime')) {
+            $showtime = $request->showtime;
+            switch ($showtime) {
+                case 'morning':
+                    $query->whereBetween('show_time', ['09:00:00', '11:59:59']);
+                    break;
+                case 'afternoon':
+                    $query->whereBetween('show_time', ['12:00:00', '16:59:59']);
+                    break;
+                case 'evening':
+                    $query->whereBetween('show_time', ['17:00:00', '20:59:59']);
+                    break;
+                case 'night':
+                    $query->where(function ($q) {
+                        $q->whereBetween('show_time', ['21:00:00', '23:59:59'])
+                          ->orWhereBetween('show_time', ['00:00:00', '08:59:59']);
+                    });
+                    break;
+            }
+        }
+
         $showtimes = $query->orderBy('show_date')->orderBy('show_time')->paginate(20);
 
         return response()->json([
@@ -375,8 +397,26 @@ class ShowtimeController extends Controller
             'status' => 'required|in:active,inactive,cancelled',
         ]);
 
-        // Convert prices string to array
-        $validated['prices'] = json_decode($validated['prices'], true);
+        // Convert prices string to array and validate
+        $pricesArray = json_decode($validated['prices'], true);
+        
+        // If JSON decoding failed or resulted in null, provide default prices
+        if ($pricesArray === null || !is_array($pricesArray)) {
+            $pricesArray = [
+                'gold' => 100000,
+                'platinum' => 150000,
+                'box' => 200000
+            ];
+        }
+
+        // Get the theater to generate available seats
+        $theater = Theater::findOrFail($validated['theater_id']);
+        
+        // Generate available seats based on theater configuration
+        $validated['available_seats'] = $this->generateAvailableSeats($theater);
+        
+        // Set the prices as an array (will be automatically converted to JSON by Eloquent)
+        $validated['prices'] = $pricesArray;
 
         $showtime = Showtime::create($validated);
 
@@ -402,7 +442,24 @@ class ShowtimeController extends Controller
 
         // Convert prices string to array if provided
         if (isset($validated['prices'])) {
-            $validated['prices'] = json_decode($validated['prices'], true);
+            $pricesArray = json_decode($validated['prices'], true);
+            
+            // If JSON decoding failed or resulted in null, keep existing prices or provide defaults
+            if ($pricesArray === null || !is_array($pricesArray)) {
+                $pricesArray = $showtime->prices ?? [
+                    'gold' => 100000,
+                    'platinum' => 150000,
+                    'box' => 200000
+                ];
+            }
+            
+            $validated['prices'] = $pricesArray;
+        }
+
+        // If theater_id is being updated, regenerate available seats
+        if (isset($validated['theater_id'])) {
+            $theater = Theater::findOrFail($validated['theater_id']);
+            $validated['available_seats'] = $this->generateAvailableSeats($theater);
         }
 
         $showtime->update($validated);
@@ -423,6 +480,46 @@ class ShowtimeController extends Controller
             'success' => true,
             'message' => 'Xóa lịch chiếu thành công'
         ]);
+    }
+
+    private function generateAvailableSeats($theater)
+    {
+        // If no seat configuration, provide a default
+        if (!$theater->seat_configuration) {
+            // Default configuration: 10 rows with 12 seats each
+            $seats = [];
+            $rows = range('A', 'J'); // A to J
+            
+            foreach ($rows as $row) {
+                for ($i = 1; $i <= 12; $i++) {
+                    $seats[] = $row . $i;
+                }
+            }
+            
+            return $seats;
+        }
+        
+        // Generate seats based on theater configuration
+        $seatConfig = is_string($theater->seat_configuration) ? 
+                      json_decode($theater->seat_configuration, true) : 
+                      $theater->seat_configuration;
+        
+        $seats = [];
+        
+        // Process sections to generate seat list
+        foreach ($seatConfig as $section => $config) {
+            $sectionRows = explode(',', $config['rows'] ?? 'A,B,C,D,E');
+            $sectionCols = $config['cols'] ?? 12;
+            
+            foreach ($sectionRows as $row) {
+                $row = trim($row);
+                for ($col = 1; $col <= $sectionCols; $col++) {
+                    $seats[] = $row . $col;
+                }
+            }
+        }
+        
+        return $seats;
     }
 
     private function generateSeatMap($showtime)

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card, Container, Table, Form, InputGroup, Badge } from 'react-bootstrap';
+import { Button, Card, Container, Table, Form, InputGroup, Badge, Modal, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
 
 // Function to normalize genre data
@@ -29,39 +29,122 @@ const AdminMovies = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterGenre, setFilterGenre] = useState('');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteMovieId, setDeleteMovieId] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalMovies, setTotalMovies] = useState(0);
+
+  // Get unique genres for filter dropdown
+  const getUniqueGenres = () => {
+    const allGenres = movies.flatMap(movie => {
+      const genres = normalizeGenre(movie.genre);
+      return genres;
+    });
+    return [...new Set(allGenres)].sort();
+  };
 
   useEffect(() => {
-    const fetchMovies = async () => {
-      try {
-        const response = await adminAPI.getAdminMovies();
-        // Handle paginated response correctly
-        const moviesData = response.data.data?.data || response.data.data || [];
-        setMovies(moviesData);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching movies:', error);
-        setLoading(false);
-      }
-    };
-
     fetchMovies();
-  }, []);
+  }, [currentPage, sortBy, sortOrder]);
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this movie?')) {
-      try {
-        await adminAPI.deleteMovie(id);
-        setMovies(movies.filter(movie => movie.id !== id));
-      } catch (error) {
-        console.error('Error deleting movie:', error);
-        alert('Failed to delete movie');
-      }
+  const fetchMovies = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const params = {
+        page: currentPage,
+        per_page: 10,
+        sort_by: sortBy,
+        sort_order: sortOrder
+      };
+      
+      if (filterStatus) params.status = filterStatus;
+      if (filterGenre) params.genre = filterGenre;
+      if (searchTerm) params.search = searchTerm;
+      
+      console.log('Fetching movies with params:', params);
+      const response = await adminAPI.getAdminMovies(params);
+      console.log('Movies response:', response.data);
+      
+      // Handle paginated response correctly
+      const moviesData = response.data.data?.data || response.data.data || [];
+      const pagination = response.data.data || {};
+      
+      setMovies(moviesData);
+      setTotalPages(pagination.last_page || 1);
+      setTotalMovies(pagination.total || moviesData.length);
+      
+    } catch (error) {
+      console.error('Error fetching movies:', error);
+      setError('Failed to load movies. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredMovies = movies.filter(movie => 
-    movie.title?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Handle search with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(1);
+      fetchMovies();
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, filterStatus, filterGenre]);
+
+  const handleDelete = (id) => {
+    setDeleteMovieId(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteMovieId) return;
+    
+    setDeleteLoading(true);
+    try {
+      await adminAPI.deleteMovie(deleteMovieId);
+      setMovies(movies.filter(movie => movie.id !== deleteMovieId));
+      setShowDeleteModal(false);
+      setDeleteMovieId(null);
+      // Refresh data to update pagination
+      fetchMovies();
+    } catch (error) {
+      console.error('Error deleting movie:', error);
+      setError('Failed to delete movie. Please try again.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const filteredMovies = movies.filter(movie => {
+    const matchesSearch = movie.title?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = !filterStatus || movie.status === filterStatus;
+    const matchesGenre = !filterGenre || normalizeGenre(movie.genre).includes(filterGenre);
+    
+    return matchesSearch && matchesStatus && matchesGenre;
+  });
 
   if (loading) {
     return (
@@ -75,89 +158,343 @@ const AdminMovies = () => {
 
   return (
     <Container fluid>
+      {/* Header Section */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-gold">Manage Movies</h2>
-        <div className="d-flex gap-2">
-          <Form className="w-300px">
-            <InputGroup>
-              <Form.Control
-                type="text"
-                placeholder="Search movies..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </InputGroup>
-          </Form>
-          <Button variant="primary" as={Link} to="/admin/movies/create">
-            Add New Movie
-          </Button>
+        <div>
+          <h2 className="text-gold mb-1">Manage Movies</h2>
+          <p className="text-muted mb-0">Total: {totalMovies} movies</p>
         </div>
+        <Button variant="primary" as={Link} to="/admin/movies/create">
+          <i className="bi bi-plus-circle me-2"></i>
+          Add New Movie
+        </Button>
       </div>
 
-      <Card className="bg-dark">
-        <Card.Body>
-          <Table responsive hover variant="dark">
-            <thead>
-              <tr>
-                <th>Poster</th>
-                <th>Title</th>
-                <th>Genre</th>
-                <th>Duration</th>
-                <th>Rating</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredMovies.map((movie) => {
-                const genres = normalizeGenre(movie.genre);
-                return (
-                  <tr key={movie.id}>
-                    <td>
-                      <img 
-                        src={movie.poster_url || "https://placehold.co/50x75/1f1f1f/ffd700?text=Poster"} 
-                        alt={movie.title} 
-                        width="50" 
-                        height="75"
-                      />
-                    </td>
-                    <td>{movie.title}</td>
-                    <td>{genres.join(', ')}</td>
-                    <td>{movie.duration} min</td>
-                    <td>⭐ {movie.average_rating || 'N/A'}</td>
-                    <td>
-                      <Badge bg={
-                        movie.status === 'active' ? 'success' :
-                        movie.status === 'inactive' ? 'danger' : 'warning'
-                      }>
-                        {movie.status}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Button 
-                        variant="outline-primary" 
-                        size="sm" 
-                        as={Link} 
-                        to={`/admin/movies/${movie.id}/edit`}
-                        className="me-2"
-                      >
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline-danger" 
-                        size="sm" 
-                        onClick={() => handleDelete(movie.id)}
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </Table>
+      {/* Filters Section */}
+      <Card className="bg-dark mb-4">
+        <Card.Body className="py-3">
+          <Row className="g-3">
+            <Col md={4}>
+              <Form.Label className="text-muted small">Search Movies</Form.Label>
+              <InputGroup>
+                <InputGroup.Text className="bg-secondary border-secondary">
+                  <i className="bi bi-search"></i>
+                </InputGroup.Text>
+                <Form.Control
+                  type="text"
+                  placeholder="Search by title..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-dark border-secondary text-white"
+                />
+              </InputGroup>
+            </Col>
+            
+            <Col md={2}>
+              <Form.Label className="text-muted small">Status</Form.Label>
+              <Form.Select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="bg-dark border-secondary text-white"
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="coming_soon">Coming Soon</option>
+                <option value="inactive">Inactive</option>
+              </Form.Select>
+            </Col>
+            
+            <Col md={2}>
+              <Form.Label className="text-muted small">Genre</Form.Label>
+              <Form.Select
+                value={filterGenre}
+                onChange={(e) => setFilterGenre(e.target.value)}
+                className="bg-dark border-secondary text-white"
+              >
+                <option value="">All Genres</option>
+                {getUniqueGenres().map(genre => (
+                  <option key={genre} value={genre}>{genre}</option>
+                ))}
+              </Form.Select>
+            </Col>
+            
+            <Col md={2}>
+              <Form.Label className="text-muted small">Sort By</Form.Label>
+              <Form.Select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-dark border-secondary text-white"
+              >
+                <option value="created_at">Date Created</option>
+                <option value="title">Title</option>
+                <option value="release_date">Release Date</option>
+                <option value="duration">Duration</option>
+                <option value="average_rating">Rating</option>
+              </Form.Select>
+            </Col>
+            
+            <Col md={2}>
+              <Form.Label className="text-muted small">Order</Form.Label>
+              <Form.Select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="bg-dark border-secondary text-white"
+              >
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+              </Form.Select>
+            </Col>
+          </Row>
         </Card.Body>
       </Card>
+
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="danger" className="mb-4">
+          <i className="bi bi-exclamation-triangle me-2"></i>
+          {error}
+        </Alert>
+      )}
+
+      {/* Movies Table */}
+      <Card className="bg-dark">
+        <Card.Body>
+          {loading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="gold" />
+              <p className="mt-2 text-muted">Loading movies...</p>
+            </div>
+          ) : filteredMovies.length === 0 ? (
+            <div className="text-center py-5">
+              <i className="bi bi-film display-1 text-muted"></i>
+              <h4 className="text-muted mt-3">No Movies Found</h4>
+              <p className="text-muted">Try adjusting your filters or add a new movie.</p>
+              <Button variant="primary" as={Link} to="/admin/movies/create">
+                Add New Movie
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Table responsive hover variant="dark">
+                <thead>
+                  <tr>
+                    <th style={{ width: '80px' }}>Poster</th>
+                    <th 
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleSort('title')}
+                    >
+                      Title 
+                      {sortBy === 'title' && (
+                        <i className={`bi bi-arrow-${sortOrder === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                      )}
+                    </th>
+                    <th>Genre</th>
+                    <th 
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleSort('duration')}
+                    >
+                      Duration 
+                      {sortBy === 'duration' && (
+                        <i className={`bi bi-arrow-${sortOrder === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                      )}
+                    </th>
+                    <th 
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleSort('average_rating')}
+                    >
+                      Rating 
+                      {sortBy === 'average_rating' && (
+                        <i className={`bi bi-arrow-${sortOrder === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                      )}
+                    </th>
+                    <th>Status</th>
+                    <th 
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleSort('release_date')}
+                    >
+                      Release Date 
+                      {sortBy === 'release_date' && (
+                        <i className={`bi bi-arrow-${sortOrder === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                      )}
+                    </th>
+                    <th style={{ width: '150px' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMovies.map((movie) => {
+                    const genres = normalizeGenre(movie.genre);
+                    return (
+                      <tr key={movie.id}>
+                        <td>
+                          <img 
+                            src={movie.poster_url || "https://placehold.co/50x75/1f1f1f/ffd700?text=No+Image"} 
+                            alt={movie.title} 
+                            width="50" 
+                            height="75"
+                            style={{ objectFit: 'cover', borderRadius: '4px' }}
+                            onError={(e) => {
+                              e.target.src = "https://placehold.co/50x75/1f1f1f/ffd700?text=No+Image";
+                            }}
+                          />
+                        </td>
+                        <td>
+                          <div>
+                            <strong>{movie.title}</strong>
+                            {movie.director && (
+                              <div className="text-muted small">By {movie.director}</div>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="d-flex flex-wrap gap-1">
+                            {genres.slice(0, 2).map((genre, index) => (
+                              <Badge key={index} bg="secondary" className="small">
+                                {genre}
+                              </Badge>
+                            ))}
+                            {genres.length > 2 && (
+                              <Badge bg="dark" className="small">+{genres.length - 2}</Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td>{movie.duration} min</td>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            <i className="bi bi-star-fill text-warning me-1"></i>
+                            {movie.average_rating || 'N/A'}
+                          </div>
+                        </td>
+                        <td>
+                          <Badge bg={
+                            movie.status === 'active' ? 'success' :
+                            movie.status === 'inactive' ? 'danger' : 'warning'
+                          }>
+                            {movie.status === 'active' ? 'Active' :
+                             movie.status === 'inactive' ? 'Inactive' : 'Coming Soon'}
+                          </Badge>
+                        </td>
+                        <td>
+                          <small className="text-muted">
+                            {movie.release_date ? new Date(movie.release_date).toLocaleDateString() : 'N/A'}
+                          </small>
+                        </td>
+                        <td>
+                          <div className="d-flex gap-1">
+                            <Button 
+                              variant="outline-primary" 
+                              size="sm" 
+                              as={Link} 
+                              to={`/admin/movies/${movie.id}/edit`}
+                              title="Edit Movie"
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </Button>
+                            <Button 
+                              variant="outline-danger" 
+                              size="sm" 
+                              onClick={() => handleDelete(movie.id)}
+                              title="Delete Movie"
+                            >
+                              <i className="bi bi-trash"></i>
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </Table>
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="d-flex justify-content-between align-items-center mt-3">
+                  <div className="text-muted small">
+                    Showing page {currentPage} of {totalPages}
+                  </div>
+                  <div className="d-flex gap-1">
+                    <Button 
+                      variant="outline-secondary" 
+                      size="sm" 
+                      disabled={currentPage === 1}
+                      onClick={() => handlePageChange(currentPage - 1)}
+                    >
+                      <i className="bi bi-chevron-left"></i>
+                    </Button>
+                    
+                    {[...Array(Math.min(5, totalPages))].map((_, index) => {
+                      const page = Math.max(1, currentPage - 2) + index;
+                      if (page > totalPages) return null;
+                      
+                      return (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? 'primary' : 'outline-secondary'}
+                          size="sm"
+                          onClick={() => handlePageChange(page)}
+                        >
+                          {page}
+                        </Button>
+                      );
+                    })}
+                    
+                    <Button 
+                      variant="outline-secondary" 
+                      size="sm" 
+                      disabled={currentPage === totalPages}
+                      onClick={() => handlePageChange(currentPage + 1)}
+                    >
+                      <i className="bi bi-chevron-right"></i>
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </Card.Body>
+      </Card>
+
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+        <Modal.Header closeButton className="bg-dark border-secondary">
+          <Modal.Title className="text-danger">
+            <i className="bi bi-exclamation-triangle me-2"></i>
+            Confirm Delete
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="bg-dark">
+          <p>Are you sure you want to delete this movie?</p>
+          <p className="text-warning small">
+            <i className="bi bi-info-circle me-1"></i>
+            This action cannot be undone. All associated data will be permanently removed.
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="bg-dark border-secondary">
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowDeleteModal(false)}
+            disabled={deleteLoading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={confirmDelete}
+            disabled={deleteLoading}
+          >
+            {deleteLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Deleting...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-trash me-2"></i>
+                Delete Movie
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

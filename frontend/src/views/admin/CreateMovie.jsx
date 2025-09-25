@@ -1,16 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Card, Container, Form, Alert, Row, Col } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
 
-const EditMovie = () => {
-  const { id } = useParams();
+const CreateMovie = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isCreateMode, setIsCreateMode] = useState(!id); // Check if it's create mode
   const [formData, setFormData] = useState({
     title: '',
     synopsis: '',
@@ -25,53 +22,6 @@ const EditMovie = () => {
     cast: '',
     status: 'active'
   });
-
-  useEffect(() => {
-    console.log('Route parameters:', { id });
-    
-    if (id) {
-      // Edit mode
-      setIsCreateMode(false);
-      fetchMovie();
-    } else {
-      // Create mode
-      setIsCreateMode(true);
-      setLoading(false);
-    }
-  }, [id]);
-
-  const fetchMovie = async () => {
-    try {
-      console.log('Fetching movie with ID:', id);
-      const response = await adminAPI.getMovieById(id);
-      console.log('API Response:', response);
-      const movie = response.data.data || response.data;
-      
-      // Convert arrays to comma-separated strings for form inputs
-      const genreString = Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre || '';
-      const castString = Array.isArray(movie.cast) ? movie.cast.join(', ') : movie.cast || '';
-      
-      setFormData({
-        title: movie.title || '',
-        synopsis: movie.synopsis || '',
-        duration: movie.duration || '',
-        genre: genreString,
-        language: movie.language || '',
-        age_rating: movie.age_rating || '',
-        release_date: movie.release_date || '',
-        poster_url: movie.poster_url || '',
-        trailer_url: movie.trailer_url || '',
-        director: movie.director || '',
-        cast: castString,
-        status: movie.status || 'active'
-      });
-      setLoading(false);
-    } catch (err) {
-      console.error('Error fetching movie:', err);
-      setError('Failed to load movie data');
-      setLoading(false);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -94,50 +44,32 @@ const EditMovie = () => {
         duration: parseInt(formData.duration) || 0
       };
 
-      let response;
-      if (isCreateMode) {
-        console.log('Creating movie with data:', submitData);
-        response = await adminAPI.createMovie(submitData);
-        setSuccess('Movie created successfully!');
-      } else {
-        console.log('Updating movie with data:', submitData);
-        response = await adminAPI.updateMovie(id, submitData);
-        setSuccess('Movie updated successfully!');
-      }
+      console.log('Creating movie with data:', submitData);
+      const response = await adminAPI.createMovie(submitData);
+      console.log('Create movie response:', response);
       
+      setSuccess('Movie created successfully!');
       setTimeout(() => {
         navigate('/admin/movies');
       }, 2000);
     } catch (err) {
-      console.error(`Error ${isCreateMode ? 'creating' : 'updating'} movie:`, err);
+      console.error('Error creating movie:', err);
       if (err.response?.data?.errors) {
         // Handle validation errors
         const errors = Object.values(err.response.data.errors).flat();
         setError(errors.join(', '));
       } else {
-        setError(err.response?.data?.message || `Failed to ${isCreateMode ? 'create' : 'update'} movie`);
+        setError(err.response?.data?.message || 'Failed to create movie');
       }
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-gold" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <Container fluid>
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-gold">
-          {isCreateMode ? 'Create New Movie' : `Edit Movie (ID: ${id})`}
-        </h2>
+        <h2 className="text-gold">Create New Movie</h2>
         <Button variant="secondary" onClick={() => navigate('/admin/movies')}>
           Back to Movies
         </Button>
@@ -364,10 +296,10 @@ const EditMovie = () => {
                 {saving ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    {isCreateMode ? 'Creating...' : 'Updating...'}
+                    Creating...
                   </>
                 ) : (
-                  isCreateMode ? 'Create Movie' : 'Update Movie'
+                  'Create Movie'
                 )}
               </Button>
             </div>
@@ -378,4 +310,4 @@ const EditMovie = () => {
   );
 };
 
-export default EditMovie;
+export default CreateMovie;
