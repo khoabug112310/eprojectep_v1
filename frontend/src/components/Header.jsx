@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Container, Row, Col, Navbar, Nav, NavDropdown, Form, FormControl } from 'react-bootstrap';
+import { Button, Container, Row, Col, Navbar, Nav, NavDropdown, Form, FormControl, Badge } from 'react-bootstrap';
 
 const Header = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,16 +37,14 @@ const Header = () => {
 
   return (
     <header className="bg-dark border-bottom border-secondary sticky-top">
-      <Navbar bg="dark" variant="dark" expand="lg" className="py-2">
+      <Navbar bg="dark" variant="dark" expand="lg" className="py-2 shadow">
         <Container>
           {/* Logo */}
-          <Navbar.Brand as={Link} to="/" className="fw-bold me-3">
+          <Navbar.Brand as={Link} to="/home" className="fw-bold me-3 d-flex align-items-center">
             <img 
-              src="./image/Gemini_Generated_Image_a55g0ka55g0ka55g.png" 
+              src="/image/Gemini_Generated_Image_a55g0ka55g0ka55g.png" 
               alt="CineBook" 
-              width="120" 
-              height="60" 
-              className="d-inline-block align-top" 
+              style={{ width: '120px', height: '30px', objectFit: 'contain' }}
             />
           </Navbar.Brand>
           
@@ -129,23 +127,50 @@ const Header = () => {
             {/* User Authentication Section */}
             <Nav>
               {user ? (
-                <NavDropdown title={user.name || 'User'} id="user-dropdown">
-                  <NavDropdown.Item as={Link} to="/profile">
-                    <i className="bi bi-person me-2"></i>Profile
-                  </NavDropdown.Item>
-                  <NavDropdown.Item as={Link} to="/my-bookings">
-                    <i className="bi bi-ticket-perforated me-2"></i>My Bookings
-                  </NavDropdown.Item>
-                  {user.role === 'admin' && (
-                    <NavDropdown.Item as={Link} to="/admin">
-                      <i className="bi bi-gear me-2"></i>Admin Panel
+                <>
+                  {/* Notifications for logged in users */}
+                  <Nav.Link as={Link} to="/notifications" className="position-relative mx-2">
+                    <i className="bi bi-bell"></i>
+                    <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle p-1">
+                      <span className="visually-hidden">3 new notifications</span>
+                    </Badge>
+                  </Nav.Link>
+                  
+                  <NavDropdown 
+                    title={
+                      <div className="d-flex align-items-center">
+                        <i className="bi bi-person-circle me-2"></i>
+                        <span>{user.name || 'User'}</span>
+                      </div>
+                    } 
+                    id="user-dropdown"
+                    align="end"
+                  >
+                    <NavDropdown.Header>
+                      <div className="text-center">
+                        <i className="bi bi-person-circle fs-1 mb-2"></i>
+                        <div className="fw-bold">{user.name || 'User'}</div>
+                        <div className="small text-muted">{user.email || 'user@example.com'}</div>
+                      </div>
+                    </NavDropdown.Header>
+                    <NavDropdown.Divider />
+                    <NavDropdown.Item as={Link} to="/profile" className="d-flex align-items-center">
+                      <i className="bi bi-person me-2"></i> Profile
                     </NavDropdown.Item>
-                  )}
-                  <NavDropdown.Divider />
-                  <NavDropdown.Item onClick={handleLogout}>
-                    <i className="bi bi-box-arrow-right me-2"></i>Logout
-                  </NavDropdown.Item>
-                </NavDropdown>
+                    <NavDropdown.Item as={Link} to="/my-bookings" className="d-flex align-items-center">
+                      <i className="bi bi-ticket-perforated me-2"></i> My Bookings
+                    </NavDropdown.Item>
+                    {user.role === 'admin' && (
+                      <NavDropdown.Item as={Link} to="/admin" className="d-flex align-items-center">
+                        <i className="bi bi-gear me-2"></i> Admin Panel
+                      </NavDropdown.Item>
+                    )}
+                    <NavDropdown.Divider />
+                    <NavDropdown.Item onClick={handleLogout} className="d-flex align-items-center text-danger">
+                      <i className="bi bi-box-arrow-right me-2"></i> Logout
+                    </NavDropdown.Item>
+                  </NavDropdown>
+                </>
               ) : (
                 <>
                   <Nav.Link as={Link} to="/auth/login" className="me-2">
@@ -160,74 +185,6 @@ const Header = () => {
           </Navbar.Collapse>
         </Container>
       </Navbar>
-      
-      {/* Secondary Filter Bar */}
-      <div className="bg-secondary py-2">
-        <Container>
-          <Row className="align-items-center">
-            <Col md={8}>
-              <div className="d-flex flex-wrap gap-2 align-items-center">
-                <small className="text-light me-2">Quick Filters:</small>
-                <Button 
-                  as={Link} 
-                  to="/movies?status=now-showing" 
-                  variant="outline-light" 
-                  size="sm"
-                  className="py-1 px-2"
-                >
-                  Now Showing
-                </Button>
-                <Button 
-                  as={Link} 
-                  to="/movies?status=coming-soon" 
-                  variant="outline-light" 
-                  size="sm"
-                  className="py-1 px-2"
-                >
-                  Coming Soon
-                </Button>
-                <Button 
-                  as={Link} 
-                  to="/movies?discount=true" 
-                  variant="outline-warning" 
-                  size="sm"
-                  className="py-1 px-2"
-                >
-                  Special Offers
-                </Button>
-                <Button 
-                  as={Link} 
-                  to="/movies?time=today" 
-                  variant="outline-info" 
-                  size="sm"
-                  className="py-1 px-2"
-                >
-                  Today's Shows
-                </Button>
-              </div>
-            </Col>
-            <Col md={4} className="text-end">
-              <small className="text-light me-2">Sort by:</small>
-              <Form.Select 
-                size="sm" 
-                style={{ width: 'auto', display: 'inline-block' }}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    navigate(`/movies?sort=${e.target.value}`);
-                  }
-                }}
-              >
-                <option value="">Choose...</option>
-                <option value="title">Title A-Z</option>
-                <option value="rating">Highest Rated</option>
-                <option value="newest">Latest Release</option>
-                <option value="popularity">Most Popular</option>
-                <option value="duration">Duration</option>
-              </Form.Select>
-            </Col>
-          </Row>
-        </Container>
-      </div>
     </header>
   );
 };

@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Movie;
-use Illuminate\Support\Str;
 
 class MovieSeeder extends Seeder
 {
@@ -14,425 +13,370 @@ class MovieSeeder extends Seeder
      */
     public function run(): void
     {
-        $movies = [
-            // PHIM VIỆT NAM - ĐANG CHIẾU
+        // Check if movies already exist to avoid duplication
+        if (Movie::count() > 0) {
+            $this->command->info('Movies already exist in the database. Skipping movie seeding.');
+            return;
+        }
+
+        // Vietnamese movies
+        $vietnameseMovies = [
             [
-                'title' => 'Mai',
-                'slug' => 'mai-2024',
-                'synopsis' => 'Câu chuyện về một cô gái trẻ tên Mai, với cuộc sống đầy biến động giữa gia đình và tình yêu. Phim khắc họa hành trình trưởng thành của cô qua những thử thách và khó khăn trong cuộc sống.',
-                'duration' => 131,
-                'genre' => json_encode(['Tâm lý', 'Tình cảm', 'Gia đình']),
-                'language' => 'Tiếng Việt',
-                'age_rating' => 'T16',
-                'release_date' => '2024-02-10',
-                'poster_url' => 'https://picsum.photos/300/450?random=1',
-                'trailer_url' => 'https://www.youtube.com/embed/giXco2jaZ_4',
+                'title' => 'Em Chưa 18',
+                'synopsis' => 'Câu chuyện tình yêu tuổi học trò đầy cảm xúc, hài hước và trong sáng giữa hai nhân vật chính Linh và Bin. Phim khắc họa chân thực tuổi thanh xuân với những rung động đầu đời, những trăn trở và khát khao của tuổi trẻ.',
+                'duration' => 110,
+                'genre' => json_encode(['Drama', 'Romance', 'Comedy']),
+                'language' => 'Vietnamese',
+                'age_rating' => 'PG-13',
+                'release_date' => '2024-06-15',
+                'poster_url' => 'https://picsum.photos/500/750?random=11',
+                'trailer_url' => 'https://www.youtube.com/watch?v=VNmVrE2v3ZA',
                 'cast' => json_encode([
-                    ['name' => 'Phương Anh Đào', 'role' => 'Mai'],
-                    ['name' => 'Tuấn Trần', 'role' => 'Dương'],
-                    ['name' => 'Hồng Đào', 'role' => 'Mẹ Mai']
+                    ['name' => 'Kiều Minh Tuấn', 'role' => 'Lead'],
+                    ['name' => 'Ngọc Thảo', 'role' => 'Lead'],
+                    ['name' => 'Johnny Trí Nguyễn', 'role' => 'Support']
+                ]),
+                'director' => 'Ngô Thanh Vân',
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Mắt Biếc',
+                'synopsis' => 'Câu chuyện tình đơn phương đầy day dứt của chàng trai trẻ dành cho cô gái đẹp trong thanh xuân của anh. Phim chuyển thể từ tiểu thuyết cùng tên của Nguyễn Nhật Ánh, khắc họa tinh tế cảm xúc yêu thương, mất mát và sự trưởng thành.',
+                'duration' => 125,
+                'genre' => json_encode(['Drama', 'Romance']),
+                'language' => 'Vietnamese',
+                'age_rating' => 'PG',
+                'release_date' => '2024-07-20',
+                'poster_url' => 'https://picsum.photos/500/750?random=12',
+                'trailer_url' => 'https://www.youtube.com/watch?v=QHGoU8vX53c',
+                'cast' => json_encode([
+                    ['name' => 'Trần Phong', 'role' => 'Lead'],
+                    ['name' => 'Hà Anh', 'role' => 'Lead'],
+                    ['name' => 'Lan Ngọc', 'role' => 'Support']
+                ]),
+                'director' => 'Victor Vũ',
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Hai Phượng',
+                'synopsis' => 'Một bà mẹ đơn thân với quá khứ huyền thoại trong thế giới ngầm quyết tâm giải cứu con gái khỏi tay bọn buôn người. Phim hành động mãn nhãn với những pha võ thuật đỉnh cao và kịch tính.',
+                'duration' => 138,
+                'genre' => json_encode(['Action', 'Thriller']),
+                'language' => 'Vietnamese',
+                'age_rating' => 'R',
+                'release_date' => '2024-05-10',
+                'poster_url' => 'https://picsum.photos/500/750?random=13',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
+                'cast' => json_encode([
+                    ['name' => 'Ngô Thanh Vân', 'role' => 'Lead'],
+                    ['name' => 'Jun Vũ', 'role' => 'Support'],
+                    ['name' => 'Trấn Thành', 'role' => 'Support']
+                ]),
+                'director' => 'Lê Văn Kiệt',
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Tôi Thấy Hoa Vàng Trên Cỏ Xanh',
+                'synopsis' => 'Câu chuyện tuổi thơ nghèo khó nhưng đầy ắp những kỷ niệm đẹp ở một làng quê Việt Nam những năm 1980. Phim mang đến cảm xúc chân thật về tình anh em, tình bạn và sự trưởng thành.',
+                'duration' => 145,
+                'genre' => json_encode(['Drama', 'Family']),
+                'language' => 'Vietnamese',
+                'age_rating' => 'PG',
+                'release_date' => '2024-08-30',
+                'poster_url' => 'https://picsum.photos/500/750?random=14',
+                'trailer_url' => 'https://www.youtube.com/watch?v=8Bf-BcJkT4I',
+                'cast' => json_encode([
+                    ['name' => 'Hoàng Dũng', 'role' => 'Lead'],
+                    ['name' => 'Kiều Diễm', 'role' => 'Support'],
+                    ['name' => 'NSND Đỗ Thanh Hải', 'role' => 'Support']
+                ]),
+                'director' => 'Phan Đăng Di',
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Cô Ba Sài Gòn',
+                'synopsis' => 'Câu chuyện về một cô gái Sài Gòn yêu nghề may và văn hóa áo dài truyền thống. Khi phải đối mặt với áp lực từ thời trang hiện đại, cô quyết tâm giữ gìn và phát huy giá trị truyền thống.',
+                'duration' => 105,
+                'genre' => json_encode(['Drama', 'Romance']),
+                'language' => 'Vietnamese',
+                'age_rating' => 'PG',
+                'release_date' => '2024-09-05',
+                'poster_url' => 'https://picsum.photos/500/750?random=15',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
+                'cast' => json_encode([
+                    ['name' => 'Ngô Thanh Vân', 'role' => 'Lead'],
+                    ['name' => 'Tuấn Trần', 'role' => 'Lead'],
+                    ['name' => 'Châu Bùi', 'role' => 'Support']
                 ]),
                 'director' => 'Trấn Thành',
-                'average_rating' => 4.2,
-                'total_reviews' => 1547,
                 'status' => 'active',
             ],
             [
-                'title' => 'Gái Già Lắm Chiêu V',
-                'slug' => 'gai-gia-lam-chieu-5',
-                'synopsis' => 'Phần thứ 5 của loạt phim hài đình đám, tiếp tục câu chuyện của bà Nàng và những người bạn với nhiều tình huống hài hước và ý nghĩa về tình bạn tuổi xế chiều.',
-                'duration' => 113,
-                'genre' => json_encode(['Hài', 'Tình cảm']),
-                'language' => 'Tiếng Việt',
-                'age_rating' => 'T13',
-                'release_date' => '2024-03-08',
-                'poster_url' => 'https://picsum.photos/300/450?random=2',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'title' => 'Sài Gòn Trong Tôi',
+                'synopsis' => 'Bộ phim tình cảm về mối quan hệ giữa ba thế hệ trong một gia đình Sài Gòn. Phim khắc họa chân thực cuộc sống đô thị hiện đại và những giá trị truyền thống được gìn giữ.',
+                'duration' => 120,
+                'genre' => json_encode(['Drama', 'Family']),
+                'language' => 'Vietnamese',
+                'age_rating' => 'PG',
+                'release_date' => '2024-09-15',
+                'poster_url' => 'https://picsum.photos/500/750?random=16',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
                 'cast' => json_encode([
-                    ['name' => 'Lê Khanh', 'role' => 'Bà Nàng'],
-                    ['name' => 'Kaity Nguyễn', 'role' => 'Thanh'],
-                    ['name' => 'NSƯT Hồng Vân', 'role' => 'Bà Hai']
+                    ['name' => 'NSND Hồng Vân', 'role' => 'Lead'],
+                    ['name' => 'Hồng Diễm', 'role' => 'Lead'],
+                    ['name' => 'Mai Thu Huyền', 'role' => 'Support']
                 ]),
-                'director' => 'Bảo Nhân - Namcito',
-                'average_rating' => 3.8,
-                'total_reviews' => 892,
+                'director' => 'Huỳnh Đông',
                 'status' => 'active',
             ],
             [
-                'title' => 'Lat Mặt 7: Một Điều Ước',
-                'slug' => 'lat-mat-7-mot-dieu-uoc',
-                'synopsis' => 'Phần 7 của series Lật Mặt đình đám, Lý Hải tiếp tục mang đến một câu chuyện đầy cảm xúc về gia đình, tình thân và những điều ước giản dị nhưng ý nghĩa.',
-                'duration' => 138,
-                'genre' => json_encode(['Hành động', 'Tình cảm', 'Gia đình']),
-                'language' => 'Tiếng Việt',
-                'age_rating' => 'T16',
-                'release_date' => '2024-04-26',
-                'poster_url' => 'https://picsum.photos/300/450?random=3',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'title' => 'Thợ Săn Ma Cà Rồng',
+                'synopsis' => 'Một nhóm thợ săn ma cà rồng trẻ tuổi phải đối mặt với thế lực hắc ám đang đe dọa thế giới. Phim hành động kinh dị với nhiều pha chiến đấu mãn nhãn và hiệu ứng đặc biệt ấn tượng.',
+                'duration' => 130,
+                'genre' => json_encode(['Action', 'Horror', 'Fantasy']),
+                'language' => 'Vietnamese',
+                'age_rating' => 'R',
+                'release_date' => '2024-10-01',
+                'poster_url' => 'https://picsum.photos/500/750?random=17',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
                 'cast' => json_encode([
-                    ['name' => 'Lý Hải', 'role' => 'Chính'],
-                    ['name' => 'Minh Hà', 'role' => 'Lan'],
-                    ['name' => 'Trương Minh Cường', 'role' => 'Tám']
+                    ['name' => 'Anh Tú', 'role' => 'Lead'],
+                    ['name' => 'Phương Anh Đào', 'role' => 'Lead'],
+                    ['name' => 'Mai Thu Huyền', 'role' => 'Support']
                 ]),
-                'director' => 'Lý Hải',
-                'average_rating' => 4.0,
-                'total_reviews' => 1203,
+                'director' => 'Lê Văn Kiệt',
                 'status' => 'active',
             ],
+            [
+                'title' => 'Chị Mười Ba',
+                'synopsis' => 'Câu chuyện hài hước về một cô gái quê lên Sài Gòn lập nghiệp và những rắc rối cô gặp phải. Phim mang đến nhiều tiếng cười và thông điệp tích cực về sự kiên trì và bản lĩnh.',
+                'duration' => 115,
+                'genre' => json_encode(['Comedy', 'Drama']),
+                'language' => 'Vietnamese',
+                'age_rating' => 'PG-13',
+                'release_date' => '2024-10-20',
+                'poster_url' => 'https://picsum.photos/500/750?random=18',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
+                'cast' => json_encode([
+                    ['name' => 'Thu Trang', 'role' => 'Lead'],
+                    ['name' => 'Đức Thịnh', 'role' => 'Lead'],
+                    ['name' => 'Trấn Thành', 'role' => 'Support']
+                ]),
+                'director' => 'Trấn Thành',
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Đôi Mắt',
+                'synopsis' => 'Một câu chuyện tâm lý ly kỳ về khả năng nhìn thấy tương lai qua đôi mắt đặc biệt. Phim khám phá các chủ đề về số phận, lựa chọn và hệ quả của những quyết định trong cuộc sống.',
+                'duration' => 140,
+                'genre' => json_encode(['Drama', 'Thriller', 'Mystery']),
+                'language' => 'Vietnamese',
+                'age_rating' => 'PG-13',
+                'release_date' => '2024-11-05',
+                'poster_url' => 'https://picsum.photos/500/750?random=19',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
+                'cast' => json_encode([
+                    ['name' => 'Hứa Vĩ Văn', 'role' => 'Lead'],
+                    ['name' => 'Midu', 'role' => 'Lead'],
+                    ['name' => 'NSND Lê Khanh', 'role' => 'Support']
+                ]),
+                'director' => 'Phan Gia Nhật Linh',
+                'status' => 'active',
+            ],
+        ];
 
-            // PHIM QUỐC TẾ - ĐANG CHIẾU
+        // International movies
+        $internationalMovies = [
             [
-                'title' => 'Spider-Man: No Way Home',
-                'slug' => 'spider-man-no-way-home',
-                'synopsis' => 'Peter Parker phải đối mặt với hậu quả khi danh tính Spider-Man bị tiết lộ. Anh tìm đến Doctor Strange để xóa bỏ ký ức của mọi người, nhưng phép thuật đã mở ra multiverse nguy hiểm.',
-                'duration' => 148,
-                'genre' => json_encode(['Hành động', 'Khoa học viễn tưởng', 'Phiêu lưu']),
-                'language' => 'Tiếng Anh',
-                'age_rating' => 'T13',
-                'release_date' => '2024-01-15',
-                'poster_url' => 'https://picsum.photos/300/450?random=4',
-                'trailer_url' => 'https://www.youtube.com/embed/JfVOs4VSpmA',
+                'title' => 'Dune: Part Two',
+                'synopsis' => 'Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family. Facing a choice between the love of his life and the fate of the known universe, he must prevent a terrible future only he can foresee.',
+                'duration' => 166,
+                'genre' => json_encode(['Sci-Fi', 'Adventure', 'Drama']),
+                'language' => 'English',
+                'age_rating' => 'PG-13',
+                'release_date' => '2024-03-01',
+                'poster_url' => 'https://picsum.photos/500/750?random=20',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
                 'cast' => json_encode([
-                    ['name' => 'Tom Holland', 'role' => 'Peter Parker / Spider-Man'],
-                    ['name' => 'Zendaya', 'role' => 'MJ'],
-                    ['name' => 'Benedict Cumberbatch', 'role' => 'Doctor Strange']
+                    ['name' => 'Timothée Chalamet', 'role' => 'Lead'],
+                    ['name' => 'Zendaya', 'role' => 'Lead'],
+                    ['name' => 'Rebecca Ferguson', 'role' => 'Support']
                 ]),
-                'director' => 'Jon Watts',
-                'average_rating' => 4.7,
-                'total_reviews' => 2841,
+                'director' => 'Denis Villeneuve',
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Oppenheimer',
+                'synopsis' => 'The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb during World War II.',
+                'duration' => 180,
+                'genre' => json_encode(['Biography', 'Drama', 'History']),
+                'language' => 'English',
+                'age_rating' => 'R',
+                'release_date' => '2024-07-21',
+                'poster_url' => 'https://picsum.photos/500/750?random=21',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
+                'cast' => json_encode([
+                    ['name' => 'Cillian Murphy', 'role' => 'Lead'],
+                    ['name' => 'Emily Blunt', 'role' => 'Lead'],
+                    ['name' => 'Matt Damon', 'role' => 'Support']
+                ]),
+                'director' => 'Christopher Nolan',
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Spider-Man: Across the Spider-Verse',
+                'synopsis' => 'Miles Morales catapults across the Multiverse, where he encounters a team of Spider-People charged with protecting its very existence. When the heroes clash on how to handle a new threat, Miles must redefine what it means to be a hero.',
+                'duration' => 140,
+                'genre' => json_encode(['Animation', 'Action', 'Adventure']),
+                'language' => 'English',
+                'age_rating' => 'PG',
+                'release_date' => '2024-06-02',
+                'poster_url' => 'https://picsum.photos/500/750?random=22',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
+                'cast' => json_encode([
+                    ['name' => 'Shameik Moore', 'role' => 'Lead'],
+                    ['name' => 'Hailee Steinfeld', 'role' => 'Lead'],
+                    ['name' => 'Brian Tyree Henry', 'role' => 'Support']
+                ]),
+                'director' => 'Joaquim Dos Santos',
+                'status' => 'active',
+            ],
+            [
+                'title' => 'John Wick: Chapter 4',
+                'synopsis' => 'John Wick uncovers a path to defeating The High Table. But before he can earn his freedom, Wick must face off against a new enemy with powerful alliances across the globe and forces that turn old friends into foes.',
+                'duration' => 169,
+                'genre' => json_encode(['Action', 'Crime', 'Thriller']),
+                'language' => 'English',
+                'age_rating' => 'R',
+                'release_date' => '2024-03-24',
+                'poster_url' => 'https://picsum.photos/500/750?random=23',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
+                'cast' => json_encode([
+                    ['name' => 'Keanu Reeves', 'role' => 'Lead'],
+                    ['name' => 'Donnie Yen', 'role' => 'Support'],
+                    ['name' => 'Bill Skarsgård', 'role' => 'Support']
+                ]),
+                'director' => 'Chad Stahelski',
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Fast X',
+                'synopsis' => 'Over many missions and against impossible odds, Dom Toretto and his family have outsmarted and outdriven every foe in their path. Now, they must confront the most lethal opponent they have ever faced. Fueled by revenge, a terrifying threat emerges from the shadows of the past to shatter this world and destroy everything that Dom loves.',
+                'duration' => 141,
+                'genre' => json_encode(['Action', 'Crime', 'Thriller']),
+                'language' => 'English',
+                'age_rating' => 'PG-13',
+                'release_date' => '2024-05-19',
+                'poster_url' => 'https://picsum.photos/500/750?random=24',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
+                'cast' => json_encode([
+                    ['name' => 'Vin Diesel', 'role' => 'Lead'],
+                    ['name' => 'Michelle Rodriguez', 'role' => 'Lead'],
+                    ['name' => 'Jason Statham', 'role' => 'Support']
+                ]),
+                'director' => 'Louis Leterrier',
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Guardians of the Galaxy Vol. 3',
+                'synopsis' => 'Still reeling from the loss of Gamora, Peter Quill rallies his team to defend the universe and protect one of their own. When the team\'s mission is jeopardized, Rocket proves that his life can have a huge impact.',
+                'duration' => 150,
+                'genre' => json_encode(['Action', 'Adventure', 'Comedy']),
+                'language' => 'English',
+                'age_rating' => 'PG-13',
+                'release_date' => '2024-05-05',
+                'poster_url' => 'https://picsum.photos/500/750?random=25',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
+                'cast' => json_encode([
+                    ['name' => 'Chris Pratt', 'role' => 'Lead'],
+                    ['name' => 'Zoe Saldana', 'role' => 'Lead'],
+                    ['name' => 'Dave Bautista', 'role' => 'Support']
+                ]),
+                'director' => 'James Gunn',
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Mission: Impossible - Dead Reckoning Part One',
+                'synopsis' => 'Ethan Hunt and his IMF team must track down a terrifying new weapon that threatens all of humanity if it falls into the wrong hands. With the fate of the world at stake, a deadly race around the globe begins.',
+                'duration' => 163,
+                'genre' => json_encode(['Action', 'Adventure', 'Thriller']),
+                'language' => 'English',
+                'age_rating' => 'PG-13',
+                'release_date' => '2024-07-12',
+                'poster_url' => 'https://picsum.photos/500/750?random=26',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
+                'cast' => json_encode([
+                    ['name' => 'Tom Cruise', 'role' => 'Lead'],
+                    ['name' => 'Hayley Atwell', 'role' => 'Lead'],
+                    ['name' => 'Ving Rhames', 'role' => 'Support']
+                ]),
+                'director' => 'Christopher McQuarrie',
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Barbie',
+                'synopsis' => 'Barbie and Ken are having the time of their lives in the colorful and seemingly perfect world of Barbie Land. However, when they get a chance to go to the real world, they soon discover it can be a messy place.',
+                'duration' => 114,
+                'genre' => json_encode(['Adventure', 'Comedy', 'Fantasy']),
+                'language' => 'English',
+                'age_rating' => 'PG-13',
+                'release_date' => '2024-07-21',
+                'poster_url' => 'https://picsum.photos/500/750?random=27',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
+                'cast' => json_encode([
+                    ['name' => 'Margot Robbie', 'role' => 'Lead'],
+                    ['name' => 'Ryan Gosling', 'role' => 'Lead'],
+                    ['name' => 'America Ferrera', 'role' => 'Support']
+                ]),
+                'director' => 'Greta Gerwig',
                 'status' => 'active',
             ],
             [
                 'title' => 'Avatar: The Way of Water',
-                'slug' => 'avatar-the-way-of-water',
-                'synopsis' => 'Hơn một thập kỷ sau những sự kiện của phần đầu, Avatar: The Way of Water kể về gia đình của Jake Sully, những rắc rối theo họ, những gì họ phải làm để đảm bảo an toàn cho nhau.',
+                'synopsis' => 'Jake Sully lives with his newfound family formed on the extrasolar moon Pandora. Once a familiar threat returns to finish what was previously started, Jake must work with Neytiri and the army of the Na\'vi race to protect their home.',
                 'duration' => 192,
-                'genre' => json_encode(['Khoa học viễn tưởng', 'Phiêu lưu', 'Gia đình']),
-                'language' => 'Tiếng Anh',
-                'age_rating' => 'T13',
-                'release_date' => '2024-01-20',
-                'poster_url' => 'https://picsum.photos/300/450?random=5',
-                'trailer_url' => 'https://www.youtube.com/embed/d9MyW72ELq0',
+                'genre' => json_encode(['Action', 'Adventure', 'Fantasy']),
+                'language' => 'English',
+                'age_rating' => 'PG-13',
+                'release_date' => '2024-12-16',
+                'poster_url' => 'https://picsum.photos/500/750?random=28',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
                 'cast' => json_encode([
-                    ['name' => 'Sam Worthington', 'role' => 'Jake Sully'],
-                    ['name' => 'Zoe Saldana', 'role' => 'Neytiri'],
-                    ['name' => 'Sigourney Weaver', 'role' => 'Kiri']
+                    ['name' => 'Sam Worthington', 'role' => 'Lead'],
+                    ['name' => 'Zoe Saldana', 'role' => 'Lead'],
+                    ['name' => 'Sigourney Weaver', 'role' => 'Support']
                 ]),
                 'director' => 'James Cameron',
-                'average_rating' => 4.5,
-                'total_reviews' => 1967,
                 'status' => 'active',
             ],
             [
-                'title' => 'Top Gun: Maverick',
-                'slug' => 'top-gun-maverick',
-                'synopsis' => 'Sau hơn ba mười năm phục vụ như một phi công hàng đầu của Hải quân, Pete "Maverick" Mitchell đang ở nơi anh thuộc về, đẩy những giới hạn như một phi công thử nghiệm dũng cảm.',
-                'duration' => 131,
-                'genre' => json_encode(['Hành động', 'Chiến tranh', 'Phiêu lưu']),
-                'language' => 'Tiếng Anh',
-                'age_rating' => 'T13',
-                'release_date' => '2024-02-14',
-                'poster_url' => 'https://picsum.photos/300/450?random=6',
-                'trailer_url' => 'https://www.youtube.com/embed/WGt-8adyabk',
+                'title' => 'Transformers: Rise of the Beasts',
+                'synopsis' => 'During the \'90s, a new faction of Transformers - the Maximals - join the Autobots as allies in the battle for Earth. Optimus Prime and the Autobots are forced to form an alliance with the Maximals to defend Earth from a powerful new threat: the Terrorcons.',
+                'duration' => 127,
+                'genre' => json_encode(['Action', 'Adventure', 'Sci-Fi']),
+                'language' => 'English',
+                'age_rating' => 'PG-13',
+                'release_date' => '2024-06-09',
+                'poster_url' => 'https://picsum.photos/500/750?random=29',
+                'trailer_url' => 'https://www.youtube.com/watch?v=9QngZfFU4SA',
                 'cast' => json_encode([
-                    ['name' => 'Tom Cruise', 'role' => 'Pete "Maverick" Mitchell'],
-                    ['name' => 'Miles Teller', 'role' => 'Bradley "Rooster" Bradshaw'],
-                    ['name' => 'Jennifer Connelly', 'role' => 'Penny Benjamin']
+                    ['name' => 'Anthony Ramos', 'role' => 'Lead'],
+                    ['name' => 'Dominique Fishback', 'role' => 'Lead'],
+                    ['name' => 'Peter Cullen', 'role' => 'Support']
                 ]),
-                'director' => 'Joseph Kosinski',
-                'average_rating' => 4.6,
-                'total_reviews' => 2156,
+                'director' => 'Steven Caple Jr.',
                 'status' => 'active',
-            ],
-
-            // PHIM HÀN QUỐC
-            [
-                'title' => 'Parasite',
-                'slug' => 'parasite-korean',
-                'synopsis' => 'Bộ phim kể về gia đình nghèo Ki-taek sống trong tầng hầm bán ngầm. Họ tìm cách thâm nhập vào gia đình giàu có Park thông qua việc làm gia sư cho con gái nhà Park.',
-                'duration' => 132,
-                'genre' => json_encode(['Kinh dị', 'Hài đen', 'Tâm lý']),
-                'language' => 'Tiếng Hàn',
-                'age_rating' => 'T16',
-                'release_date' => '2024-03-15',
-                'poster_url' => 'https://picsum.photos/300/450?random=7',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'Song Kang-ho', 'role' => 'Ki-taek'],
-                    ['name' => 'Lee Sun-kyun', 'role' => 'Park Dong-ik'],
-                    ['name' => 'Cho Yeo-jeong', 'role' => 'Choi Yeon-gyo']
-                ]),
-                'director' => 'Bong Joon-ho',
-                'average_rating' => 4.8,
-                'total_reviews' => 1834,
-                'status' => 'active',
-            ],
-            [
-                'title' => 'Train to Busan',
-                'slug' => 'train-to-busan',
-                'synopsis' => 'Một đại dịch zombie bùng phát ở Hàn Quốc. Seok-woo và con gái Su-an lên chuyến tàu KTX từ Seoul đến Busan, nhưng trên đường đi họ phải đối mặt với thảm họa zombie.',
-                'duration' => 118,
-                'genre' => json_encode(['Kinh dị', 'Hành động', 'Zombie']),
-                'language' => 'Tiếng Hàn',
-                'age_rating' => 'T16',
-                'release_date' => '2024-03-22',
-                'poster_url' => 'https://picsum.photos/300/450?random=8',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'Gong Yoo', 'role' => 'Seok-woo'],
-                    ['name' => 'Jung Yu-mi', 'role' => 'Sung-kyung'],
-                    ['name' => 'Ma Dong-seok', 'role' => 'Sang-hwa']
-                ]),
-                'director' => 'Yeon Sang-ho',
-                'average_rating' => 4.4,
-                'total_reviews' => 1456,
-                'status' => 'active',
-            ],
-
-            // PHIM HOẠT HÌNH
-            [
-                'title' => 'Doraemon: Nobita và Vùng Đất Lý Tưởng Trên Bầu Trời',
-                'slug' => 'doraemon-nobita-vung-dat-ly-tuong',
-                'synopsis' => 'Nobita tìm thấy một hòn đảo hình trăng lưỡi liềm trên bầu trời và cùng Doraemon khám phá vùng đất lý tưởng Utopia. Tại đây, mọi người đều hoàn hảo và không ai phạm lỗi.',
-                'duration' => 108,
-                'genre' => json_encode(['Hoạt hình', 'Gia đình', 'Phiêu lưu']),
-                'language' => 'Tiếng Nhật',
-                'age_rating' => 'P',
-                'release_date' => '2024-06-01',
-                'poster_url' => 'https://picsum.photos/300/450?random=15',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'Megumi Oohara', 'role' => 'Nobita'],
-                    ['name' => 'Wasabi Mizuta', 'role' => 'Doraemon'],
-                    ['name' => 'Yumi Kakazu', 'role' => 'Shizuka']
-                ]),
-                'director' => 'Takumi Doyama',
-                'average_rating' => 4.3,
-                'total_reviews' => 567,
-                'status' => 'active',
-            ],
-            [
-                'title' => 'Turning Red',
-                'slug' => 'turning-red',
-                'synopsis' => 'Câu chuyện về Mei Lee, một cô gái 13 tuổi tự tin và hơi bướng bỉnh, đang trong độ tuổi dậy thì khó khăn. Và như thể những thay đổi về sở thích, mối quan hệ và cơ thể chưa đủ, bất cứ khi nào cô ấy quá phấn khích, cô ấy sẽ "poof" biến thành một con gấu trúc đỏ khổng lồ!',
-                'duration' => 100,
-                'genre' => json_encode(['Hoạt hình', 'Gia đình', 'Hài']),
-                'language' => 'Tiếng Anh',
-                'age_rating' => 'P',
-                'release_date' => '2024-05-15',
-                'poster_url' => 'https://picsum.photos/300/450?random=16',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'Rosalie Chiang', 'role' => 'Mei Lee'],
-                    ['name' => 'Sandra Oh', 'role' => 'Ming'],
-                    ['name' => 'Ava Morse', 'role' => 'Miriam']
-                ]),
-                'director' => 'Domee Shi',
-                'average_rating' => 4.1,
-                'total_reviews' => 892,
-                'status' => 'active',
-            ],
-
-            // PHIM KINH DỊ
-            [
-                'title' => 'Ma Lai',
-                'slug' => 'ma-lai',
-                'synopsis' => 'Câu chuyện về một gia đình chuyển đến ngôi nhà mới và phát hiện ra những bí mật đen tối từ quá khứ. Những hiện tượng siêu nhiên bắt đầu xảy ra và họ phải đối mặt với thế lực ma quỷ.',
-                'duration' => 95,
-                'genre' => json_encode(['Kinh dị', 'Tâm lý']),
-                'language' => 'Tiếng Việt',
-                'age_rating' => 'T18',
-                'release_date' => '2024-07-31',
-                'poster_url' => 'https://picsum.photos/300/450?random=17',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'Hồng Ánh', 'role' => 'Lan'],
-                    ['name' => 'Huy Khánh', 'role' => 'Nam'],
-                    ['name' => 'Lâm Thanh Mỹ', 'role' => 'Bé An']
-                ]),
-                'director' => 'Nguyễn Hữu Hoàng',
-                'average_rating' => 3.7,
-                'total_reviews' => 734,
-                'status' => 'active',
-            ],
-            [
-                'title' => 'The Conjuring: The Devil Made Me Do It',
-                'slug' => 'the-conjuring-devil-made-me-do-it',
-                'synopsis' => 'Ed và Lorraine Warren điều tra một vụ giết người có thể liên quan đến quỷ dữ và là lần đầu tiên trong lịch sử nước Mỹ, một nghi phạm giết người tuyên bố bị quỷ ám như một biện pháp bào chữa.',
-                'duration' => 112,
-                'genre' => json_encode(['Kinh dị', 'Siêu nhiên', 'Tâm lý']),
-                'language' => 'Tiếng Anh',
-                'age_rating' => 'T18',
-                'release_date' => '2024-06-18',
-                'poster_url' => 'https://picsum.photos/300/450?random=18',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'Patrick Wilson', 'role' => 'Ed Warren'],
-                    ['name' => 'Vera Farmiga', 'role' => 'Lorraine Warren'],
-                    ['name' => 'Ruairi O\'Connor', 'role' => 'Arne Cheyenne Johnson']
-                ]),
-                'director' => 'Michael Chaves',
-                'average_rating' => 4.2,
-                'total_reviews' => 1456,
-                'status' => 'active',
-            ],
-
-            // PHIM SẮP CHIẾU
-            [
-                'title' => 'Dune: Part Two',
-                'slug' => 'dune-part-two',
-                'synopsis' => 'Paul Atreides hợp nhất với Chani và Fremen trong cuộc chiến báo thù chống lại những kẻ âm mưu hủy diệt gia đình anh. Đối mặt với sự lựa chọn giữa tình yêu và số phận của vũ trụ.',
-                'duration' => 155,
-                'genre' => json_encode(['Khoa học viễn tưởng', 'Phiêu lưu', 'Hành động']),
-                'language' => 'Tiếng Anh',
-                'age_rating' => 'T13',
-                'release_date' => '2024-09-15',
-                'poster_url' => 'https://picsum.photos/300/450?random=9',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'Timothée Chalamet', 'role' => 'Paul Atreides'],
-                    ['name' => 'Zendaya', 'role' => 'Chani'],
-                    ['name' => 'Rebecca Ferguson', 'role' => 'Lady Jessica']
-                ]),
-                'director' => 'Denis Villeneuve',
-                'average_rating' => 0.0,
-                'total_reviews' => 0,
-                'status' => 'coming_soon',
-            ],
-            [
-                'title' => 'Guardians of the Galaxy Vol. 3',
-                'slug' => 'guardians-of-the-galaxy-vol-3',
-                'synopsis' => 'Peter Quill vẫn còn đau buồn vì mất Gamora, phải tập hợp đội của mình để bảo vệ vũ trụ và bảo vệ một trong những thành viên của họ - một nhiệm vụ có thể kết thúc Guardians nếu không thành công.',
-                'duration' => 150,
-                'genre' => json_encode(['Hành động', 'Khoa học viễn tưởng', 'Hài']),
-                'language' => 'Tiếng Anh',
-                'age_rating' => 'T13',
-                'release_date' => '2024-10-05',
-                'poster_url' => 'https://picsum.photos/300/450?random=10',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'Chris Pratt', 'role' => 'Peter Quill / Star-Lord'],
-                    ['name' => 'Zoe Saldana', 'role' => 'Gamora'],
-                    ['name' => 'Dave Bautista', 'role' => 'Drax']
-                ]),
-                'director' => 'James Gunn',
-                'average_rating' => 0.0,
-                'total_reviews' => 0,
-                'status' => 'coming_soon',
-            ],
-            [
-                'title' => 'Fast X',
-                'slug' => 'fast-x',
-                'synopsis' => 'Trong nhiều nhiệm vụ và chống lại mọi tỷ lệ cược, Dom Toretto và gia đình anh đã vượt qua mọi kẻ thù trên đường đi. Giờ đây, họ đối mặt với đối thủ tàn nhẫn nhất từng thấy.',
-                'duration' => 141,
-                'genre' => json_encode(['Hành động', 'Phiêu lưu', 'Tội phạm']),
-                'language' => 'Tiếng Anh',
-                'age_rating' => 'T13',
-                'release_date' => '2024-11-10',
-                'poster_url' => 'https://picsum.photos/300/450?random=11',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'Vin Diesel', 'role' => 'Dominic Toretto'],
-                    ['name' => 'Michelle Rodriguez', 'role' => 'Letty'],
-                    ['name' => 'Tyrese Gibson', 'role' => 'Roman']
-                ]),
-                'director' => 'Louis Leterrier',
-                'average_rating' => 0.0,
-                'total_reviews' => 0,
-                'status' => 'coming_soon',
-            ],
-
-            // PHIM ANIME/HOẠT HÌNH
-            [
-                'title' => 'Your Name',
-                'slug' => 'your-name-kimi-no-na-wa',
-                'synopsis' => 'Mitsuha, một nữ sinh trung học sống ở vùng nông thôn, và Taki, một nam sinh sống ở Tokyo, bắt đầu hoán đổi cơ thể một cách bí ẩn và dần dần phát triển mối liên kết đặc biệt.',
-                'duration' => 106,
-                'genre' => json_encode(['Anime', 'Tình cảm', 'Siêu nhiên']),
-                'language' => 'Tiếng Nhật',
-                'age_rating' => 'T13',
-                'release_date' => '2024-04-12',
-                'poster_url' => 'https://picsum.photos/300/450?random=12',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'Ryunosuke Kamiki', 'role' => 'Taki Tachibana'],
-                    ['name' => 'Mone Kamishiraishi', 'role' => 'Mitsuha Miyamizu'],
-                    ['name' => 'Masami Nagasawa', 'role' => 'Miki Okudera']
-                ]),
-                'director' => 'Makoto Shinkai',
-                'average_rating' => 4.7,
-                'total_reviews' => 967,
-                'status' => 'active',
-            ],
-            [
-                'title' => 'Spirited Away',
-                'slug' => 'spirited-away',
-                'synopsis' => 'Chihiro, một cô bé 10 tuổi, cùng bố mẹ lạc vào thế giới thần linh. Để cứu bố mẹ khỏi lời nguyền, cô phải làm việc tại nhà tắm của phù thủy Yubaba.',
-                'duration' => 125,
-                'genre' => json_encode(['Anime', 'Gia đình', 'Phiêu lưu']),
-                'language' => 'Tiếng Nhật',
-                'age_rating' => 'T10',
-                'release_date' => '2024-05-01',
-                'poster_url' => 'https://picsum.photos/300/450?random=13',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'Rumi Hiiragi', 'role' => 'Chihiro'],
-                    ['name' => 'Miyu Irino', 'role' => 'Haku'],
-                    ['name' => 'Mari Natsuki', 'role' => 'Yubaba']
-                ]),
-                'director' => 'Hayao Miyazaki',
-                'average_rating' => 4.9,
-                'total_reviews' => 1245,
-                'status' => 'active',
-            ],
-
-            // THÊM PHIM VIỆT NAM MỚI
-            [
-                'title' => 'Nhà Bà Nữ',
-                'slug' => 'nha-ba-nu',
-                'synopsis' => 'Câu chuyện về một gia đình ba thế hệ phụ nữ cùng sống chung dưới một mái nhà, với những xung đột, hiểu lầm và yêu thương qua từng thế hệ.',
-                'duration' => 122,
-                'genre' => json_encode(['Tâm lý', 'Gia đình', 'Tình cảm']),
-                'language' => 'Tiếng Việt',
-                'age_rating' => 'T13',
-                'release_date' => '2024-08-30',
-                'poster_url' => 'https://picsum.photos/300/450?random=30',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'NSƯT Lê Thiện', 'role' => 'Bà Nữ'],
-                    ['name' => 'Uyển Ân', 'role' => 'Linh'],
-                    ['name' => 'Anh Tú', 'role' => 'Đức']
-                ]),
-                'director' => 'Trương Minh Quý',
-                'average_rating' => 4.1,
-                'total_reviews' => 456,
-                'status' => 'coming_soon',
-            ],
-            [
-                'title' => 'Quỷ Lùn',
-                'slug' => 'quy-lun',
-                'synopsis' => 'Một gia đình chuyển về làng quê sống cùng ông bà, nhưng sớm phát hiện ra những điều bí ẩn và đáng sợ về căn nhà cũ kỹ này.',
-                'duration' => 98,
-                'genre' => json_encode(['Kinh dị', 'Tâm lý']),
-                'language' => 'Tiếng Việt',
-                'age_rating' => 'T18',
-                'release_date' => '2024-09-12',
-                'poster_url' => 'https://picsum.photos/300/450?random=31',
-                'trailer_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                'cast' => json_encode([
-                    ['name' => 'Hồng Ánh', 'role' => 'Mẹ Mai'],
-                    ['name' => 'Võ Điền Gia Huy', 'role' => 'Bé Minh'],
-                    ['name' => 'Lâm Thanh Mỹ', 'role' => 'Cô Út']
-                ]),
-                'director' => 'Lưu Thành Luân',
-                'average_rating' => 3.9,
-                'total_reviews' => 234,
-                'status' => 'coming_soon',
             ],
         ];
 
-        foreach ($movies as $movieData) {
+        // Combine all movies
+        $allMovies = array_merge($vietnameseMovies, $internationalMovies);
+
+        // Create movies
+        foreach ($allMovies as $movieData) {
             Movie::create($movieData);
         }
+
+        $this->command->info('Created ' . count($allMovies) . ' sample movies.');
     }
 }

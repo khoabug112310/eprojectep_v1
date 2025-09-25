@@ -146,13 +146,24 @@ class ShowtimeSeeder extends Seeder
                 }
             }
             
+            // Handle case when allSeats is empty
+            if (empty($allSeats)) {
+                $availableSeats[$seatType] = [];
+                continue;
+            }
+            
             // Randomly occupy 10-40% of seats
             $occupancyRate = rand(10, 40) / 100;
-            $occupiedCount = (int) (count($allSeats) * $occupancyRate);
-            $occupiedSeats = array_rand(array_flip($allSeats), $occupiedCount);
+            $occupiedCount = max(0, (int) (count($allSeats) * $occupancyRate));
             
-            // Available seats are all seats minus occupied ones
-            $availableSeats[$seatType] = array_values(array_diff($allSeats, (array) $occupiedSeats));
+            // Only try to get random seats if we have seats to occupy
+            if ($occupiedCount > 0 && !empty($allSeats)) {
+                $occupiedSeats = array_rand(array_flip($allSeats), min($occupiedCount, count($allSeats)));
+                // Available seats are all seats minus occupied ones
+                $availableSeats[$seatType] = array_values(array_diff($allSeats, (array) $occupiedSeats));
+            } else {
+                $availableSeats[$seatType] = $allSeats;
+            }
         }
         
         return $availableSeats;

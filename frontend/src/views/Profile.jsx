@@ -1,46 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, Container, Form, Alert, Row, Col, Modal } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { Button, Card, Container, Form, Alert, Spinner } from 'react-bootstrap';
 import { authAPI } from '../services/api';
 
 const Profile = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
-    date_of_birth: '',
-    preferred_city: ''
+    phone: ''
   });
-  
-  // Password change state
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [changingPassword, setChangingPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordData, setPasswordData] = useState({
     current_password: '',
-    password: '',
-    password_confirmation: ''
+    new_password: '',
+    new_password_confirmation: ''
   });
+  const [errors, setErrors] = useState({});
+  const [alert, setAlert] = useState({ show: false, variant: '', message: '' });
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const response = await authAPI.getProfile();
-        const userData = response.data.data || response.data;
+        const userData = response.data?.data;
+        
+        if (!userData) {
+          throw new Error('User data not found');
+        }
+        
+        setUser(userData);
         setFormData({
           name: userData.name || '',
           email: userData.email || '',
-          phone: userData.phone || '',
-          date_of_birth: userData.date_of_birth || '',
-          preferred_city: userData.preferred_city || ''
+          phone: userData.phone || ''
         });
+        
         setLoading(false);
-      } catch (err) {
-        setError('Failed to load profile');
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        setAlert({ show: true, variant: 'danger', message: 'Failed to load profile data: ' + (error.response?.data?.message || error.message) });
         setLoading(false);
       }
     };
@@ -49,296 +50,295 @@ const Profile = () => {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setUpdating(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      await authAPI.updateProfile(formData);
-      setSuccess('Profile updated successfully');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update profile');
-    } finally {
-      setUpdating(false);
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
     }
   };
 
   const handlePasswordChange = (e) => {
-    setPasswordData({
-      ...passwordData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
-  const handlePasswordSubmit = async (e) => {
+  const validateProfileForm = () => {
+    const newErrors = {};
+    
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email is invalid';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validatePasswordForm = () => {
+    const newErrors = {};
+    
+    if (!passwordData.current_password) {
+      newErrors.current_password = 'Current password is required';
+    }
+    
+    if (!passwordData.new_password) {
+      newErrors.new_password = 'New password is required';
+    } else if (passwordData.new_password.length < 6) {
+      newErrors.new_password = 'Password must be at least 6 characters';
+    }
+    
+    if (!passwordData.new_password_confirmation) {
+      newErrors.new_password_confirmation = 'Password confirmation is required';
+    } else if (passwordData.new_password !== passwordData.new_password_confirmation) {
+      newErrors.new_password_confirmation = 'Passwords do not match';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    setChangingPassword(true);
-    setPasswordError('');
-    setPasswordSuccess('');
-
-    // Validate password confirmation
-    if (passwordData.password !== passwordData.password_confirmation) {
-      setPasswordError('New password and confirmation do not match');
-      setChangingPassword(false);
+    
+    if (!validateProfileForm()) {
       return;
     }
-
-    if (passwordData.password.length < 8) {
-      setPasswordError('New password must be at least 8 characters long');
-      setChangingPassword(false);
-      return;
-    }
-
+    
     try {
-      await authAPI.changePassword(passwordData);
-      setPasswordSuccess('Password changed successfully');
+      setUpdating(true);
+      const response = await authAPI.updateProfile(formData);
+      setAlert({ show: true, variant: 'success', message: 'Profile updated successfully!' });
+      
+      // Update user data in localStorage
+      const updatedUser = { ...user, ...formData };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      
+      setUpdating(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setAlert({ show: true, variant: 'danger', message: error.response?.data?.message || error.message || 'Failed to update profile' });
+      setUpdating(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    
+    if (!validatePasswordForm()) {
+      return;
+    }
+    
+    try {
+      setUpdating(true);
+      const response = await authAPI.changePassword(passwordData);
+      setAlert({ show: true, variant: 'success', message: 'Password changed successfully!' });
+      
+      // Reset password form
       setPasswordData({
         current_password: '',
-        password: '',
-        password_confirmation: ''
+        new_password: '',
+        new_password_confirmation: ''
       });
-      setTimeout(() => {
-        setShowPasswordModal(false);
-        setPasswordSuccess('');
-      }, 2000);
-    } catch (err) {
-      setPasswordError(err.response?.data?.message || 'Failed to change password');
-    } finally {
-      setChangingPassword(false);
+      
+      setUpdating(false);
+    } catch (error) {
+      console.error('Error changing password:', error);
+      setAlert({ show: true, variant: 'danger', message: error.response?.data?.message || error.message || 'Failed to change password' });
+      setUpdating(false);
     }
-  };
-
-  const openPasswordModal = () => {
-    setPasswordError('');
-    setPasswordSuccess('');
-    setPasswordData({
-      current_password: '',
-      password: '',
-      password_confirmation: ''
-    });
-    setShowPasswordModal(true);
   };
 
   if (loading) {
     return (
       <div className="text-center py-5">
-        <div className="spinner-border text-gold" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+        <Spinner animation="border" variant="gold" />
+        <p className="mt-2">Loading profile data...</p>
       </div>
     );
   }
 
   return (
-    <Container>
-      <h2 className="text-gold mb-4">My Profile</h2>
-      
-      {error && <Alert variant="danger">{error}</Alert>}
-      {success && <Alert variant="success">{success}</Alert>}
-      
-      <Row>
-        <Col md={8}>
-          <Card className="bg-dark mb-4">
-            <Card.Header>
-              <h5 className="text-gold mb-0">Personal Information</h5>
+    <Container className="py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2 className="text-gold">User Profile</h2>
+        <Button variant="secondary" onClick={() => navigate('/')}>
+          <i className="bi bi-arrow-left me-1"></i> Back to Home
+        </Button>
+      </div>
+
+      {alert.show && (
+        <Alert variant={alert.variant} onClose={() => setAlert({ show: false, variant: '', message: '' })} dismissible>
+          {alert.message}
+        </Alert>
+      )}
+
+      <div className="row">
+        {/* Profile Information */}
+        <div className="col-md-6">
+          <Card className="bg-dark">
+            <Card.Header className="bg-secondary text-white">
+              <i className="bi bi-person me-2"></i> Profile Information
             </Card.Header>
             <Card.Body>
-              <Form onSubmit={handleSubmit}>
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Full Name</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        placeholder="Enter your full name"
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Email Address</Form.Label>
-                      <Form.Control
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        placeholder="Enter your email"
-                        readOnly
-                        className="bg-secondary"
-                      />
-                      <Form.Text className="text-muted">
-                        Email cannot be changed for security reasons
-                      </Form.Text>
-                    </Form.Group>
-                  </Col>
-                </Row>
-                
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Phone Number</Form.Label>
-                      <Form.Control
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        placeholder="Enter your phone number"
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Date of Birth</Form.Label>
-                      <Form.Control
-                        type="date"
-                        name="date_of_birth"
-                        value={formData.date_of_birth}
-                        onChange={handleChange}
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-                
-                <Form.Group className="mb-4">
-                  <Form.Label>Preferred City</Form.Label>
+              <Form onSubmit={handleUpdateProfile}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Name</Form.Label>
                   <Form.Control
                     type="text"
-                    name="preferred_city"
-                    value={formData.preferred_city}
+                    name="name"
+                    value={formData.name}
                     onChange={handleChange}
-                    placeholder="Enter your preferred city for movie theaters"
+                    isInvalid={!!errors.name}
                   />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.name}
+                  </Form.Control.Feedback>
                 </Form.Group>
-                
-                <Button 
-                  variant="primary" 
-                  type="submit" 
-                  disabled={updating}
-                  className="me-3"
-                >
-                  {updating ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Updating...
-                    </>
-                  ) : (
-                    'Update Profile'
-                  )}
-                </Button>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Email</Form.Label>
+                  <Form.Control
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    isInvalid={!!errors.email}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.email}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Phone</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    isInvalid={!!errors.phone}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.phone}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <div className="d-flex justify-content-end">
+                  <Button variant="primary" type="submit" disabled={updating}>
+                    {updating ? (
+                      <>
+                        <Spinner animation="border" size="sm" className="me-2" />
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-check-circle me-1"></i> Update Profile
+                      </>
+                    )}
+                  </Button>
+                </div>
               </Form>
             </Card.Body>
           </Card>
-        </Col>
-        
-        <Col md={4}>
+        </div>
+
+        {/* Change Password */}
+        <div className="col-md-6">
           <Card className="bg-dark">
-            <Card.Header>
-              <h5 className="text-gold mb-0">Account Security</h5>
+            <Card.Header className="bg-secondary text-white">
+              <i className="bi bi-key me-2"></i> Change Password
             </Card.Header>
             <Card.Body>
-              <p className="text-muted mb-3">
-                Keep your account secure by regularly updating your password.
-              </p>
-              <Button 
-                variant="outline-warning" 
-                onClick={openPasswordModal}
-                className="w-100"
-              >
-                <i className="bi bi-shield-lock me-2"></i>
-                Change Password
-              </Button>
+              <Form onSubmit={handleChangePassword}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Current Password</Form.Label>
+                  <Form.Control
+                    type="password"
+                    name="current_password"
+                    value={passwordData.current_password}
+                    onChange={handlePasswordChange}
+                    isInvalid={!!errors.current_password}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.current_password}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>New Password</Form.Label>
+                  <Form.Control
+                    type="password"
+                    name="new_password"
+                    value={passwordData.new_password}
+                    onChange={handlePasswordChange}
+                    isInvalid={!!errors.new_password}
+                  />
+                  <Form.Text className="text-muted">
+                    Password must be at least 6 characters long.
+                  </Form.Text>
+                  <Form.Control.Feedback type="invalid">
+                    {errors.new_password}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Confirm New Password</Form.Label>
+                  <Form.Control
+                    type="password"
+                    name="new_password_confirmation"
+                    value={passwordData.new_password_confirmation}
+                    onChange={handlePasswordChange}
+                    isInvalid={!!errors.new_password_confirmation}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.new_password_confirmation}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <div className="d-flex justify-content-end">
+                  <Button variant="warning" type="submit" disabled={updating}>
+                    {updating ? (
+                      <>
+                        <Spinner animation="border" size="sm" className="me-2" />
+                        Changing...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-key me-1"></i> Change Password
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </Form>
             </Card.Body>
           </Card>
-        </Col>
-      </Row>
-
-      {/* Password Change Modal */}
-      <Modal show={showPasswordModal} onHide={() => setShowPasswordModal(false)} centered>
-        <Modal.Header closeButton className="bg-dark border-secondary">
-          <Modal.Title className="text-gold">Change Password</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="bg-dark">
-          {passwordError && <Alert variant="danger">{passwordError}</Alert>}
-          {passwordSuccess && <Alert variant="success">{passwordSuccess}</Alert>}
-          
-          <Form onSubmit={handlePasswordSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Current Password</Form.Label>
-              <Form.Control
-                type="password"
-                name="current_password"
-                value={passwordData.current_password}
-                onChange={handlePasswordChange}
-                required
-                placeholder="Enter your current password"
-              />
-            </Form.Group>
-            
-            <Form.Group className="mb-3">
-              <Form.Label>New Password</Form.Label>
-              <Form.Control
-                type="password"
-                name="password"
-                value={passwordData.password}
-                onChange={handlePasswordChange}
-                required
-                placeholder="Enter new password (min 8 characters)"
-                minLength={8}
-              />
-            </Form.Group>
-            
-            <Form.Group className="mb-4">
-              <Form.Label>Confirm New Password</Form.Label>
-              <Form.Control
-                type="password"
-                name="password_confirmation"
-                value={passwordData.password_confirmation}
-                onChange={handlePasswordChange}
-                required
-                placeholder="Confirm your new password"
-                minLength={8}
-              />
-            </Form.Group>
-            
-            <div className="d-flex justify-content-end gap-2">
-              <Button 
-                variant="secondary" 
-                onClick={() => setShowPasswordModal(false)}
-                disabled={changingPassword}
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="primary" 
-                type="submit" 
-                disabled={changingPassword}
-              >
-                {changingPassword ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Changing...
-                  </>
-                ) : (
-                  'Change Password'
-                )}
-              </Button>
-            </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
+        </div>
+      </div>
     </Container>
   );
 };
