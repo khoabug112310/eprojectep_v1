@@ -1,0 +1,180 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='UTF-8'>
+            <title>E-Ticket - CB20250927001</title>
+            <style>
+                body { 
+                    font-family: 'Arial, sans-serif';
+                    max-width: 533px;
+                    margin: 0 auto;
+                    padding: 13px;
+                    background-color: #fff;
+                    color: #000;
+                }
+                .ticket-header { 
+                    text-align: center; 
+                    border-bottom: 2px solid #ffc107;
+                    padding-bottom: 13px;
+                    margin-bottom: 13px;
+                }
+                .ticket-header h1 {
+                    color: #E50914;
+                    margin: 0;
+                    font-size: 24px;
+                }
+                .ticket-header h2 {
+                    color: #333;
+                    margin: 7px 0;
+                    font-size: 20px;
+                }
+                .ticket-header p {
+                    font-size: 12px;
+                    font-weight: bold;
+                    margin: 0;
+                }
+                .ticket-section {
+                    border: 1px solid #ddd;
+                    border-radius: 5px;
+                    padding: 13px;
+                    margin-bottom: 13px;
+                }
+                .ticket-section h3 {
+                    color: #E50914;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 7px;
+                    font-size: 16px;
+                    margin-top: 0;
+                }
+                .ticket-info {
+                    display: flex;
+                    flex-wrap: wrap;
+                    margin-bottom: 13px;
+                }
+                .movie-details, .booking-info {
+                    flex: 1;
+                    min-width: 200px;
+                    padding-right: 13px;
+                }
+                .booking-info {
+                    padding-right: 0;
+                }
+                .ticket-section p {
+                    font-size: 11px;
+                    margin: 5px 0;
+                }
+                .qr-section {
+                    text-align: center;
+                    margin-top: 7px;
+                }
+                .qr-section h3 {
+                    color: #333;
+                    margin-bottom: 10px;
+                    font-size: 14px;
+                }
+                .qr-container {
+                    display: inline-block;
+                    border: 2px solid #ffc107;
+                    padding: 10px;
+                    background-color: #fff;
+                    border-radius: 5px;
+                }
+                .qr-container img {
+                    max-width: 150px;
+                    height: auto;
+                }
+                .qr-container p {
+                    margin: 7px 0 0 0;
+                    font-weight: bold;
+                    font-size: 10px;
+                }
+                .booking-code {
+                    margin-top: 7px;
+                    font-size: 9px;
+                    color: #666;
+                }
+                .important-info {
+                    text-align: center;
+                    padding: 10px;
+                    background-color: #f8f9fa;
+                    border-radius: 5px;
+                    border: 1px solid #dee2e6;
+                }
+                .important-info p {
+                    margin: 0;
+                    font-weight: bold;
+                    font-size: 10px;
+                }
+                .important-info .secondary {
+                    margin: 3px 0 0 0;
+                    font-weight: normal;
+                    font-size: 9px;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 20px;
+                    font-size: 8px;
+                    color: #666;
+                }
+                .footer p {
+                    margin: 0;
+                }
+                .footer .contact {
+                    margin: 3px 0 0 0;
+                }
+                .status-booked {
+                    color: #28a745;
+                    font-weight: bold;
+                }
+            </style>
+        </head>
+        <body>
+            <div class='ticket-header'>
+                <h1>🎬 CineBook</h1>
+                <h2>E-Ticket</h2>
+                <p>Booking Code: CB20250927001</p>
+            </div>
+
+            <div class='ticket-section'>
+                <div class='ticket-info'>
+                    <div class='movie-details'>
+                        <h3>Movie Details</h3>
+                        <p><strong>Title:</strong> Spider-Man: No Way Home</p>
+                        <p><strong>Theater:</strong> Screen 1</p>
+                        <p><strong>Date:</strong> 28/09/2025</p>
+                        <p><strong>Time:</strong> 19:30 - 21:58</p>
+                    </div>
+                    
+                    <div class='booking-info'>
+                        <h3>Booking Information</h3>
+                        <p><strong>Seats:</strong> A5, A6</p>
+                        <p><strong>Total Amount:</strong> 240,000 VND VND</p>
+                        <p><strong>Status:</strong> <span class='status-booked'>BOOKED</span></p>
+                    </div>
+                </div>
+
+                
+                <div class='qr-section'>
+                    <h3>QR Code for Entry</h3>
+                    <div class='qr-container'>
+                        <img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==' alt='QR Code'>
+                        <p>Scan at theater entrance</p>
+                    </div>
+                    <p class='booking-code'>Booking Code: CB20250927001</p>
+                </div>
+                
+            </div>
+
+            <div class='important-info'>
+                <p>Important: Please arrive at least 30 minutes before the showtime.</p>
+                <p class='secondary'>Bring this e-ticket or have the booking code ready for entry.</p>
+            </div>
+
+            <div class='footer'>
+                <p>Thank you for choosing CineBook!</p>
+                <p class='contact'>support@cinebook.com | 1900-123-456</p>
+            </div>
+        </body>
+        </html>
+        

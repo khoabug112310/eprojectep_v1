@@ -52,7 +52,7 @@ class ETicketService
                 ]);
             }
 
-            // Generate PDF ticket (placeholder for now)
+            // Generate PDF ticket
             $pdfResult = $this->generateTicketPdf($booking, $ticketData, $qrResult);
 
             // Update booking with ticket information
@@ -118,6 +118,41 @@ class ETicketService
         $theater = $showtime->theater;
         $user = $booking->user;
 
+        // Handle different time formats more robustly
+        $showDateTimeString = $showtime->show_date . ' ' . $showtime->show_time;
+        
+        // Try to parse the datetime with multiple approaches
+        $showDateTime = null;
+        
+        try {
+            // First, try to parse with Carbon's flexible parser
+            $showDateTime = Carbon::parse($showDateTimeString);
+        } catch (Exception $e) {
+            // If that fails, try to create from components
+            try {
+                $date = Carbon::parse($showtime->show_date);
+                $timeParts = explode(':', $showtime->show_time);
+                
+                if (count($timeParts) >= 2) {
+                    $hour = (int)$timeParts[0];
+                    $minute = (int)$timeParts[1];
+                    $second = count($timeParts) > 2 ? (int)$timeParts[2] : 0;
+                    
+                    $showDateTime = $date->setTime($hour, $minute, $second);
+                } else {
+                    // Fallback to just the date
+                    $showDateTime = $date;
+                }
+            } catch (Exception $e2) {
+                // If all else fails, use current time as fallback
+                $showDateTime = now();
+                Log::warning('Could not parse showtime, using current time as fallback', [
+                    'showtime_string' => $showDateTimeString,
+                    'booking_id' => $booking->id
+                ]);
+            }
+        }
+
         return [
             // Booking Information
             'booking_code' => $booking->booking_code,
@@ -149,7 +184,7 @@ class ETicketService
                 'id' => $showtime->id,
                 'show_date' => $showtime->show_date,
                 'show_time' => $showtime->show_time,
-                'show_datetime' => Carbon::createFromFormat('Y-m-d H:i:s', $showtime->show_date . ' ' . $showtime->show_time)->format('Y-m-d H:i:s'),
+                'show_datetime' => $showDateTime->format('Y-m-d H:i:s'),
             ],
 
             // Seat Information
@@ -179,7 +214,7 @@ class ETicketService
             'ticket_info' => [
                 'generated_at' => now()->toISOString(),
                 'ticket_type' => 'digital',
-                'valid_until' => Carbon::createFromFormat('Y-m-d H:i:s', $showtime->show_date . ' ' . $showtime->show_time)->addHours(2)->toISOString(),
+                'valid_until' => $showDateTime->copy()->addHours(2)->toISOString(),
                 'terms' => 'This ticket is valid only for the specified showtime. Please arrive 30 minutes before showtime.',
             ],
         ];
@@ -211,7 +246,7 @@ class ETicketService
     }
 
     /**
-     * Generate PDF ticket (placeholder implementation)
+     * Generate PDF ticket
      *
      * @param Booking $booking
      * @param array $ticketData
@@ -221,26 +256,54 @@ class ETicketService
     private function generateTicketPdf(Booking $booking, array $ticketData, array $qrResult): array
     {
         try {
-            // For now, we'll generate a simple HTML representation
-            // In the future, this could use libraries like TCPDF or DomPDF
-            
+            // Generate HTML content first
             $htmlContent = $this->generateTicketHtml($ticketData, $qrResult);
             
-            // Save HTML version
-            $fileName = 'tickets/ticket_' . $booking->booking_code . '_' . now()->format('YmdHis') . '.html';
-            Storage::disk('public')->put($fileName, $htmlContent);
+            // Try to generate PDF using DomPDF if available
+            if (class_exists('\Barryvdh\DomPDF\Facade\Pdf')) {
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($htmlContent)
+                         ->setPaper('A4')
+                         ->setOptions([
+                             'defaultFont' => 'sans-serif',
+                             'isRemoteEnabled' => true
+                         ]);
+                
+                // Generate file name
+                $fileName = 'tickets/ticket_' . $booking->booking_code . '_' . now()->format('YmdHis') . '.pdf';
+                
+                // Save PDF to storage
+                Storage::disk('public')->put($fileName, $pdf->output());
 
-            return [
-                'success' => true,
-                'data' => [
-                    'file_path' => $fileName,
-                    'file_url' => Storage::disk('public')->url($fileName),
-                    'html_content' => $htmlContent,
-                    'type' => 'html'
-                ]
-            ];
+                return [
+                    'success' => true,
+                    'data' => [
+                        'file_path' => $fileName,
+                        'file_url' => Storage::disk('public')->url($fileName),
+                        'type' => 'pdf'
+                    ]
+                ];
+            } else {
+                // Fallback to HTML if DomPDF is not available
+                $fileName = 'tickets/ticket_' . $booking->booking_code . '_' . now()->format('YmdHis') . '.html';
+                Storage::disk('public')->put($fileName, $htmlContent);
+
+                return [
+                    'success' => true,
+                    'data' => [
+                        'file_path' => $fileName,
+                        'file_url' => Storage::disk('public')->url($fileName),
+                        'type' => 'html'
+                    ]
+                ];
+            }
 
         } catch (Exception $e) {
+            Log::error('PDF generation failed', [
+                'booking_id' => $booking->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return [
                 'success' => false,
                 'message' => 'PDF generation failed: ' . $e->getMessage()
@@ -259,6 +322,31 @@ class ETicketService
     {
         $qrCodeBase64 = $qrResult['success'] ? $qrResult['data']['qr_code_image_base64'] : '';
         
+        // Calculate showtime with end time based on movie duration
+        $showtimeDisplay = $ticketData['showtime']['show_time'];
+        if (isset($ticketData['movie']['duration'])) {
+            try {
+                // Parse the show time
+                $timeParts = explode(':', $ticketData['showtime']['show_time']);
+                if (count($timeParts) >= 2) {
+                    $hours = (int)$timeParts[0];
+                    $minutes = (int)$timeParts[1];
+                    $startTime = new \DateTime();
+                    $startTime->setTime($hours, $minutes, 0);
+                    
+                    // Calculate end time by adding movie duration (in minutes)
+                    $endTime = clone $startTime;
+                    $endTime->modify('+' . $ticketData['movie']['duration'] . ' minutes');
+                    
+                    // Format times
+                    $showtimeDisplay = $startTime->format('H:i') . ' - ' . $endTime->format('H:i');
+                }
+            } catch (Exception $e) {
+                // Fallback to just showing the start time if calculation fails
+                $showtimeDisplay = $ticketData['showtime']['show_time'];
+            }
+        }
+        
         return "
         <!DOCTYPE html>
         <html>
@@ -266,73 +354,175 @@ class ETicketService
             <meta charset='UTF-8'>
             <title>E-Ticket - {$ticketData['booking_code']}</title>
             <style>
-                body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-                .ticket-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 20px; }
-                .ticket-section { margin-bottom: 15px; }
-                .ticket-section h3 { margin: 0 0 10px 0; color: #333; }
-                .ticket-info { display: flex; justify-content: space-between; margin-bottom: 5px; }
-                .qr-code { text-align: center; margin: 20px 0; }
-                .qr-code img { max-width: 200px; }
-                .seats { background: #f5f5f5; padding: 10px; border-radius: 5px; }
-                .footer { text-align: center; font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #ccc; padding-top: 15px; }
+                body { 
+                    font-family: 'Arial, sans-serif';
+                    max-width: 533px;
+                    margin: 0 auto;
+                    padding: 13px;
+                    background-color: #fff;
+                    color: #000;
+                }
+                .ticket-header { 
+                    text-align: center; 
+                    border-bottom: 2px solid #ffc107;
+                    padding-bottom: 13px;
+                    margin-bottom: 13px;
+                }
+                .ticket-header h1 {
+                    color: #E50914;
+                    margin: 0;
+                    font-size: 24px;
+                }
+                .ticket-header h2 {
+                    color: #333;
+                    margin: 7px 0;
+                    font-size: 20px;
+                }
+                .ticket-header p {
+                    font-size: 12px;
+                    font-weight: bold;
+                    margin: 0;
+                }
+                .ticket-section {
+                    border: 1px solid #ddd;
+                    border-radius: 5px;
+                    padding: 13px;
+                    margin-bottom: 13px;
+                }
+                .ticket-section h3 {
+                    color: #E50914;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 7px;
+                    font-size: 16px;
+                    margin-top: 0;
+                }
+                .ticket-info {
+                    display: flex;
+                    flex-wrap: wrap;
+                    margin-bottom: 13px;
+                }
+                .movie-details, .booking-info {
+                    flex: 1;
+                    min-width: 200px;
+                    padding-right: 13px;
+                }
+                .booking-info {
+                    padding-right: 0;
+                }
+                .ticket-section p {
+                    font-size: 11px;
+                    margin: 5px 0;
+                }
+                .qr-section {
+                    text-align: center;
+                    margin-top: 7px;
+                }
+                .qr-section h3 {
+                    color: #333;
+                    margin-bottom: 10px;
+                    font-size: 14px;
+                }
+                .qr-container {
+                    display: inline-block;
+                    border: 2px solid #ffc107;
+                    padding: 10px;
+                    background-color: #fff;
+                    border-radius: 5px;
+                }
+                .qr-container img {
+                    max-width: 150px;
+                    height: auto;
+                }
+                .qr-container p {
+                    margin: 7px 0 0 0;
+                    font-weight: bold;
+                    font-size: 10px;
+                }
+                .booking-code {
+                    margin-top: 7px;
+                    font-size: 9px;
+                    color: #666;
+                }
+                .important-info {
+                    text-align: center;
+                    padding: 10px;
+                    background-color: #f8f9fa;
+                    border-radius: 5px;
+                    border: 1px solid #dee2e6;
+                }
+                .important-info p {
+                    margin: 0;
+                    font-weight: bold;
+                    font-size: 10px;
+                }
+                .important-info .secondary {
+                    margin: 3px 0 0 0;
+                    font-weight: normal;
+                    font-size: 9px;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 20px;
+                    font-size: 8px;
+                    color: #666;
+                }
+                .footer p {
+                    margin: 0;
+                }
+                .footer .contact {
+                    margin: 3px 0 0 0;
+                }
+                .status-booked {
+                    color: #28a745;
+                    font-weight: bold;
+                }
             </style>
         </head>
         <body>
             <div class='ticket-header'>
-                <h1>🎬 CINEBOOK E-TICKET</h1>
-                <h2>Booking Code: {$ticketData['booking_code']}</h2>
+                <h1>🎬 CineBook</h1>
+                <h2>E-Ticket</h2>
+                <p>Booking Code: {$ticketData['booking_code']}</p>
             </div>
 
             <div class='ticket-section'>
-                <h3>🎭 Movie Information</h3>
-                <div class='ticket-info'><span><strong>Title:</strong></span><span>{$ticketData['movie']['title']}</span></div>
-                <div class='ticket-info'><span><strong>Genre:</strong></span><span>" . (is_array($ticketData['movie']['genre']) ? implode(', ', $ticketData['movie']['genre']) : $ticketData['movie']['genre']) . "</span></div>
-                <div class='ticket-info'><span><strong>Duration:</strong></span><span>{$ticketData['movie']['duration']} minutes</span></div>
-                <div class='ticket-info'><span><strong>Age Rating:</strong></span><span>{$ticketData['movie']['age_rating']}</span></div>
-            </div>
-
-            <div class='ticket-section'>
-                <h3>🏢 Theater & Showtime</h3>
-                <div class='ticket-info'><span><strong>Theater:</strong></span><span>{$ticketData['theater']['name']}</span></div>
-                <div class='ticket-info'><span><strong>Address:</strong></span><span>{$ticketData['theater']['address']}</span></div>
-                <div class='ticket-info'><span><strong>Date:</strong></span><span>{$ticketData['showtime']['show_date']}</span></div>
-                <div class='ticket-info'><span><strong>Time:</strong></span><span>{$ticketData['showtime']['show_time']}</span></div>
-            </div>
-
-            <div class='ticket-section'>
-                <h3>🪑 Seat Information</h3>
-                <div class='seats'>
-                    <div class='ticket-info'><span><strong>Seats:</strong></span><span>" . (is_array($ticketData['seats']['seat_numbers']) ? implode(', ', $ticketData['seats']['seat_numbers']) : '') . "</span></div>
-                    <div class='ticket-info'><span><strong>Seat Count:</strong></span><span>{$ticketData['seats']['count']}</span></div>
-                    <div class='ticket-info'><span><strong>Seat Types:</strong></span><span>" . (is_array($ticketData['seats']['seat_types']) ? implode(', ', $ticketData['seats']['seat_types']) : '') . "</span></div>
+                <div class='ticket-info'>
+                    <div class='movie-details'>
+                        <h3>Movie Details</h3>
+                        <p><strong>Title:</strong> {$ticketData['movie']['title']}</p>
+                        <p><strong>Theater:</strong> {$ticketData['theater']['name']}</p>
+                        <p><strong>Date:</strong> " . date('d/m/Y', strtotime($ticketData['showtime']['show_date'])) . "</p>
+                        <p><strong>Time:</strong> {$showtimeDisplay}</p>
+                    </div>
+                    
+                    <div class='booking-info'>
+                        <h3>Booking Information</h3>
+                        <p><strong>Seats:</strong> " . (is_array($ticketData['seats']['seat_numbers']) ? implode(', ', $ticketData['seats']['seat_numbers']) : '') . "</p>
+                        <p><strong>Total Amount:</strong> {$ticketData['payment']['formatted_amount']} VND</p>
+                        <p><strong>Status:</strong> <span class='status-booked'>BOOKED</span></p>
+                    </div>
                 </div>
+
+                " . ($qrCodeBase64 ? "
+                <div class='qr-section'>
+                    <h3>QR Code for Entry</h3>
+                    <div class='qr-container'>
+                        <img src='data:image/png;base64,{$qrCodeBase64}' alt='QR Code'>
+                        <p>Scan at theater entrance</p>
+                    </div>
+                    <p class='booking-code'>Booking Code: {$ticketData['booking_code']}</p>
+                </div>
+                " : "") . "
             </div>
 
-            <div class='ticket-section'>
-                <h3>👤 Customer Information</h3>
-                <div class='ticket-info'><span><strong>Name:</strong></span><span>{$ticketData['customer']['name']}</span></div>
-                <div class='ticket-info'><span><strong>Email:</strong></span><span>{$ticketData['customer']['email']}</span></div>
+            <div class='important-info'>
+                <p>Important: Please arrive at least 30 minutes before the showtime.</p>
+                <p class='secondary'>Bring this e-ticket or have the booking code ready for entry.</p>
             </div>
-
-            <div class='ticket-section'>
-                <h3>💰 Payment Information</h3>
-                <div class='ticket-info'><span><strong>Total Amount:</strong></span><span>{$ticketData['payment']['formatted_amount']}</span></div>
-                <div class='ticket-info'><span><strong>Payment Method:</strong></span><span>{$ticketData['payment']['payment_method']}</span></div>
-                <div class='ticket-info'><span><strong>Payment Status:</strong></span><span>{$ticketData['payment_status']}</span></div>
-            </div>
-
-            " . ($qrCodeBase64 ? "
-            <div class='qr-code'>
-                <h3>📱 QR Code</h3>
-                <img src='data:image/png;base64,{$qrCodeBase64}' alt='Ticket QR Code'>
-                <p><small>Scan this QR code at the theater for verification</small></p>
-            </div>
-            " : "") . "
 
             <div class='footer'>
-                <p><strong>Important:</strong> {$ticketData['ticket_info']['terms']}</p>
-                <p>Generated on: {$ticketData['ticket_info']['generated_at']}</p>
-                <p>Valid until: {$ticketData['ticket_info']['valid_until']}</p>
+                <p>Thank you for choosing CineBook!</p>
+                <p class='contact'>support@cinebook.com | 1900-123-456</p>
             </div>
         </body>
         </html>

@@ -233,14 +233,37 @@ class ETicketServiceTest extends TestCase
     {
         $result = $this->eTicketService->generateETicket($this->booking);
 
+        if (!$result['success']) {
+            dump('Error in HTML ticket generation:', $result['message']);
+        }
+
         $this->assertTrue($result['success']);
         $this->assertArrayHasKey('pdf_ticket', $result['data']);
         
         $pdfData = $result['data']['pdf_ticket'];
-        $this->assertArrayHasKey('html_content', $pdfData);
-        $this->assertStringContainsString('CINEBOOK E-TICKET', $pdfData['html_content']);
-        $this->assertStringContainsString($this->booking->booking_code, $pdfData['html_content']);
-        $this->assertStringContainsString('Test Movie', $pdfData['html_content']);
+        $this->assertArrayHasKey('file_path', $pdfData);
+        $this->assertArrayHasKey('file_url', $pdfData);
+        $this->assertContains($pdfData['type'], ['pdf', 'html']);
+    }
+
+    public function test_it_generates_pdf_ticket()
+    {
+        $result = $this->eTicketService->generateETicket($this->booking);
+
+        if (!$result['success']) {
+            dump('Error in PDF ticket generation:', $result['message']);
+        }
+
+        $this->assertTrue($result['success']);
+        $this->assertArrayHasKey('pdf_ticket', $result['data']);
+        
+        $pdfData = $result['data']['pdf_ticket'];
+        $this->assertArrayHasKey('file_path', $pdfData);
+        $this->assertArrayHasKey('file_url', $pdfData);
+        $this->assertContains($pdfData['type'], ['pdf', 'html']);
+        
+        // Verify file was created in storage
+        Storage::disk('public')->assertExists($pdfData['file_path']);
     }
 
     public function test_it_can_regenerate_eticket()

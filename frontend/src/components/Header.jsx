@@ -1,30 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Container, Navbar, Nav, NavDropdown, Form, FormControl, Badge } from 'react-bootstrap';
+import { useAuth } from '../contexts/AuthContext';
 
 const Header = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [user, setUser] = useState(null);
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    if (token && userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch (e) {
-        console.error('Error parsing user data:', e);
-      }
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+  const handleLogoutClick = () => {
+    logout();
     navigate('/');
   };
 
@@ -166,7 +151,7 @@ const Header = () => {
                       </NavDropdown.Item>
                     )}
                     <NavDropdown.Divider />
-                    <NavDropdown.Item onClick={handleLogout} className="d-flex align-items-center text-danger">
+                    <NavDropdown.Item onClick={handleLogoutClick} className="d-flex align-items-center text-danger">
                       <i className="bi bi-box-arrow-right me-2"></i> Logout
                     </NavDropdown.Item>
                   </NavDropdown>

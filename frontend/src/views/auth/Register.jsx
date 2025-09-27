@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Card, Container, Form, Alert, Spinner } from 'react-bootstrap';
 import { authAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -15,6 +16,7 @@ const Register = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [touched, setTouched] = useState({});
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   // Clear messages after 5 seconds
   const clearMessages = () => {
@@ -136,9 +138,8 @@ const Register = () => {
       
       const { token, user } = response.data.data || response.data;
       
-      // Store token and user data in localStorage
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      // Use the auth context to set user state
+      login(token, user);
       
       // Show success message
       setSuccess('Registration successful! Welcome to CineBook.');

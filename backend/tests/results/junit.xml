@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="/Users/huamanhhung/Documents/eproject/eproject1/backend/phpunit.xml" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.304651">
-    <testsuite name="Feature" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.304651">
-      <testsuite name="Tests\Feature\Middleware\ApiResponseCachingTest" file="/Users/huamanhhung/Documents/eproject/eproject1/backend/tests/Feature/Middleware/ApiResponseCachingTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.304651">
-        <testcase name="it_does_not_cache_auth_endpoints" file="/Users/huamanhhung/Documents/eproject/eproject1/backend/tests/Feature/Middleware/ApiResponseCachingTest.php" line="52" class="Tests\Feature\Middleware\ApiResponseCachingTest" classname="Tests.Feature.Middleware.ApiResponseCachingTest" assertions="1" time="0.304651"/>
+  <testsuite name="C:\Dự án\eprojectep_v1\backend\phpunit.xml" tests="1" assertions="6" errors="0" failures="0" skipped="0" time="0.657004">
+    <testsuite name="Unit" tests="1" assertions="6" errors="0" failures="0" skipped="0" time="0.657004">
+      <testsuite name="Tests\Unit\ETicketServiceTest" file="C:\Dự án\eprojectep_v1\backend\tests\Unit\ETicketServiceTest.php" tests="1" assertions="6" errors="0" failures="0" skipped="0" time="0.657004">
+        <testcase name="test_it_can_generate_eticket_for_valid_booking" file="C:\Dự án\eprojectep_v1\backend\tests\Unit\ETicketServiceTest.php" line="92" class="Tests\Unit\ETicketServiceTest" classname="Tests.Unit.ETicketServiceTest" assertions="6" time="0.657004"/>
       </testsuite>
     </testsuite>
   </testsuite>

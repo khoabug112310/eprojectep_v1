@@ -126,7 +126,7 @@ class BookingController extends Controller
         }
 
         // Create booking in a transaction
-        $booking = DB::transaction(function () use ($validated, $request, $totalAmount, $showtime, $seatCodes) {
+        $result = DB::transaction(function () use ($validated, $request, $totalAmount, $showtime, $seatCodes) {
             // Generate proper booking code format: CB + YYYYMMDD + 3-digit sequence
             $date = now()->format('Ymd');
             $sequence = str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
@@ -141,7 +141,7 @@ class BookingController extends Controller
                 'total_amount' => $totalAmount,
                 'payment_method' => $validated['payment_method'] ?? 'credit_card',
                 'payment_status' => 'completed', // Simulate completed payment
-                'booking_status' => 'completed', // Confirmed booking
+                'booking_status' => 'confirmed', // Confirmed booking
                 'booked_at' => now(),
             ]);
             
@@ -155,9 +155,9 @@ class BookingController extends Controller
             }
             
             // Generate e-ticket for the booking
-            $eTicketService = app(\App\Services\ETicketService::class);
-            if ($booking->isPaid() && $eTicketService->isBookingEligibleForTicket($booking)) {
-                $eTicketResult = $eTicketService->generateETicket($booking);
+            $eTicketResult = null;
+            if ($booking->isPaid() && $this->eTicketService->isBookingEligibleForTicket($booking)) {
+                $eTicketResult = $this->eTicketService->generateETicket($booking);
                 if (!$eTicketResult['success']) {
                     Log::warning('E-ticket generation failed after booking creation', [
                         'booking_id' => $booking->id,
@@ -166,13 +166,41 @@ class BookingController extends Controller
                 }
             }
             
-            return $booking;
+            return [
+                'booking' => $booking,
+                'eTicketResult' => $eTicketResult
+            ];
         });
+
+        // Extract booking and e-ticket result
+        $booking = $result['booking'];
+        $eTicketResult = $result['eTicketResult'] ?? null;
+        
+        // Send booking confirmation email with e-ticket
+        try {
+            $notificationService = app(NotificationService::class);
+            $notificationResult = $notificationService->sendBookingConfirmation(
+                $booking, 
+                $eTicketResult && $eTicketResult['success'] ? $eTicketResult['data'] : null
+            );
+            
+            if (!$notificationResult['success']) {
+                Log::warning('Failed to send booking confirmation email', [
+                    'booking_id' => $booking->id,
+                    'error' => $notificationResult['message']
+                ]);
+            }
+        } catch (Exception $e) {
+            Log::error('Exception while sending booking confirmation email', [
+                'booking_id' => $booking->id,
+                'error' => $e->getMessage()
+            ]);
+        }
 
         return response()->json([
             'success' => true,
             'data' => $booking,
-            'message' => 'Đặt vé thành công' // Booking successful
+            'message' => 'Booking successful'
         ]);
     }
 

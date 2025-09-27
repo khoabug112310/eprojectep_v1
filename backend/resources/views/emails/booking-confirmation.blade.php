@@ -89,33 +89,35 @@
 
 @if($eTicketData && isset($eTicketData['qr_code']))
 <div class="qr-section">
-    <h3>📱 Mã QR vé điện tử</h3>
-    <p>Vui lòng xuất trình mã QR này tại rạp để vào xem phim:</p>
+    <h3>📱 E-Ticket QR Code</h3>
+    <p>Please present this QR code at the theater for entry:</p>
     @if(isset($eTicketData['qr_code']['qr_code_image_base64']))
         <img src="data:image/png;base64,{{ $eTicketData['qr_code']['qr_code_image_base64'] }}" 
              alt="QR Code" class="qr-code">
     @endif
     <p style="font-size: 12px; color: #6c757d; margin-top: 10px;">
-        Mã QR cũng được đính kèm trong email này
+        The QR code is also attached to this email as a separate file
     </p>
 </div>
 @endif
 
 <div class="instructions">
-    <h3>📋 Hướng dẫn quan trọng:</h3>
+    <h3>📋 Important Instructions:</h3>
     <ul>
-        <li>Vui lòng có mặt tại rạp trước giờ chiếu <strong>30 phút</strong></li>
-        <li>Mang theo <strong>giấy tờ tùy thân</strong> và email xác nhận này</li>
-        <li>Xuất trình <strong>mã QR</strong> hoặc <strong>mã đặt vé</strong> tại quầy</li>
-        <li>Không được mang thức ăn, đồ uống từ bên ngoài vào rạp</li>
-        <li>Liên hệ hotline <strong>1900-123-456</strong> nếu cần hỗ trợ</li>
+        <li>Please arrive at the theater <strong>30 minutes</strong> before showtime</li>
+        <li>Bring your <strong>ID card</strong> and this confirmation email</li>
+        <li>Present the <strong>QR code</strong> or <strong>booking code</strong> at the counter</li>
+        <li>Do not bring outside food or drinks into the theater</li>
+        <li>Contact hotline <strong>1900-123-456</strong> for assistance</li>
     </ul>
 </div>
 
-<p>Chúc bạn có những phút giây giải trí tuyệt vời tại CineBook! 🍿🎭</p>
+<p>Your e-ticket PDF is attached to this email. Please save it for your records.</p>
+
+<p>We hope you have a wonderful time at CineBook! 🍿🎭</p>
 
 <p style="margin-top: 30px;">
-    Trân trọng,<br>
-    <strong>Đội ngũ CineBook</strong>
+    Best regards,<br>
+    <strong>The CineBook Team</strong>
 </p>
 @endsection

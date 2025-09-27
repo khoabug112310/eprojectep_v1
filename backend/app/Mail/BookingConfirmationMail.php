@@ -34,7 +34,7 @@ class BookingConfirmationMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Xác nhận đặt vé - ' . $this->booking->booking_code,
+            subject: 'Booking Confirmation - ' . $this->booking->booking_code,
         );
     }
 
@@ -73,13 +73,13 @@ class BookingConfirmationMail extends Mailable implements ShouldQueue
                 ->withMime('image/png');
         }
 
-        // Attach HTML ticket if available from e-ticket data
+        // Attach PDF ticket if available from e-ticket data
         if ($this->eTicketData && isset($this->eTicketData['pdf_ticket']['file_path'])) {
             $filePath = $this->eTicketData['pdf_ticket']['file_path'];
             if (Storage::disk('public')->exists($filePath)) {
                 $attachments[] = Attachment::fromStorageDisk('public', $filePath)
-                    ->as('eticket-' . $this->booking->booking_code . '.html')
-                    ->withMime('text/html');
+                    ->as('eticket-' . $this->booking->booking_code . '.pdf')
+                    ->withMime('application/pdf');
             }
         }
 

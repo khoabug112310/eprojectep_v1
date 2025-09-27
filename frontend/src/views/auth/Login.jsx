@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Card, Container, Form, Alert, Spinner } from 'react-bootstrap';
 import { authAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -12,6 +13,7 @@ const Login = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [touched, setTouched] = useState({});
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   // Clear messages after 5 seconds
   const clearMessages = () => {
@@ -89,9 +91,8 @@ const Login = () => {
       const response = await authAPI.login({ email, password });
       const { token, user } = response.data.data || response.data;
       
-      // Store token and user data in localStorage
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      // Use the auth context to set user state
+      login(token, user);
       
       // Show success message
       setSuccess(`Welcome back, ${user.name}! Redirecting...`);
