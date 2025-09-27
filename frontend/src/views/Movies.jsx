@@ -35,10 +35,7 @@ const Movies = () => {
   const urlSearch = searchParams.get('search') || '';
   const urlGenre = searchParams.get('genre') || '';
   const urlSort = searchParams.get('sort') || '';
-  const urlShowtime = searchParams.get('showtime') || '';
   const urlStatus = searchParams.get('status') || '';
-  const urlDiscount = searchParams.get('discount') || '';
-  const urlTime = searchParams.get('time') || '';
 
   useEffect(() => {
     // Set search term from URL parameter if exists

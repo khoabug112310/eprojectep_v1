@@ -130,7 +130,7 @@ const Profile = () => {
     
     try {
       setUpdating(true);
-      const response = await authAPI.updateProfile(formData);
+      await authAPI.updateProfile(formData);
       setAlert({ show: true, variant: 'success', message: 'Profile updated successfully!' });
       
       // Update user data in localStorage
@@ -155,7 +155,7 @@ const Profile = () => {
     
     try {
       setUpdating(true);
-      const response = await authAPI.changePassword(passwordData);
+      await authAPI.changePassword(passwordData);
       setAlert({ show: true, variant: 'success', message: 'Password changed successfully!' });
       
       // Reset password form

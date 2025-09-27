@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, Container, Table, Form, InputGroup, Spinner, Badge, Dropdown } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { Button, Card, Container, Table, Form, Spinner, Badge } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
 
 const AdminBookings = () => {
@@ -117,17 +117,6 @@ const AdminBookings = () => {
       return sortOrder === 'asc' ? ' ↑' : ' ↓';
     }
     return '';
-  };
-
-  const resetFilters = () => {
-    setFilters({
-      status: '',
-      payment_status: '',
-      from_date: '',
-      to_date: ''
-    });
-    setSearchTerm('');
-    setCurrentPage(1);
   };
 
   if (loading && bookings.length === 0) {

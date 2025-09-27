@@ -130,7 +130,7 @@ const AdminProfile = () => {
     
     try {
       setUpdating(true);
-      const response = await adminAPI.updateProfile(formData);
+      await adminAPI.updateProfile(formData);
       setAlert({ show: true, variant: 'success', message: 'Profile updated successfully!' });
       
       // Update user data in localStorage
@@ -155,7 +155,7 @@ const AdminProfile = () => {
     
     try {
       setUpdating(true);
-      const response = await adminAPI.changePassword(passwordData);
+      await adminAPI.changePassword(passwordData);
       setAlert({ show: true, variant: 'success', message: 'Password changed successfully!' });
       
       // Reset password form

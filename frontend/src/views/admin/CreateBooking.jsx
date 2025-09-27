@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, Container, Form, Alert, Spinner, Table } from 'react-bootstrap';
 import { adminAPI, bookingAPI } from '../../services/api';
@@ -108,9 +108,9 @@ const CreateBooking = () => {
     }
   };
 
-  const calculateTotalAmount = () => {
+  const calculateTotalAmount = useCallback(() => {
     return selectedSeats.reduce((total, seat) => total + (seat.price || 0), 0);
-  };
+  }, [selectedSeats]);
 
   useEffect(() => {
     const total = calculateTotalAmount();
@@ -119,7 +119,7 @@ const CreateBooking = () => {
       seats: selectedSeats,
       total_amount: total
     }));
-  }, [selectedSeats]);
+  }, [selectedSeats, calculateTotalAmount]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

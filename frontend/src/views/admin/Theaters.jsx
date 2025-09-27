@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card, Container, Table, Form, InputGroup, Badge, Modal, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
@@ -47,11 +47,7 @@ const AdminTheaters = () => {
     return [...new Set(allCities)].sort();
   };
 
-  useEffect(() => {
-    fetchTheaters();
-  }, [currentPage, sortBy, sortOrder]);
-
-  const fetchTheaters = async () => {
+  const fetchTheaters = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -83,7 +79,11 @@ const AdminTheaters = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, sortBy, sortOrder, filterStatus, filterCity, searchTerm]);
+
+  useEffect(() => {
+    fetchTheaters();
+  }, [currentPage, sortBy, sortOrder, fetchTheaters]);
 
   // Handle search with debounce
   useEffect(() => {
@@ -93,7 +93,7 @@ const AdminTheaters = () => {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, filterStatus, filterCity]);
+  }, [searchTerm, filterStatus, filterCity, fetchTheaters]);
 
   const handleDelete = (id) => {
     setDeleteTheaterId(id);

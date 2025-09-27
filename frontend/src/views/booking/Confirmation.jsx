@@ -6,7 +6,6 @@ import { bookingAPI } from '../../services/api';
 const Confirmation = () => {
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
-  const [ticketData, setTicketData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ticketLoading, setTicketLoading] = useState(false);
   const [error, setError] = useState('');
@@ -34,6 +33,14 @@ const Confirmation = () => {
       // Fallback to just showing the start time if calculation fails
       return showtime.show_time;
     }
+  };
+
+  // Function to generate QR code URL using QR server API
+  const generateQRCodeURL = (bookingCode) => {
+    if (!bookingCode) return '';
+    const size = '200x200';
+    const data = encodeURIComponent(bookingCode);
+    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}&data=${data}`;
   };
 
   useEffect(() => {
@@ -68,7 +75,8 @@ const Confirmation = () => {
     try {
       const ticketResponse = await bookingAPI.getTicket(bookingId);
       if (ticketResponse.data.success) {
-        setTicketData(ticketResponse.data.data);
+        // Ticket data is available but not used in this component
+        console.log('Ticket data received:', ticketResponse.data.data);
       } else {
         console.warn('Ticket not ready yet:', ticketResponse.data.message);
       }
@@ -80,7 +88,10 @@ const Confirmation = () => {
   };
 
   const handlePrint = () => {
-    window.print();
+    // Save booking data to localStorage for the print page
+    localStorage.setItem('printBooking', JSON.stringify(booking));
+    // Navigate to the print page
+    navigate('/print-ticket', { state: { booking } });
   };
 
   if (loading) {
@@ -99,6 +110,31 @@ const Confirmation = () => {
       </Container>
     );
   }
+
+  // QR code container styles
+  const qrCodeContainerStyle = {
+    border: '2px solid #ffc107',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+    padding: '15px',
+    borderRadius: '8px',
+    display: 'inline-block'
+  };
+
+  // QR code text styles
+  const qrCodeTextStyle = {
+    color: '#212529',
+    fontWeight: 'bold',
+    marginTop: '10px',
+    marginBottom: '0'
+  };
+
+  // QR code small text styles
+  const qrCodeSmallTextStyle = {
+    color: '#6c757d',
+    fontSize: '0.875em',
+    marginBottom: '0'
+  };
 
   return (
     <Container>
@@ -147,28 +183,16 @@ const Confirmation = () => {
                             <Spinner animation="border" size="sm" />
                             <p>Generating QR code...</p>
                           </div>
-                        ) : ticketData && ticketData.qr_code_url ? (
-                          <div>
+                        ) : (
+                          <div style={qrCodeContainerStyle}>
                             <img 
-                              src={ticketData.qr_code_url} 
+                              src={generateQRCodeURL(booking.booking_code)} 
                               alt="QR Code" 
                               className="img-fluid"
                               style={{ maxWidth: '200px', height: 'auto' }}
                             />
-                            <p className="mt-2">Scan at theater entrance</p>
-                          </div>
-                        ) : (
-                          <div className="qr-code-placeholder bg-light text-dark p-3 d-inline-block">
-                            <p className="mb-0">QR CODE PLACEHOLDER</p>
-                            <p className="mb-0">Scan at theater entrance</p>
-                            <Button 
-                              variant="outline-primary" 
-                              size="sm" 
-                              className="mt-2"
-                              onClick={() => fetchTicketData(booking.id)}
-                            >
-                              Refresh QR Code
-                            </Button>
+                            <p style={qrCodeTextStyle}>Scan at theater entrance</p>
+                            <p style={qrCodeSmallTextStyle}>Booking Code: {booking.booking_code}</p>
                           </div>
                         )}
                       </div>
@@ -197,6 +221,78 @@ const Confirmation = () => {
         <strong>Important:</strong> Please arrive at least 30 minutes before the showtime. 
         Bring this e-ticket or have the booking code ready for entry.
       </Alert>
+      
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          /* Hide elements that shouldn't be printed */
+          .no-print, .btn, .alert, .navbar, .footer, .d-flex {
+            display: none !important;
+          }
+          
+          /* Ensure the ticket takes up the full page */
+          body, html {
+            margin: 0;
+            padding: 0;
+            background: white !important;
+            color: black !important;
+          }
+          
+          /* Make the container full width for printing */
+          .container {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          /* Ensure the card is visible and properly styled for printing */
+          .card {
+            border: 1px solid #000 !important;
+            background: white !important;
+            color: black !important;
+            box-shadow: none !important;
+          }
+          
+          /* Ensure text is black for better printing */
+          .text-gold, .text-success, .text-muted, p, h1, h2, h3, h4, h5, h6 {
+            color: black !important;
+          }
+          
+          /* Make QR code container visible */
+          [style*="background-color"] {
+            background-color: white !important;
+            border: 1px solid black !important;
+          }
+          
+          /* Ensure images are printed */
+          img {
+            display: block !important;
+            max-width: 100% !important;
+            height: auto !important;
+          }
+          
+          /* Center the ticket content */
+          .text-center {
+            text-align: center !important;
+          }
+          
+          /* Add some padding for better print layout */
+          .card-body {
+            padding: 20px !important;
+          }
+          
+          /* Ensure rows and columns work for print */
+          .row {
+            display: flex !important;
+            flex-wrap: wrap !important;
+          }
+          
+          .col-md-6, .col-md-8 {
+            flex: 0 0 50% !important;
+            max-width: 50% !important;
+          }
+        }
+      `}</style>
     </Container>
   );
 };

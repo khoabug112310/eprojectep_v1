@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card, Container, Table, Form, InputGroup, Badge, Modal, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
@@ -41,6 +41,13 @@ const AdminMovies = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalMovies, setTotalMovies] = useState(0);
 
+  // Rating management state
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [movieReviews, setMovieReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState('');
+
   // Get unique genres for filter dropdown
   const getUniqueGenres = () => {
     const allGenres = movies.flatMap(movie => {
@@ -50,11 +57,7 @@ const AdminMovies = () => {
     return [...new Set(allGenres)].sort();
   };
 
-  useEffect(() => {
-    fetchMovies();
-  }, [currentPage, sortBy, sortOrder]);
-
-  const fetchMovies = async () => {
+  const fetchMovies = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -88,7 +91,11 @@ const AdminMovies = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, sortBy, sortOrder, filterStatus, filterGenre, searchTerm]);
+
+  useEffect(() => {
+    fetchMovies();
+  }, [fetchMovies]);
 
   // Handle search with debounce
   useEffect(() => {
@@ -98,7 +105,7 @@ const AdminMovies = () => {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, filterStatus, filterGenre]);
+  }, [searchTerm, filterStatus, filterGenre, fetchMovies]);
 
   const handleDelete = (id) => {
     setDeleteMovieId(id);
@@ -155,6 +162,88 @@ const AdminMovies = () => {
       </div>
     );
   }
+
+  // Fetch reviews for a specific movie
+  const fetchMovieReviews = async (movieId) => {
+    try {
+      setReviewsLoading(true);
+      setReviewsError('');
+      // Use admin API to get all reviews for the movie, not just public ones
+      const response = await adminAPI.getAdminReviews({ movie_id: movieId });
+      if (response.data.success) {
+        // Handle paginated response correctly
+        const reviewsData = response.data.data?.data || response.data.data || [];
+        setMovieReviews(reviewsData);
+      }
+    } catch (error) {
+      console.error('Error fetching movie reviews:', error);
+      setReviewsError('Failed to load reviews. Please try again.');
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  // Open rating modal for a movie
+  const openRatingModal = async (movie) => {
+    setSelectedMovie(movie);
+    setShowRatingModal(true);
+    await fetchMovieReviews(movie.id);
+  };
+
+  // Close rating modal
+  const closeRatingModal = () => {
+    setShowRatingModal(false);
+    setSelectedMovie(null);
+    setMovieReviews([]);
+  };
+
+  // Approve a review
+  const approveReview = async (reviewId) => {
+    try {
+      await adminAPI.approveReview(reviewId);
+      // Refresh reviews
+      if (selectedMovie) {
+        await fetchMovieReviews(selectedMovie.id);
+      }
+      // Refresh main movie list to update average rating
+      fetchMovies();
+    } catch (error) {
+      console.error('Error approving review:', error);
+      setReviewsError('Failed to approve review. Please try again.');
+    }
+  };
+
+  // Reject a review
+  const rejectReview = async (reviewId) => {
+    try {
+      await adminAPI.rejectReview(reviewId);
+      // Refresh reviews
+      if (selectedMovie) {
+        await fetchMovieReviews(selectedMovie.id);
+      }
+      // Refresh main movie list to update average rating
+      fetchMovies();
+    } catch (error) {
+      console.error('Error rejecting review:', error);
+      setReviewsError('Failed to reject review. Please try again.');
+    }
+  };
+
+  // Delete a review
+  const deleteReview = async (reviewId) => {
+    try {
+      await adminAPI.deleteReview(reviewId);
+      // Refresh reviews
+      if (selectedMovie) {
+        await fetchMovieReviews(selectedMovie.id);
+      }
+      // Refresh main movie list to update average rating
+      fetchMovies();
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      setReviewsError('Failed to delete review. Please try again.');
+    }
+  };
 
   return (
     <Container fluid>
@@ -397,6 +486,14 @@ const AdminMovies = () => {
                             >
                               <i className="bi bi-trash"></i>
                             </Button>
+                            <Button 
+                              variant="outline-secondary" 
+                              size="sm" 
+                              onClick={() => openRatingModal(movie)}
+                              title="Manage Ratings"
+                            >
+                              <i className="bi bi-star-fill"></i>
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -453,27 +550,138 @@ const AdminMovies = () => {
         </Card.Body>
       </Card>
 
-      {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton className="bg-dark border-secondary">
-          <Modal.Title className="text-danger">
-            <i className="bi bi-exclamation-triangle me-2"></i>
-            Confirm Delete
+      {/* Rating Management Modal */}
+      <Modal show={showRatingModal} onHide={closeRatingModal} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Manage Reviews for "{selectedMovie?.title}"
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body className="bg-dark">
-          <p>Are you sure you want to delete this movie?</p>
-          <p className="text-warning small">
-            <i className="bi bi-info-circle me-1"></i>
-            This action cannot be undone. All associated data will be permanently removed.
-          </p>
+        <Modal.Body>
+          {reviewsError && (
+            <Alert variant="danger" className="mb-3">
+              {reviewsError}
+            </Alert>
+          )}
+          
+          {reviewsLoading ? (
+            <div className="text-center py-4">
+              <Spinner animation="border" variant="gold" />
+              <p className="mt-2">Loading reviews...</p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-3">
+                <strong>Movie Rating:</strong> 
+                <span className="ms-2">
+                  {selectedMovie?.average_rating || 'N/A'} 
+                  <i className="bi bi-star-fill text-warning ms-1"></i>
+                </span>
+                <span className="ms-3">
+                  ({selectedMovie?.total_reviews || 0} reviews)
+                </span>
+              </div>
+              
+              {movieReviews.length === 0 ? (
+                <p className="text-muted">No reviews found for this movie.</p>
+              ) : (
+                <div className="table-responsive">
+                  <Table hover className="table-dark">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>Rating</th>
+                        <th>Comment</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {movieReviews.map((review) => (
+                        <tr key={review.id}>
+                          <td>{review.user?.name || 'N/A'}</td>
+                          <td>
+                            <div className="d-flex align-items-center">
+                              <i className="bi bi-star-fill text-warning me-1"></i>
+                              {review.rating}
+                            </div>
+                          </td>
+                          <td style={{ maxWidth: '200px' }}>
+                            <div className="text-truncate" title={review.comment || ''}>
+                              {review.comment || 'No comment'}
+                            </div>
+                          </td>
+                          <td>
+                            <Badge 
+                              bg={
+                                review.status === 'approved' ? 'success' :
+                                review.status === 'pending' ? 'warning' :
+                                'danger'
+                              }
+                            >
+                              {review.status}
+                            </Badge>
+                          </td>
+                          <td>
+                            {new Date(review.created_at).toLocaleDateString()}
+                          </td>
+                          <td>
+                            {review.status === 'pending' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="success"
+                                  className="me-1"
+                                  onClick={() => approveReview(review.id)}
+                                >
+                                  <i className="bi bi-check"></i>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  onClick={() => rejectReview(review.id)}
+                                >
+                                  <i className="bi bi-x"></i>
+                                </Button>
+                              </>
+                            )}
+                            {review.status !== 'pending' && (
+                              <Button
+                                size="sm"
+                                variant="outline-danger"
+                                onClick={() => deleteReview(review.id)}
+                              >
+                                <i className="bi bi-trash"></i>
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              )}
+            </>
+          )}
         </Modal.Body>
-        <Modal.Footer className="bg-dark border-secondary">
-          <Button 
-            variant="secondary" 
-            onClick={() => setShowDeleteModal(false)}
-            disabled={deleteLoading}
-          >
+        <Modal.Footer>
+          <Button variant="secondary" onClick={closeRatingModal}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Delete</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete this movie? This action cannot be undone.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
             Cancel
           </Button>
           <Button 
@@ -481,17 +689,7 @@ const AdminMovies = () => {
             onClick={confirmDelete}
             disabled={deleteLoading}
           >
-            {deleteLoading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Deleting...
-              </>
-            ) : (
-              <>
-                <i className="bi bi-trash me-2"></i>
-                Delete Movie
-              </>
-            )}
+            {deleteLoading ? 'Deleting...' : 'Delete'}
           </Button>
         </Modal.Footer>
       </Modal>

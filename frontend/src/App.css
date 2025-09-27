@@ -929,6 +929,11 @@ body {
   transform: translateY(-5px);
 }
 
+/* Add cursor-pointer class for elements that should show pointer cursor on hover */
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .hide-mobile {

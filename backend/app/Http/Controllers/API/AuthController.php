@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\API;
 
 use App\Models\User;
+use App\Mail\AccountRegistrationMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends BaseApiController
@@ -20,12 +22,23 @@ class AuthController extends BaseApiController
                 'password' => 'required|string|min:8|confirmed',
             ]);
 
+            // Store the plain password before hashing for email
+            $plainPassword = $validated['password'];
+
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
                 'password' => Hash::make($validated['password']),
             ]);
+
+            // Send account registration email
+            try {
+                Mail::to($user->email)->send(new AccountRegistrationMail($user, $plainPassword));
+            } catch (\Exception $e) {
+                // Log the error but don't fail the registration
+                \Log::error('Failed to send registration email: ' . $e->getMessage());
+            }
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -155,4 +168,4 @@ class AuthController extends BaseApiController
             return $this->successResponse(null, 'Đặt lại mật khẩu thành công');
         });
     }
-} 
+}

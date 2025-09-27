@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -198,7 +198,7 @@
     <div class="container">
         <div class="header">
             <h1>🎬 CineBook</h1>
-            <p class="subtitle">@yield('subtitle', 'Hệ thống đặt vé xem phim trực tuyến')</p>
+            <p class="subtitle">@yield('subtitle', 'Online Movie Ticket Booking System')</p>
         </div>
         
         <div class="content">
@@ -206,7 +206,7 @@
         </div>
         
         <div class="footer">
-            <p><strong>CineBook</strong> - Đặt vé xem phim dễ dàng</p>
+            <p><strong>CineBook</strong> - Easy Movie Ticket Booking</p>
             <p>📧 support@cinebook.com | 📞 1900-123-456</p>
             <div class="social-links">
                 <a href="#">Facebook</a>
@@ -214,8 +214,8 @@
                 <a href="#">Twitter</a>
             </div>
             <p style="font-size: 12px; margin-top: 20px;">
-                Email này được gửi tự động, vui lòng không trả lời.<br>
-                Nếu bạn có thắc mắc, vui lòng liên hệ bộ phận chăm sóc khách hàng.
+                This email was sent automatically, please do not reply.<br>
+                If you have any questions, please contact customer support.
             </p>
         </div>
     </div>

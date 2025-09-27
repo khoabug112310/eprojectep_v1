@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Button, Card, Container, Row, Col, Alert, Spinner, Badge } from 'react-bootstrap';
-import { showtimeAPI, bookingAPI } from '../../services/api';
+import { showtimeAPI, bookingAPI, movieAPI } from '../../services/api';
 import { normalizeFacilities } from '../../utils/helpers';
 
 const Seats = () => {
@@ -52,52 +52,23 @@ const Seats = () => {
   };
 
   // Fetch other showtimes for the same movie at the same theater
-  const fetchOtherShowtimes = useCallback(async (showtimeData = null) => {
-    const currentShowtime = showtimeData || showtime;
-    if (!currentShowtime?.movie_id || !currentShowtime?.theater_id) return;
+  const fetchOtherShowtimes = useCallback(async (currentShowtime) => {
+    if (!currentShowtime?.movie_id || !currentShowtime?.theater_id || !currentShowtime?.show_date) return;
     
-    console.log('Fetching other showtimes for:', {
-      movie_id: currentShowtime.movie_id,
-      theater_id: currentShowtime.theater_id,
-      show_date: currentShowtime.show_date,
-      current_showtime_id: showtimeId
-    });
-    
-    setShowtimesLoading(true);
     try {
-      // Extract date part from show_date (handle both YYYY-MM-DD and YYYY-MM-DD HH:MM:SS formats)
-      const showDate = currentShowtime.show_date?.split('T')[0] || currentShowtime.show_date?.split(' ')[0];
-      
-      // Get all showtimes for the movie at the same theater
-      const response = await showtimeAPI.getAll({
-        movie_id: currentShowtime.movie_id,
-        theater_id: currentShowtime.theater_id,
-        show_date: showDate
-      });
-      
-      console.log('Showtimes API response:', response.data);
+      setShowtimesLoading(true);
+      const response = await movieAPI.getShowtimes(currentShowtime.movie_id);
       
       if (response.data.success) {
-        let showtimesData = response.data.data?.data || response.data.data || [];
-        
-        console.log('All showtimes for movie:', showtimesData);
-        
-        // Filter out current showtime and only show other times
-        const otherTimes = showtimesData.filter(st => {
-          const isSameDate = (st.show_date?.split('T')[0] || st.show_date?.split(' ')[0]) === showDate;
-          const isDifferentShowtime = st.id !== parseInt(showtimeId);
-          
-          console.log(`Showtime ${st.id}: same_date=${isSameDate}, different_id=${isDifferentShowtime}`);
-          
-          return isSameDate && isDifferentShowtime;
-        });
-        
-        console.log('Filtered other showtimes:', otherTimes);
-        
-        // Sort by show time
-        otherTimes.sort((a, b) => {
-          const timeA = a.show_time.replace(':', '');
-          const timeB = b.show_time.replace(':', '');
+        // Filter showtimes for the same movie and theater on the same date
+        const otherTimes = response.data.data.filter(showtime => 
+          showtime.id !== currentShowtime.id &&
+          showtime.theater_id === currentShowtime.theater_id &&
+          showtime.show_date === currentShowtime.show_date
+        ).sort((a, b) => {
+          // Sort by show time
+          const timeA = a.show_time;
+          const timeB = b.show_time;
           return timeA.localeCompare(timeB);
         });
         
@@ -108,7 +79,7 @@ const Seats = () => {
     } finally {
       setShowtimesLoading(false);
     }
-  }, [showtime?.movie_id, showtime?.theater_id, showtime?.show_date, showtimeId]);
+  }, []);
 
   // Fetch seat data
   const fetchSeats = useCallback(async () => {
@@ -191,12 +162,7 @@ const Seats = () => {
     } finally {
       setLoading(false);
     }
-  }, [showtimeId]); // Dependencies are correct
-
-  // Create a stable reference for fetchSeats to prevent infinite re-renders
-  const stableFetchSeats = useCallback(() => {
-    fetchSeats();
-  }, [fetchSeats]);
+  }, [showtimeId, fetchOtherShowtimes]); // Dependencies are correct
 
   // Refresh seat status periodically
   useEffect(() => {
@@ -418,36 +384,6 @@ const Seats = () => {
     console.log('Sorted rows:', sortedRowsObject);
     
     return sortedRowsObject;
-  };
-
-  // Group seats by type for proper layout (box, platinum, gold)
-  const groupSeatsByType = (seats) => {
-    // Handle case where seats might be undefined or not an array
-    if (!seats || !Array.isArray(seats)) {
-      console.log('No seats to group by type');
-      return { box: {}, platinum: {}, gold: {} };
-    }
-    
-    console.log('Grouping seats by type:', seats);
-    
-    // Create copies of seats to avoid mutation
-    const boxSeats = seats.filter(seat => seat.type === 'box').map(seat => ({...seat}));
-    const platinumSeats = seats.filter(seat => seat.type === 'platinum').map(seat => ({...seat}));
-    const goldSeats = seats.filter(seat => seat.type === 'gold').map(seat => ({...seat}));
-    
-    console.log('Box seats:', boxSeats);
-    console.log('Platinum seats:', platinumSeats);
-    console.log('Gold seats:', goldSeats);
-    
-    const result = {
-      box: groupSeatsByRow(boxSeats),
-      platinum: groupSeatsByRow(platinumSeats),
-      gold: groupSeatsByRow(goldSeats)
-    };
-    
-    console.log('Seats grouped by type result:', result);
-    
-    return result;
   };
 
   // Get seat map layout with proper row grouping and type organization

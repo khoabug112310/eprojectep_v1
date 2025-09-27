@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Card, Container, Row, Col, Alert, Spinner, Modal, Form } from 'react-bootstrap';
-import { bookingAPI } from '../../services/api';
 
 const Checkout = () => {
   const navigate = useNavigate();

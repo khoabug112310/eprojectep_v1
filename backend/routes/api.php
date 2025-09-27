@@ -113,6 +113,12 @@ Route::prefix('v1')->group(function () {
             Route::post('/users', [API\UserController::class, 'store']);
             Route::put('/users/{id}', [API\UserController::class, 'update']);
             Route::delete('/users/{id}', [API\UserController::class, 'destroy']);
+            
+            // Review management
+            Route::get('/reviews', [API\ReviewController::class, 'adminIndex']);
+            Route::put('/reviews/{id}/approve', [API\ReviewController::class, 'approve']);
+            Route::put('/reviews/{id}/reject', [API\ReviewController::class, 'reject']);
+            Route::delete('/reviews/{id}', [API\ReviewController::class, 'destroy']);
         });
     });
 });

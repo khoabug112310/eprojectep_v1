@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Container, Row, Col, Navbar, Nav, NavDropdown, Form, FormControl, Badge } from 'react-bootstrap';
+import { Button, Container, Navbar, Nav, NavDropdown, Form, FormControl, Badge } from 'react-bootstrap';
 
 const Header = () => {
   const [searchTerm, setSearchTerm] = useState('');

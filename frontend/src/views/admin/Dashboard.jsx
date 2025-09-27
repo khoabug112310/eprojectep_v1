@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Container, Row, Col, ProgressBar, Form, Button, ButtonGroup, Table, Badge, Alert } from 'react-bootstrap';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
 import DatePicker from 'react-datepicker';
@@ -36,16 +36,39 @@ const Dashboard = () => {
     }).format(amount / 25000); // Convert VND to USD
   };
 
+  const fetchRevenueData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = {
+        period,
+        start_date: startDate?.toISOString().split('T')[0],
+        end_date: endDate?.toISOString().split('T')[0]
+      };
+      
+      const response = await adminAPI.getRevenueReports(params);
+      const data = response.data.data || response.data;
+      
+      // Generate chart data based on period
+      const chartData = generateChartData(data, period);
+      setRevenueData(chartData);
+      
+    } catch (error) {
+      console.error('Error fetching revenue data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [period, startDate, endDate]);
+
   useEffect(() => {
     fetchDashboardStats();
     fetchRevenueData();
-  }, []);
+  }, [fetchRevenueData]);
 
   useEffect(() => {
     if (period || startDate || endDate) {
       fetchRevenueData();
     }
-  }, [period, startDate, endDate]);
+  }, [period, startDate, endDate, fetchRevenueData]);
 
   const fetchDashboardStats = async () => {
     try {
@@ -160,29 +183,6 @@ const Dashboard = () => {
       console.log('🔄 Loading mock data due to API error');
     } finally {
       setRefreshing(false);
-    }
-  };
-
-  const fetchRevenueData = async () => {
-    try {
-      setLoading(true);
-      const params = {
-        period,
-        start_date: startDate?.toISOString().split('T')[0],
-        end_date: endDate?.toISOString().split('T')[0]
-      };
-      
-      const response = await adminAPI.getRevenueReports(params);
-      const data = response.data.data || response.data;
-      
-      // Generate chart data based on period
-      const chartData = generateChartData(data, period);
-      setRevenueData(chartData);
-      
-    } catch (error) {
-      console.error('Error fetching revenue data:', error);
-    } finally {
-      setLoading(false);
     }
   };
 

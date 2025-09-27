@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, Container, Form, Alert, Row, Col } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
 
 const EditMovie = () => {
   const { id } = useParams();
+  const isCreateMode = !id;
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isCreateMode, setIsCreateMode] = useState(!id); // Check if it's create mode
   const [formData, setFormData] = useState({
     title: '',
     synopsis: '',
@@ -26,21 +26,7 @@ const EditMovie = () => {
     status: 'active'
   });
 
-  useEffect(() => {
-    console.log('Route parameters:', { id });
-    
-    if (id) {
-      // Edit mode
-      setIsCreateMode(false);
-      fetchMovie();
-    } else {
-      // Create mode
-      setIsCreateMode(true);
-      setLoading(false);
-    }
-  }, [id]);
-
-  const fetchMovie = async () => {
+  const fetchMovie = useCallback(async () => {
     try {
       console.log('Fetching movie with ID:', id);
       const response = await adminAPI.getMovieById(id);
@@ -71,7 +57,15 @@ const EditMovie = () => {
       setError('Failed to load movie data');
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id && !isCreateMode) {
+      fetchMovie();
+    } else {
+      setLoading(false);
+    }
+  }, [id, isCreateMode, fetchMovie]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -94,14 +88,13 @@ const EditMovie = () => {
         duration: parseInt(formData.duration) || 0
       };
 
-      let response;
       if (isCreateMode) {
         console.log('Creating movie with data:', submitData);
-        response = await adminAPI.createMovie(submitData);
+        await adminAPI.createMovie(submitData);
         setSuccess('Movie created successfully!');
       } else {
         console.log('Updating movie with data:', submitData);
-        response = await adminAPI.updateMovie(id, submitData);
+        await adminAPI.updateMovie(id, submitData);
         setSuccess('Movie updated successfully!');
       }
       

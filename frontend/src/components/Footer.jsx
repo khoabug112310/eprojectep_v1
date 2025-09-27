@@ -24,16 +24,16 @@ const Footer = () => {
               <div className="social-media">
                 <h6 className="text-gold mb-2">Follow Us</h6>
                 <div className="d-flex gap-2">
-                  <a href="#" className="text-light" aria-label="Facebook">
+                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-light" aria-label="Facebook">
                     <i className="bi bi-facebook fs-4"></i>
                   </a>
-                  <a href="#" className="text-light" aria-label="Instagram">
+                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-light" aria-label="Instagram">
                     <i className="bi bi-instagram fs-4"></i>
                   </a>
-                  <a href="#" className="text-light" aria-label="Twitter">
+                  <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-light" aria-label="Twitter">
                     <i className="bi bi-twitter fs-4"></i>
                   </a>
-                  <a href="#" className="text-light" aria-label="YouTube">
+                  <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-light" aria-label="YouTube">
                     <i className="bi bi-youtube fs-4"></i>
                   </a>
                 </div>
@@ -81,29 +81,29 @@ const Footer = () => {
               <h5 className="text-gold mb-3">Customer Service</h5>
               <ul className="list-unstyled">
                 <li className="mb-2">
-                  <a href="#" className="text-light footer-link text-decoration-none">
+                  <Nav.Link as={Link} to="/help" className="text-light p-0 footer-link">
                     <i className="bi bi-question-circle me-2"></i>Help & FAQ
-                  </a>
+                  </Nav.Link>
                 </li>
                 <li className="mb-2">
-                  <a href="#" className="text-light footer-link text-decoration-none">
+                  <Nav.Link as={Link} to="/privacy" className="text-light p-0 footer-link">
                     <i className="bi bi-shield-check me-2"></i>Privacy Policy
-                  </a>
+                  </Nav.Link>
                 </li>
                 <li className="mb-2">
-                  <a href="#" className="text-light footer-link text-decoration-none">
+                  <Nav.Link as={Link} to="/terms" className="text-light p-0 footer-link">
                     <i className="bi bi-file-text me-2"></i>Terms of Service
-                  </a>
+                  </Nav.Link>
                 </li>
                 <li className="mb-2">
-                  <a href="#" className="text-light footer-link text-decoration-none">
+                  <Nav.Link as={Link} to="/payment" className="text-light p-0 footer-link">
                     <i className="bi bi-credit-card me-2"></i>Payment Methods
-                  </a>
+                  </Nav.Link>
                 </li>
                 <li className="mb-2">
-                  <a href="#" className="text-light footer-link text-decoration-none">
+                  <Nav.Link as={Link} to="/refund" className="text-light p-0 footer-link">
                     <i className="bi bi-arrow-clockwise me-2"></i>Refund Policy
-                  </a>
+                  </Nav.Link>
                 </li>
               </ul>
             </div>

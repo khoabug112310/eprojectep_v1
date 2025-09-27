@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, Container, Table, Form, InputGroup, Spinner, Badge, Dropdown } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { Button, Card, Container, Table, Form, Spinner, Badge } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
 
 const AdminShowtimes = () => {
@@ -137,22 +137,6 @@ const AdminShowtimes = () => {
     }
     return '';
   };
-
-  const resetFilters = () => {
-    setFilters({
-      movie_id: '',
-      theater_id: '',
-      status: '',
-      date: ''
-    });
-    setSearchTerm('');
-    setCurrentPage(1);
-  };
-
-  const filteredShowtimes = showtimes.filter(showtime => 
-    showtime.movie?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    showtime.theater?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   if (loading && showtimes.length === 0) {
     return (

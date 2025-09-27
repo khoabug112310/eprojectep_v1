@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { Button, Card, Container, Table, Form, InputGroup, Badge, Modal, Row, Col, Spinner, Alert, Pagination } from 'react-bootstrap';
+import { Button, Card, Container, Table, Form, InputGroup, Badge, Modal, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
 
 const AdminUsers = () => {
@@ -74,7 +73,7 @@ const AdminUsers = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, sortBy, sortOrder]);
+  }, [currentPage, sortBy, sortOrder, fetchUsers]);
 
   // Handle search with debounce
   useEffect(() => {
@@ -84,7 +83,7 @@ const AdminUsers = () => {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, filterStatus, filterRole]);
+  }, [searchTerm, filterStatus, filterRole, fetchUsers]);
 
   // Handle sorting
   const handleSort = (column) => {
@@ -213,7 +212,7 @@ const AdminUsers = () => {
     
     setActionLoading(true);
     try {
-      const response = await adminAPI.createUser(userForm);
+      await adminAPI.createUser(userForm);
       setShowCreateModal(false);
       setSuccess('User created successfully!');
       setTimeout(() => setSuccess(''), 3000);

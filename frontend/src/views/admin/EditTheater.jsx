@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, Container, Form, Alert, Row, Col } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
@@ -20,19 +20,7 @@ const EditTheater = () => {
     status: 'active'
   });
 
-  useEffect(() => {
-    if (id) {
-      // Edit mode
-      setIsCreateMode(false);
-      fetchTheater();
-    } else {
-      // Create mode
-      setIsCreateMode(true);
-      setLoading(false);
-    }
-  }, [id]);
-
-  const fetchTheater = async () => {
+  const fetchTheater = useCallback(async () => {
     try {
       const response = await adminAPI.getTheaterById(id);
       const theater = response.data.data || response.data;
@@ -56,7 +44,19 @@ const EditTheater = () => {
       setError('Failed to load theater data');
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      // Edit mode
+      setIsCreateMode(false);
+      fetchTheater();
+    } else {
+      // Create mode
+      setIsCreateMode(true);
+      setLoading(false);
+    }
+  }, [id, fetchTheater]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -79,14 +79,13 @@ const EditTheater = () => {
         total_seats: parseInt(formData.total_seats) || 0
       };
 
-      let response;
       if (isCreateMode) {
         console.log('Creating theater with data:', submitData);
-        response = await adminAPI.createTheater(submitData);
+        await adminAPI.createTheater(submitData);
         setSuccess('Theater created successfully!');
       } else {
         console.log('Updating theater with data:', submitData);
-        response = await adminAPI.updateTheater(id, submitData);
+        await adminAPI.updateTheater(id, submitData);
         setSuccess('Theater updated successfully!');
       }
       

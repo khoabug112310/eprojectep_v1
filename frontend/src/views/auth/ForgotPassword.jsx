@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Form, Button, Card, Container, Alert } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
+import { Button, Card, Container, Form, Alert } from 'react-bootstrap';
 import { authAPI } from '../../services/api';
 
 const ForgotPassword = () => {
@@ -8,7 +8,6 @@ const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
