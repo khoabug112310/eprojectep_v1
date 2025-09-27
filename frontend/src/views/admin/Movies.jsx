@@ -406,6 +406,7 @@ const AdminMovies = () => {
                         <i className={`bi bi-arrow-${sortOrder === 'asc' ? 'up' : 'down'} ms-1`}></i>
                       )}
                     </th>
+                    
                     <th style={{ width: '150px' }}>Actions</th>
                   </tr>
                 </thead>

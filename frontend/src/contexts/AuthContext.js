@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext();
 
@@ -14,12 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Check if user is logged in on initial load
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = () => {
+  const checkAuthStatus = useCallback(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
@@ -33,7 +28,12 @@ export const AuthProvider = ({ children }) => {
       }
     }
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    // Check if user is logged in on initial load
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   const login = (token, userData) => {
     localStorage.setItem('token', token);
