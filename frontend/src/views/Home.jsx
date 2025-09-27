@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, Container, Row, Col, Carousel, Badge, Form, Alert } from 'react-bootstrap';
+import { Button, Card, Container, Row, Col, Carousel, Badge, Form, Alert, Modal } from 'react-bootstrap';
 import { movieAPI, theaterAPI } from '../services/api';
 import HomeFooter from '../components/HomeFooter';
+import MoviePosterWithHover from '../components/MoviePosterWithHover';
 
 // Function to normalize genre data
 const normalizeGenre = (genre) => {
@@ -54,6 +55,8 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isQuickBookingVisible, setIsQuickBookingVisible] = useState(true);
+  const [showTrailer, setShowTrailer] = useState(false);
+  const [trailerMovie, setTrailerMovie] = useState(null);
   
   // Quick booking state
   const [selectedMovie, setSelectedMovie] = useState('');
@@ -326,6 +329,33 @@ const Home = () => {
   // Format showtime display
   const formatTimeDisplay = (showtime) => {
     return showtime.show_time;
+  };
+
+  // Convert YouTube URL to embed format
+  const getYouTubeEmbedUrl = (url) => {
+    if (!url) return null;
+
+    // If it's already an embed URL, return as is
+    if (url.includes('/embed/')) {
+      return url;
+    }
+
+    // Extract video ID from various YouTube URL formats
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+
+    if (match && match[2].length === 11) {
+      // Convert to embed URL with autoplay and sound enabled
+      return `https://www.youtube.com/embed/${match[2]}?autoplay=1&mute=0`;
+    }
+
+    return null;
+  };
+
+  // Handle trailer button click
+  const handleTrailerClick = (movie) => {
+    setTrailerMovie(movie);
+    setShowTrailer(true);
   };
 
   if (loading) {
@@ -605,49 +635,14 @@ const Home = () => {
         </div>
         
         <Row>
-          {nowShowing.map((movie) => {
-            const genres = normalizeGenre(movie.genre);
-            return (
-              <Col key={movie.id} md={6} lg={3} className="mb-4">
-                <Card className="h-100 movie-card">
-                  <div className="position-relative">
-                    {/* Make the movie poster clickable to go to movie detail page */}
-                    <Link to={`/movies/${movie.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                      <Card.Img 
-                        variant="top" 
-                        src={movie.poster_url || "https://placehold.co/300x450/1f1f1f/ffd700?text=Movie"} 
-                        style={{ height: '350px', objectFit: 'cover', cursor: 'pointer' }}
-                      />
-                    </Link>
-                    <Badge bg="gold" className="position-absolute top-0 end-0 m-2">
-                      ⭐ {movie.average_rating || 'N/A'}
-                    </Badge>
-                  </div>
-                  <Card.Body className="d-flex flex-column">
-                    <Card.Title className="fs-6 fw-bold">{movie.title}</Card.Title>
-                    <div className="mb-2">
-                      <small className="text-muted">
-                        {genres.slice(0, 2).join(', ')}
-                      </small>
-                    </div>
-                    <div className="mt-auto">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="text-gold">{movie.duration} min</span>
-                        <Button 
-                          as={Link} 
-                          to={`/movies/${movie.id}`} 
-                          variant="outline-primary" 
-                          size="sm"
-                        >
-                          Book
-                        </Button>
-                      </div>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            );
-          })}
+          {nowShowing.map((movie) => (
+            <Col key={movie.id} md={6} lg={3} className="mb-4">
+              <MoviePosterWithHover 
+                movie={movie} 
+                onTrailerClick={handleTrailerClick}
+              />
+            </Col>
+          ))}
         </Row>
       </Container>
 
@@ -661,49 +656,15 @@ const Home = () => {
         </div>
         
         <Row>
-          {comingSoon.map((movie) => {
-            const genres = normalizeGenre(movie.genre);
-            return (
-              <Col key={movie.id} md={6} lg={3} className="mb-4">
-                <Card className="h-100 movie-card">
-                  <div className="position-relative">
-                    {/* Make the movie poster clickable to go to movie detail page */}
-                    <Link to={`/movies/${movie.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                      <Card.Img 
-                        variant="top" 
-                        src={movie.poster_url || "https://placehold.co/300x450/1f1f1f/ffd700?text=Coming+Soon"} 
-                        style={{ height: '350px', objectFit: 'cover', cursor: 'pointer' }}
-                      />
-                    </Link>
-                    <Badge bg="warning" className="position-absolute top-0 end-0 m-2 text-dark">
-                      Coming Soon
-                    </Badge>
-                  </div>
-                  <Card.Body className="d-flex flex-column">
-                    <Card.Title className="fs-6 fw-bold">{movie.title}</Card.Title>
-                    <div className="mb-2">
-                      <small className="text-muted">
-                        {genres.slice(0, 2).join(', ')}
-                      </small>
-                    </div>
-                    <Card.Text className="text-muted small">
-                      {movie.release_date ? new Date(movie.release_date).toLocaleDateString() : 'TBA'}
-                    </Card.Text>
-                    <div className="mt-auto">
-                      <Button 
-                        as={Link} 
-                        to={`/movies/${movie.id}`} 
-                        variant="outline-primary" 
-                        size="sm"
-                      >
-                        Details
-                      </Button>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            );
-          })}
+          {comingSoon.map((movie) => (
+            <Col key={movie.id} md={6} lg={3} className="mb-4">
+              <MoviePosterWithHover 
+                movie={movie} 
+                isComingSoon={true}
+                onTrailerClick={handleTrailerClick}
+              />
+            </Col>
+          ))}
         </Row>
       </Container>
 
@@ -754,6 +715,25 @@ const Home = () => {
           })}
         </Row>
       </Container>
+
+      {/* Trailer Modal */}
+      <Modal show={showTrailer} onHide={() => setShowTrailer(false)} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>{trailerMovie?.title} - Trailer</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {trailerMovie && trailerMovie.trailer_url && (
+            <div className="ratio ratio-16x9">
+              <iframe
+                src={getYouTubeEmbedUrl(trailerMovie.trailer_url)}
+                title={`${trailerMovie.title} Trailer`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          )}
+        </Modal.Body>
+      </Modal>
 
       {/* Home Footer Sections */}
       <HomeFooter />

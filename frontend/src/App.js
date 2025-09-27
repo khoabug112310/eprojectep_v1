@@ -44,7 +44,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="*" element={
-              <div className="py-4">
+              <div className="main-content-wrapper">
                 <Routes>
                   <Route path="/movies" element={<Movies />} />
                   <Route path="/movies/:id" element={<MovieDetail />} />

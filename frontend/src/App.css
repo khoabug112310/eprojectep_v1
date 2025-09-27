@@ -281,6 +281,26 @@ a:hover {
   border-color: var(--primary-gold) !important;
 }
 
+/* Main Content Wrapper - Added to prevent content overflow */
+.main-content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px; /* Default padding for desktop */
+}
+
+/* Responsive adjustments for main content wrapper */
+@media (max-width: 768px) {
+  .main-content-wrapper {
+    padding: 0 15px; /* Tablet padding */
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content-wrapper {
+    padding: 0 10px; /* Mobile padding */
+  }
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   h1 { font-size: 2rem; }
