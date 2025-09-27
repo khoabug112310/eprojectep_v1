@@ -20,6 +20,7 @@ import ForgotPassword from './views/auth/ForgotPassword';
 import AdminRoutes from './views/admin/Routes';
 import TestRating from './views/TestRating';
 import { AuthProvider } from './contexts/AuthContext';
+import ScrollToTop from './components/ScrollToTop';
 import './App.css';
 
 function App() {
@@ -29,6 +30,9 @@ function App() {
   return (
     <AuthProvider>
       <div className="App">
+        {/* Scroll to top button */}
+        <ScrollToTop />
+        
         {/* Header for all pages except admin */}
         {!isAdminRoute && location.pathname !== '/print-ticket' && <Header />}
         
